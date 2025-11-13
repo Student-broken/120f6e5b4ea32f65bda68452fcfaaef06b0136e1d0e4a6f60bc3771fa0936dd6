@@ -5,140 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mettre à Jour les Données - Outil MBS</title>
     <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #2980b9;
-            --secondary-color: #2c3e50;
-            --background-color: #f7f9fb;
-            --widget-background: #ffffff;
-            --text-color: #34495e;
-            --light-grey: #bdc3c7;
-            --footer-grey: #95a5a6;
-            --danger-color: #e74c3c;
-            --shadow: 0 8px 15px rgba(0, 0, 0, 0.08);
+            --primary-color: #2980b9; --secondary-color: #2c3e50; --background-color: #f7f9fb;
+            --widget-background: #ffffff; --text-color: #34495e; --light-grey: #bdc3c7;
+            --danger-color: #e74c3c; --success-color: #27ae60; --shadow: 0 8px 15px rgba(0, 0, 0, 0.08);
         }
-        body {
-            margin: 0;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--background-color);
-            color: var(--text-color);
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        .site-header-container {
-            background-color: var(--widget-background);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            border-bottom: 1px solid #e0e6eb;
-            padding: 15px 0;
-            position: relative;
-        }
-        .site-header {
-            text-align: center;
-            padding: 0;
-            margin: 0;
-            color: var(--secondary-color);
-            font-size: 2.2em;
-            font-weight: 700;
-            font-family: 'Playfair Display', serif;
-            letter-spacing: 0.05em;
-        }
-        .content {
-            flex-grow: 1;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            padding: 40px 20px;
-        }
-        .back-arrow {
-            position: absolute;
-            top: 50%;
-            left: 25px;
-            transform: translateY(-50%);
-            font-size: 2.2em;
-            color: var(--secondary-color);
-            text-decoration: none;
-            transition: color 0.2s, transform 0.2s;
-            line-height: 1;
-        }
-        .back-arrow:hover {
-            color: var(--primary-color);
-            transform: translateY(-50%) scale(1.05);
-        }
-        .data-widget {
-            background-color: var(--widget-background);
-            padding: 40px;
-            border-radius: 16px;
-            box-shadow: var(--shadow);
-            width: 100%;
-            max-width: 700px;
-            margin-top: 20px;
-            text-align: center;
-        }
-        h2 {
-            margin-top: 0;
-            font-family: 'Playfair Display', serif;
-        }
-        textarea {
-            width: 100%;
-            height: 350px;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            font-family: monospace;
-            font-size: 14px;
-            margin-bottom: 20px;
-            box-sizing: border-box;
-            resize: vertical;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        textarea:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(41, 128, 185, 0.2);
-            outline: none;
-        }
-        .btn {
-            display: block;
-            width: 100%;
-            padding: 16px;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.1em;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            color: white;
-            background-color: var(--primary-color);
-            transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        .btn:hover:not(:disabled) {
-            background-color: #3498db;
-            transform: translateY(-1px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-        }
-        .btn:disabled {
-            background-color: var(--light-grey);
-            cursor: not-allowed;
-            box-shadow: none;
-        }
-        footer {
-            text-align: center;
-            padding: 20px;
-            font-size: 0.9em;
-            color: var(--footer-grey);
-            border-top: 1px solid #eee;
-            margin-top: auto;
-        }
-        footer a {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-weight: 500;
-        }
-        footer a:hover {
-            text-decoration: underline;
-        }
+        body { margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--background-color); color: var(--text-color); display: flex; flex-direction: column; min-height: 100vh; }
+        .site-header-container { background-color: var(--widget-background); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); border-bottom: 1px solid #e0e6eb; padding: 15px 0; position: relative; }
+        .site-header { text-align: center; margin: 0; color: var(--secondary-color); font-size: 2.2em; font-weight: 700; font-family: 'Playfair Display', serif; }
+        .content { flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; padding: 40px 20px; }
+        .back-arrow { position: absolute; top: 50%; left: 25px; transform: translateY(-50%); font-size: 2.2em; color: var(--secondary-color); text-decoration: none; line-height: 1; transition: color 0.2s, transform 0.2s; font-family: 'Inter', sans-serif; }
+        .back-arrow:hover { color: var(--primary-color); transform: translateY(-50%) scale(1.05); }
+        .data-widget { background-color: var(--widget-background); padding: 40px; border-radius: 16px; box-shadow: var(--shadow); width: 100%; max-width: 650px; text-align: center; }
+        .data-widget h2 { margin-top: 0; font-family: 'Playfair Display', serif; }
+        textarea { width: 100%; height: 350px; padding: 15px; border: 2px dashed var(--light-grey); border-radius: 10px; font-family: monospace; font-size: 14px; margin-top: 20px; margin-bottom: 20px; box-sizing: border-box; resize: vertical; transition: all 0.2s; }
+        textarea:disabled { background-color: #f5f5f5; cursor: not-allowed; }
+        textarea:focus { border-color: var(--primary-color); border-style: solid; box-shadow: 0 0 0 3px rgba(41, 128, 185, 0.2); outline: none; }
+        .checkbox-container { display: flex; align-items: center; justify-content: center; margin-bottom: 25px; font-size: 0.9em; line-height: 1.5; }
+        .checkbox-container input { margin-right: 10px; transform: scale(1.15); cursor: pointer; }
+        .checkbox-container a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
+        .checkbox-container a:hover { text-decoration: underline; }
+        #status-message { min-height: 24px; font-weight: 600; margin-top: 15px; transition: color 0.3s; }
+        .status-analyzing { color: var(--primary-color); }
+        .status-error { color: var(--danger-color); }
+        footer { text-align: center; padding: 25px; font-size: 0.9em; color: var(--light-grey); border-top: 1px solid #eee; margin-top: auto; }
+        footer a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
+        footer a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -150,349 +44,105 @@
 
     <main class="content">
         <div class="data-widget">
-            <h2>Mettre à jour vos données</h2>
-            <p style="margin-bottom: 30px;">1. Allez sur le portail étudiant. 2. Copiez tout (Ctrl+A). 3. Collez ici (Ctrl+V).</p>
-            <form id="data-form">
-                <textarea id="raw-text" placeholder="Collez les données du portail ici..."></textarea>
-                <button type="submit" id="submit-btn" class="btn" disabled>Analyser et Sauvegarder</button>
-            </form>
+            <h2>Mettre à Jour les Données</h2>
+            <p>Copiez vos notes du portail (Ctrl+A, Ctrl+C) et collez-les ici.</p>
+            
+            <div class="checkbox-container">
+                <input type="checkbox" id="terms-checkbox">
+                <label for="terms-checkbox">Je comprends que ces données sont stockées localement sur mon navigateur.</label>
+            </div>
+
+            <textarea id="raw-text" placeholder="Veuillez d'abord cocher la case ci-dessus" readonly disabled></textarea>
+            
+            <div id="status-message"></div>
         </div>
     </main>
 
     <footer>
-        <p>Un problème? <a href="ticket.html">Signalez-le ici</a>.</p>
+        <p>Pour tout problème ou question, vous pouvez <a href="ticket.html">soumettre un ticket</a>.</p>
     </footer>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const submitBtn = document.getElementById('submit-btn');
-            const dataForm = document.getElementById('data-form');
             const rawTextArea = document.getElementById('raw-text');
+            const termsCheckbox = document.getElementById('terms-checkbox');
+            const statusMessage = document.getElementById('status-message');
 
-            const updateSubmitButtonState = () => {
-                const isTextPresent = rawTextArea.value.trim().length > 0;
-                submitBtn.disabled = !isTextPresent;
-            };
-            
-            // Use a timeout to allow the paste to complete before checking
-            rawTextArea.addEventListener('paste', () => {
-                setTimeout(updateSubmitButtonState, 0);
+            // 1. Enable/Disable textarea based on checkbox
+            termsCheckbox.addEventListener('change', () => {
+                if (termsCheckbox.checked) {
+                    rawTextArea.disabled = false;
+                    rawTextArea.readOnly = false; // Must be false to allow paste
+                    rawTextArea.placeholder = "Collez les données du portail ici... (Ctrl+V)";
+                    rawTextArea.focus();
+                } else {
+                    rawTextArea.disabled = true;
+                    rawTextArea.readOnly = true;
+                    rawTextArea.placeholder = "Veuillez d'abord cocher la case ci-dessus";
+                }
             });
-            rawTextArea.addEventListener('input', updateSubmitButtonState);
 
-            dataForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Analyse en cours...';
+            // 2. Add focus/blur listeners to handle manual typing attempts
+            rawTextArea.addEventListener('focus', () => {
+                if (!termsCheckbox.checked) return;
+                rawTextArea.readOnly = false;
+            });
 
-                const rawText = rawTextArea.value;
-
-                if (!rawText.trim()) {
-                    alert("Veuillez coller des données avant de sauvegarder.");
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Analyser et Sauvegarder';
+            rawTextArea.addEventListener('blur', () => {
+                rawTextArea.readOnly = true;
+            });
+            
+            // 3. Main logic: listen for paste, then analyze and save
+            rawTextArea.addEventListener('paste', (event) => {
+                if (!termsCheckbox.checked) {
+                    event.preventDefault();
+                    alert("Veuillez d'abord accepter les conditions en cochant la case.");
                     return;
                 }
 
-                try {
-                    const parsedResult = parsePortalData(rawText);
-
-                    if (!parsedResult.nom || !parsedResult.etapeData || !parsedResult.etapeKey) {
-                        throw new Error("Les données collées sont invalides ou incomplètes. Le nom ou le numéro d'étape n'a pas pu être trouvé.");
-                    }
-                    
-                    // --- OVERWRITE AND HISTORY LOGIC ---
-                    let mbsData = JSON.parse(localStorage.getItem('mbsData')) || { settings: {}, historique: {} };
-
-                    // Update main data (Overwrite)
-                    mbsData.nom = parsedResult.nom;
-                    mbsData[parsedResult.etapeKey] = parsedResult.etapeData;
-                    if (!mbsData.user_random) {
-                        mbsData.user_random = 'user-' + Date.now().toString(36) + Math.random().toString(36).substring(2);
-                    }
-                    if (!mbsData.valid){
-                        mbsData.valid = true;
-                    }
-
-                    // Record history
-                    const gradeMap = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 85, 'B': 80, 'B-': 75, 'C+': 70, 'C': 65, 'C-': 60, 'D+': 55, 'D': 50, 'E': 45 };
-                    const getNumericGrade = (result) => {
-                        if (!result) return null;
-                        const trimmed = result.trim();
-                        if (gradeMap[trimmed]) return gradeMap[trimmed];
-                        const pMatch = trimmed.match(/(\d+[,.]?\d*)\s*%/);
-                        if (pMatch) return parseFloat(pMatch[1].replace(',', '.'));
-                        const sMatch = trimmed.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/);
-                        if (sMatch) {
-                            const score = parseFloat(sMatch[1].replace(',', '.'));
-                            const max = parseFloat(sMatch[2].replace(',', '.'));
-                            return max > 0 ? (score / max) * 100 : null;
-                        }
-                        return null;
-                    };
-
-                    let termWeightedSum = 0;
-                    let termCompetencySum = 0;
-                    parsedResult.etapeData.forEach(subject => {
-                        subject.competencies.forEach(comp => {
-                            const compWeightMatch = comp.name.match(/\((\d+)%\)/);
-                            if (!compWeightMatch) return;
-                            const compWeight = parseFloat(compWeightMatch[1]);
-                            let totalAssignmentGrade = 0;
-                            let totalAssignmentWeight = 0;
-                            comp.assignments.forEach(assign => {
-                                const grade = getNumericGrade(assign.result);
-                                const weight = parseFloat(assign.pond);
-                                if (grade !== null && !isNaN(weight) && weight > 0) {
-                                    totalAssignmentGrade += grade * weight;
-                                    totalAssignmentWeight += weight;
-                                }
-                            });
-                            if (totalAssignmentWeight > 0) {
-                                termWeightedSum += (totalAssignmentGrade / totalAssignmentWeight) * compWeight;
-                                termCompetencySum += compWeight;
-                            }
-                        });
-                    });
-                    
-                    const newAverage = termCompetencySum > 0 ? termWeightedSum / termCompetencySum : null;
-
-                    if (newAverage !== null) {
-                        if (!mbsData.historique[parsedResult.etapeKey]) {
-                            mbsData.historique[parsedResult.etapeKey] = { timestamps: [], moyennes: [] };
-                        }
-                        mbsData.historique[parsedResult.etapeKey].timestamps.push(Date.now());
-                        mbsData.historique[parsedResult.etapeKey].moyennes.push(newAverage);
-                    }
-
-                    localStorage.setItem('mbsData', JSON.stringify(mbsData));
-                    
-                    // Redirect after success
-                    window.location.href = 'main.html';
-
-                } catch (error) {
-                    alert("Erreur: " + error.message);
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Analyser et Sauvegarder';
-                }
-            });
-
-            function parsePortalData(text) {
-                const nameMatch = text.match(/Photo\s*\n(.+)/);
-                const semesterMatch = text.match(/Classe\s*\n\s*(\d)/);
-                const nom = nameMatch ? nameMatch[1].trim() : null;
-                const etapeNumber = semesterMatch ? parseInt(semesterMatch[1].trim(), 10) : null;
-                if (!nom || !etapeNumber) return {};
-                const etapeKey = `etape${etapeNumber}`;
-
-                const POND_REGEX = /^\d{1,3}$/;
-                const DATE_REGEX = /^\d{4}-\d{2}-\d{2}/;
-                const RESULT_REGEX = /^(\d{1,3},\d\s\/\s\d{1,3}\s\(.+\)|[A-DF][+-]?)$/;
-
-                const parseAssignments = (lines) => {
-                    let assignments = [];
-                    let currentAssignment = { textBuffer: [], category: '', work: '', pond: '', assignedDate: '', dueDate: '', result: '' };
-                    
-                    const finalizeAssignment = () => {
-                        if (currentAssignment.textBuffer.length === 0 && !currentAssignment.pond && !currentAssignment.result) return;
-                        const buffer = currentAssignment.textBuffer;
-                        if (buffer.length === 1) {
-                            currentAssignment.work = buffer[0];
-                        } else if (buffer.length > 1) {
-                            currentAssignment.category = buffer[0];
-                            currentAssignment.work = buffer.slice(1).join('<br>');
-                        }
-                        delete currentAssignment.textBuffer;
-                        assignments.push(currentAssignment);
-                    };
-
-                    for (const line of lines) {
-                        const trimmedLine = line.trim();
-                        if (!trimmedLine || trimmedLine.includes('Catégorie\tTravail\tPond.')) continue;
-                        
-                        if (RESULT_REGEX.test(trimmedLine)) {
-                            currentAssignment.result = trimmedLine;
-                            finalizeAssignment();
-                            currentAssignment = { textBuffer: [], category: '', work: '', pond: '', assignedDate: '', dueDate: '', result: '' };
-                        } else if (POND_REGEX.test(trimmedLine)) {
-                            currentAssignment.pond = trimmedLine;
-                        } else if (DATE_REGEX.test(trimmedLine)) {
-                            if (!currentAssignment.assignedDate) {
-                                currentAssignment.assignedDate = trimmedLine.split(' à ')[0].trim();
-                            } else {
-                                currentAssignment.dueDate = trimmedLine;
-                            }
-                        } else {
-                            if (currentAssignment.pond || currentAssignment.assignedDate) {
-                                finalizeAssignment();
-                                currentAssignment = { textBuffer: [], category: '', work: '', pond: '', assignedDate: '', dueDate: '', result: '' };
-                            }
-                            currentAssignment.textBuffer.push(trimmedLine);
-                        }
-                    }
-                    finalizeAssignment();
-                    return assignments;
-                };
-
-                const subjects = [];
-                const subjectRegex = /([A-Z]{3}\d{3}[A-Z]?) - (.+)/g;
-                const subjectsText = text.split(subjectRegex).slice(1);
-
-                for (let i = 0; i < subjectsText.length; i += 3) {
-                    const subjectData = { code: subjectsText[i].trim(), name: subjectsText[i+1].trim(), competencies: [] };
-                    const competencyBlocks = (subjectsText[i+2] || '').split('Compétence - ').slice(1);
-
-                    for (const block of competencyBlocks) {
-                        const blockLines = block.trim().split('\n');
-                        const compName = blockLines.shift() || '';
-                        const competencyData = {
-                            name: `Compétence - ${compName.trim()}`,
-                            assignments: parseAssignments(blockLines)
-                        };
-                        if (competencyData.assignments.length > 0) {
-                            subjectData.competencies.push(competencyData);
-                        }
-                    }
-                    if (subjectData.competencies.length > 0) {
-                        subjects.push(subjectData);
-                    }
-                }
-                return { nom, etapeKey, etapeData: subjects };
-            }
-        });
-    </script>
-</body>
-</html><!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mise à Jour - Outil MBS</title>
-    <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary-color: #2980b9; --secondary-color: #2c3e50; --background-color: #f7f9fb;
-            --widget-background: #ffffff; --text-color: #34495e; --danger-color: #e74c3c;
-            --success-color: #27ae60; --shadow-header: 0 2px 4px rgba(0, 0, 0, 0.05);
-            --shadow-widget: 0 8px 15px rgba(0, 0, 0, 0.08);
-        }
-        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--background-color); color: var(--text-color); display: flex; flex-direction: column; min-height: 100vh; }
-        .site-header-container { background-color: var(--widget-background); box-shadow: var(--shadow-header); padding: 15px 0; position: relative; }
-        .site-header { text-align: center; margin: 0; color: var(--secondary-color); font-size: 2.2em; font-family: 'Playfair Display', serif; }
-        .back-arrow { position: absolute; top: 50%; left: 25px; transform: translateY(-50%); font-size: 2.2em; color: var(--secondary-color); text-decoration: none; transition: color 0.2s; }
-        .back-arrow:hover { color: var(--primary-color); }
-        .main-content { flex: 1; display: flex; justify-content: center; align-items: center; padding: 20px; }
-        .data-card { background: var(--widget-background); border-radius: 12px; box-shadow: var(--shadow-widget); padding: 30px 40px; width: 100%; max-width: 800px; text-align: center; }
-        .data-card h2 { margin-top: 0; font-size: 1.5em; color: var(--secondary-color); }
-        .data-card p { color: #6c757d; margin-bottom: 25px; }
-        #raw-text { width: 100%; min-height: 250px; border: 2px dashed #ddd; border-radius: 10px; padding: 15px; font-family: monospace; font-size: 0.9em; resize: vertical; box-sizing: border-box; transition: border-color 0.2s; }
-        #raw-text:focus { outline: none; border-color: var(--primary-color); }
-        .btn { display: inline-block; padding: 14px 30px; border: none; border-radius: 10px; font-size: 1.1em; font-weight: 600; cursor: pointer; color: white; background-color: var(--primary-color); transition: background-color 0.2s, transform 0.1s; margin-top: 20px; }
-        .btn:disabled { background-color: #bdc3c7; cursor: not-allowed; }
-        .status-message { margin-top: 15px; font-weight: 500; height: 20px; }
-        .status-message.success { color: var(--success-color); }
-        .status-message.error { color: var(--danger-color); }
-        footer { text-align: center; padding: 15px; font-size: 0.8em; color: #95a5a6; border-top: 1px solid #eee; margin-top: auto; }
-        footer a { color: var(--primary-color); text-decoration: none; }
-    </style>
-</head>
-<body>
-
-    <div class="site-header-container">
-        <a href="index.html" class="back-arrow" title="Retour">←</a>
-        <header class="site-header">Outil MBS</header>
-    </div>
-
-    <main class="main-content">
-        <div class="data-card">
-            <h2>Mettre à jour vos Données</h2>
-            <p>1. Allez sur le portail. 2. Copiez tout (Ctrl+A). 3. Collez dans la zone ci-dessous.</p>
-            <form id="data-form">
-                <textarea id="raw-text" placeholder="Collez vos données ici..."></textarea>
-                <button type="submit" id="submit-btn" class="btn" disabled>Analyser et Sauvegarder</button>
-                <div id="status-message" class="status-message"></div>
-            </form>
-        </div>
-    </main>
-
-    <footer>
-        <a href="ticket.html">Signaler un problème</a>
-    </footer>
-
-    <script>
-        const submitBtn = document.getElementById('submit-btn');
-        const dataForm = document.getElementById('data-form');
-        const rawTextArea = document.getElementById('raw-text');
-        const statusMessage = document.getElementById('status-message');
-
-        // Enable button only when there is text
-        rawTextArea.addEventListener('input', () => {
-            submitBtn.disabled = rawTextArea.value.trim().length === 0;
-        });
-
-        // Handle form submission
-        dataForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Analyse en cours...';
-            statusMessage.textContent = '';
-            statusMessage.className = 'status-message';
-
-            try {
-                const rawText = rawTextArea.value;
-                const parsedResult = parsePortalData(rawText);
-
-                if (!parsedResult.nom || !parsedResult.etapeData || !parsedResult.etapeKey) {
-                    throw new Error("Les données collées sont invalides ou incomplètes.");
-                }
-
-                // Get existing data or create a new structure
-                let mbsData = JSON.parse(localStorage.getItem('mbsData')) || {
-                    valid: true,
-                    historique: { etape1: { timestamps: [], moyennes: [] }, etape2: { timestamps: [], moyennes: [] }, etape3: { timestamps: [], moyennes: [] } },
-                    settings: { theme: 'auto', niveau: '', unitesMode: 'defaut' }
-                };
-
-                // Overwrite general info and specific step data
-                mbsData.nom = parsedResult.nom;
-                mbsData[parsedResult.etapeKey] = parsedResult.etapeData;
-                mbsData.valid = true;
-                
-                if (!mbsData.user_random) {
-                    mbsData.user_random = 'user-' + Date.now().toString(36) + Math.random().toString(36).substring(2);
-                }
-
-                // --- Record history for trend analysis ---
-                const termAverage = calculateTermAverage(parsedResult.etapeData);
-                if (termAverage !== null) {
-                    if (!mbsData.historique[parsedResult.etapeKey]) {
-                        mbsData.historique[parsedResult.etapeKey] = { timestamps: [], moyennes: [] };
-                    }
-                    mbsData.historique[parsedResult.etapeKey].timestamps.push(Date.now());
-                    mbsData.historique[parsedResult.etapeKey].moyennes.push(termAverage);
-                }
-
-                // Save updated data
-                localStorage.setItem('mbsData', JSON.stringify(mbsData));
-
-                // Provide feedback and redirect
-                statusMessage.textContent = '✅ Données sauvegardées ! Redirection...';
-                statusMessage.classList.add('success');
+                // Use a timeout to let the paste operation complete
                 setTimeout(() => {
-                    window.location.href = 'main.html';
-                }, 1500);
+                    const rawText = rawTextArea.value;
+                    if (!rawText.trim()) return;
 
-            } catch (error) {
-                console.error("Erreur d'analyse:", error);
-                statusMessage.textContent = `❌ ${error.message}`;
-                statusMessage.classList.add('error');
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Analyser et Sauvegarder';
-            }
+                    statusMessage.textContent = "Analyse en cours...";
+                    statusMessage.className = 'status-analyzing';
+
+                    try {
+                        const parsedResult = parsePortalData(rawText);
+
+                        if (!parsedResult.nom || !parsedResult.etapeData) {
+                            throw new Error("Les données collées sont invalides ou incomplètes. Le nom ou l'étape est introuvable.");
+                        }
+
+                        // Overwrite logic as requested
+                        const existingData = JSON.parse(localStorage.getItem('mbsData')) || {};
+                        const updatedData = {
+                            ...existingData,
+                            valid: true, // Mark data as valid
+                            nom: parsedResult.nom,
+                            [parsedResult.etapeKey]: parsedResult.etapeData,
+                        };
+                        
+                        // Add a unique ID if it doesn't exist
+                        if (!updatedData.user_random) {
+                            updatedData.user_random = 'user-' + Date.now().toString(36) + Math.random().toString(36).substring(2);
+                        }
+                        
+                        localStorage.setItem('mbsData', JSON.stringify(updatedData));
+                        
+                        // Redirect to the main page after success
+                        window.location.href = 'main.html';
+
+                    } catch (error) {
+                        statusMessage.textContent = "Erreur : " + error.message;
+                        statusMessage.className = 'status-error';
+                        rawTextArea.value = ''; // Clear the invalid data
+                    }
+                }, 10);
+            });
         });
 
-        // --- CORE PARSING LOGIC ---
         function parsePortalData(text) {
             const nameMatch = text.match(/Photo\s*\n(.+)/);
             const semesterMatch = text.match(/Classe\s*\n\s*(\d)/);
@@ -582,51 +232,6 @@
             }
             return { nom, etapeKey, etapeData: subjects };
         }
-
-        // --- Helper function to calculate average for history recording ---
-        const gradeMap = { 'A+': {min: 100, max: 100}, 'A': {min: 95, max: 95}, 'A-': {min: 90, max: 90}, 'B+': {min: 85, max: 85}, 'B': {min: 80, max: 80}, 'B-': {min: 75, max: 75}, 'C+': {min: 70, max: 70}, 'C': {min: 65, max: 65}, 'C-': {min: 60, max: 60}, 'D+': {min: 55, max: 55}, 'D': {min: 50, max: 50}, 'E': {min: 45, max: 45} };
-        function getNumericGrade(result) { if (!result) return null; const trimmedResult = result.trim(); if (gradeMap[trimmedResult]) { return (gradeMap[trimmedResult].min + gradeMap[trimmedResult].max) / 2; } const percentageMatch = trimmedResult.match(/(\d+[,.]?\d*)\s*%/); if (percentageMatch) { return parseFloat(percentageMatch[1].replace(',', '.')); } const scoreMatch = trimmedResult.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/); if (scoreMatch) { const score = parseFloat(scoreMatch[1].replace(',', '.')); const maxScore = parseFloat(scoreMatch[2].replace(',', '.')); if (!isNaN(score) && !isNaN(maxScore) && maxScore > 0) { return (score / maxScore) * 100; } } return null; }
-        
-        function calculateSubjectAverageFromSource(subject) {
-            let totalWeightedGrade = 0; let totalCompetencyWeight = 0;
-            subject.competencies.forEach(comp => {
-                const compWeightMatch = comp.name.match(/\((\d+)%\)/);
-                if (!compWeightMatch) return;
-                const compWeight = parseFloat(compWeightMatch[1]);
-                let totalAssignmentGrade = 0; let totalAssignmentWeight = 0;
-                comp.assignments.forEach(assign => {
-                    const grade = getNumericGrade(assign.result);
-                    const weight = parseFloat(assign.pond);
-                    if (grade !== null && !isNaN(grade) && !isNaN(weight) && weight > 0) {
-                        totalAssignmentGrade += grade * weight;
-                        totalAssignmentWeight += weight;
-                    }
-                });
-                if (totalAssignmentWeight > 0) {
-                    const competencyAverage = totalAssignmentGrade / totalAssignmentWeight;
-                    totalWeightedGrade += competencyAverage * compWeight;
-                    totalCompetencyWeight += compWeight;
-                }
-            });
-            return totalCompetencyWeight > 0 ? totalWeightedGrade / totalCompetencyWeight : null;
-        }
-
-        function calculateTermAverage(termData) {
-            // This is a simplified average calculation that doesn't use units,
-            // as units are a setting that might not be configured yet.
-            // It provides a good general trend.
-            let totalGradeSum = 0;
-            let subjectCount = 0;
-            termData.forEach(subject => {
-                const avg = calculateSubjectAverageFromSource(subject);
-                if (avg !== null) {
-                    totalGradeSum += avg;
-                    subjectCount++;
-                }
-            });
-            return subjectCount > 0 ? totalGradeSum / subjectCount : null;
-        }
-
     </script>
 </body>
 </html>
