@@ -1,206 +1,172 @@
-import { getData, saveData } from '../core/storage.js';
-import { getNumericGrade, calculateAllAverages, calculateSubjectAverage } from '../core/calculations.js';
-import { applyTheme, setupThemeToggle } from '../ui/theme.js';
+import { getData, saveData, saveSetting } from '../core/storage.js';
+import { getNumericGrade } from '../core/calculations.js';
+import { renderSubjectTable, populateUnitesModal } from '../ui/render.js';
+import { initializeModal } from '../ui/modals.js';
 
-// --- STATE MANAGEMENT ---
 let mbsData;
 let activeTab = 'etape1';
 
-// --- DOM ELEMENTS ---
-const tabContentsContainer = document.getElementById('tab-contents');
-const niveauSelect = document.getElementById('niveau-secondaire');
-
-// --- INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', () => {
     mbsData = getData();
-
-    if (!mbsData || !mbsData.valid) {
-        window.location.href = 'index.html'; // Redirect if no valid data
+    
+    if (!mbsData.valid) {
+        document.getElementById('tab-contents').innerHTML = `
+            <p class="no-data">
+                Aucune donnée trouvée. Veuillez commencer par mettre à jour vos données.
+                <br><br>
+                <a href="data.html" class="btn">Mettre à jour les données</a>
+            </p>`;
+        // Hide side panel content if no data
+        document.querySelector('.side-panel').classList.add('hidden');
         return;
     }
-
-    setupThemeToggle();
+    
     loadSettings();
-    renderAll();
     setupEventListeners();
+    renderAll();
 });
 
-// --- EVENT LISTENERS ---
+function loadSettings() {
+    const { settings } = mbsData;
+    document.getElementById('niveau-secondaire').value = settings.niveau || '';
+    document.getElementById('unites-mode').value = settings.unitesMode || 'defaut';
+}
+
 function setupEventListeners() {
-    // Tab switching
+    // Tabs
     document.querySelectorAll('.tab-btn').forEach(tab => {
         tab.addEventListener('click', () => {
             document.querySelector('.tab-btn.active').classList.remove('active');
             tab.classList.add('active');
             document.querySelector('.tab-content.active').classList.remove('active');
-            
             activeTab = tab.dataset.tab;
             document.getElementById(activeTab).classList.add('active');
-            renderSidePanel(); // Update side panel for the new active tab
+            renderSidePanel();
         });
     });
 
-    // Niveau setting change
-    niveauSelect.addEventListener('change', (e) => {
-        mbsData.settings.niveau = e.target.value;
-        saveData(mbsData);
-        renderAll(); // Recalculate and re-render everything
+    // Settings
+    document.getElementById('niveau-secondaire').addEventListener('change', (e) => {
+        saveSetting('niveau', e.target.value);
+        mbsData = getData(); // Refresh data after saving
+        renderAll();
     });
 
-    // Event delegation for dynamic grade/pond inputs
-    tabContentsContainer.addEventListener('click', handleGradeClick);
-    tabContentsContainer.addEventListener('focusout', handleGradeFocusOut);
-    tabContentsContainer.addEventListener('keydown', handleGradeKeyDown);
+    document.getElementById('unites-mode').addEventListener('change', (e) => {
+        saveSetting('unitesMode', e.target.value);
+        mbsData = getData();
+        populateUnitesModal(mbsData);
+    });
+
+    // Modals
+    const unitesModal = initializeModal('unites-modal', 'unites-btn', 'close-unites-modal');
+    // Add event listener to the modal itself for saving on close
+    document.getElementById('unites-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'unites-modal') {
+            saveCustomUnits();
+            unitesModal.close();
+            renderAll();
+        }
+    });
+
+    // Dynamic input logic
+    const tabContents = document.getElementById('tab-contents');
+    tabContents.addEventListener('input', handleDynamicInput);
+    tabContents.addEventListener('click', handleGradeClick);
+    tabContents.addEventListener('focusout', handleGradeFocusOut);
+    tabContents.addEventListener('keydown', handleGradeKeyDown);
 }
 
-// --- RENDERING LOGIC ---
-
-/**
- * Main render function, orchestrates the rendering of all components.
- */
 function renderAll() {
-    document.getElementById('user-name-header').textContent = `Tableau de Bord de ${mbsData.nom}`;
-    renderAllTermTables();
+    renderTermTables();
     renderSidePanel();
 }
 
-/**
- * Renders the side panel with summary statistics and subject averages.
- */
+function renderTermTables() {
+    ['etape1', 'etape2', 'etape3'].forEach(etapeKey => {
+        const container = document.getElementById(etapeKey);
+        const termData = mbsData[etapeKey];
+        container.innerHTML = ''; // Clear previous content
+        if (!termData || termData.length === 0) {
+            container.innerHTML = '<p class="no-data">Aucune donnée pour cette étape.</p>';
+            return;
+        }
+        termData.forEach(subject => container.appendChild(renderSubjectTable(subject)));
+    });
+}
+
 function renderSidePanel() {
-    const averages = calculateAllAverages(mbsData);
-    const { globalAverage, termAverages, subjectAverages } = averages;
-
-    const formatAvg = (avg) => avg !== null ? `${avg.toFixed(2)}%` : '--';
-    const isValidNiveau = !!mbsData.settings.niveau;
-
+    const averages = calculateAveragesFromDOM();
+    const { niveau } = mbsData.settings;
+    
     const globalAvgEl = document.getElementById('moyenne-generale');
     const termAvgEl = document.getElementById('moyenne-etape');
-
-    globalAvgEl.textContent = formatAvg(globalAverage);
-    termAvgEl.textContent = formatAvg(termAverages[activeTab]);
-    globalAvgEl.classList.toggle('invalid', !isValidNiveau);
-    termAvgEl.classList.toggle('invalid', !isValidNiveau);
-
+    
+    globalAvgEl.classList.toggle('invalid', !niveau);
+    termAvgEl.classList.toggle('invalid', !niveau);
+    
+    const formatAvg = (avg) => avg !== null ? `${avg.toFixed(2)}%` : '--';
+    
+    globalAvgEl.textContent = !niveau ? 'N/A' : formatAvg(averages.globalAverage);
+    termAvgEl.textContent = !niveau ? 'N/A' : formatAvg(averages.termAverages[activeTab]);
 
     const subjectListEl = document.getElementById('subject-averages-list');
     subjectListEl.innerHTML = '';
-    const activeTermSubjects = subjectAverages[activeTab];
+    const activeTermSubjects = averages.subjectAverages[activeTab];
 
-    if (Object.keys(activeTermSubjects).length > 0) {
-        for (const subjectCode in activeTermSubjects) {
-            const subjectData = mbsData[activeTab].find(s => s.code === subjectCode);
-            if(subjectData) {
-                 const li = document.createElement('li');
-                 li.innerHTML = `<span>${subjectData.name}</span><strong>${formatAvg(activeTermSubjects[subjectCode])}</strong>`;
-                 subjectListEl.appendChild(li);
-            }
-        }
+    if (activeTermSubjects && Object.keys(activeTermSubjects).length > 0) {
+        Object.entries(activeTermSubjects).forEach(([code, subj]) => {
+            const li = document.createElement('li');
+            li.innerHTML = `<span>${subj.name}</span><strong>${subj.average !== null ? `<span class="grade-percentage">${subj.average.toFixed(2)}%</span>` : '--'}</strong>`;
+            subjectListEl.appendChild(li);
+        });
     } else {
         subjectListEl.innerHTML = '<li class="no-data">Aucune matière pour cette étape</li>';
     }
 }
 
-/**
- * Renders the grade tables for all three terms.
- */
-function renderAllTermTables() {
-    renderTermData(mbsData.etape1, document.getElementById('etape1'));
-    renderTermData(mbsData.etape2, document.getElementById('etape2'));
-    renderTermData(mbsData.etape3, document.getElementById('etape3'));
-}
-
-/**
- * Renders all subject tables for a specific term container.
- */
-function renderTermData(termData, container) {
-    container.innerHTML = '';
-    if (!termData || termData.length === 0) {
-        container.innerHTML = '<p class="no-data">Aucune donnée pour cette étape.</p>';
-        return;
+// --- DYNAMIC INPUT HANDLERS ---
+function handleDynamicInput(e) {
+    const target = e.target;
+    if (target.classList.contains('pond-input-field')) {
+        // Note: Ponderations are NOT saved automatically. A save button could be added.
+        // For now, this just provides visual feedback.
+        target.classList.add('modified-input');
+        renderSidePanel();
     }
-    termData.forEach(subject => container.appendChild(renderSubjectTable(subject)));
+    if (target.classList.contains('grade-input-field')) {
+        target.classList.add('modified-input');
+        renderSidePanel();
+    }
 }
-
-/**
- * Creates and returns an HTML table element for a single subject.
- */
-function renderSubjectTable(subject) {
-    const table = document.createElement('table');
-    table.className = 'subject-table';
-    table.innerHTML = `
-        <thead>
-            <tr><th colspan="7">${subject.code} - ${subject.name}</th></tr>
-            <tr>
-                <th>Catégorie</th><th>Travail</th><th>Pond.</th><th>Date assignée</th>
-                <th>Date due</th><th>Résultat</th>
-            </tr>
-        </thead>
-    `;
-    const tbody = document.createElement('tbody');
-    
-    subject.competencies.forEach((comp) => {
-        const compRow = document.createElement('tr');
-        compRow.className = 'competency-row';
-        compRow.innerHTML = `<td colspan="7">${comp.name}</td>`;
-        tbody.appendChild(compRow);
-
-        comp.assignments.forEach((assign) => {
-            const numGrade = getNumericGrade(assign.result);
-            let formattedResult = '<span class="no-data">-</span>';
-            if (assign.result) {
-                formattedResult = numGrade !== null ? `${assign.result} <i>(~${numGrade.toFixed(1)}%)</i>` : assign.result;
-            }
-            
-            const assignRow = document.createElement('tr');
-            assignRow.innerHTML = `
-                <td>${assign.category || '<span class="no-data">-</span>'}</td>
-                <td>${assign.work || '<span class="no-data">-</span>'}</td>
-                <td><span class="pond-display">${assign.pond || '--'}</span></td>
-                <td>${assign.assignedDate || '<span class="no-data">-</span>'}</td>
-                <td>${(assign.dueDate || '').replace('à', '') || '<span class="no-data">-</span>'}</td>
-                <td>
-                    <div class="grade-container" data-original-result="${assign.result || ''}">
-                        <span class="grade-display">${formattedResult}</span>
-                        <input type="number" class="grade-input-field hidden" min="0" max="100" step="0.1">
-                    </div>
-                </td>
-            `;
-            tbody.appendChild(assignRow);
-        });
-    });
-
-    table.appendChild(tbody);
-    return table;
-}
-
-// --- DYNAMIC INTERACTIONS ---
 
 function handleGradeClick(e) {
     const gradeDisplay = e.target.closest('.grade-display');
-    if (!gradeDisplay) return;
+    if (gradeDisplay) {
+        const container = gradeDisplay.closest('.grade-container');
+        const inputField = container.querySelector('.grade-input-field');
+        const originalResult = container.dataset.originalResult;
+        const numericGrade = getNumericGrade(originalResult);
 
-    const container = gradeDisplay.closest('.grade-container');
-    const inputField = container.querySelector('.grade-input-field');
-    const originalResult = container.dataset.originalResult;
-    const numericGrade = getNumericGrade(originalResult);
-
-    gradeDisplay.classList.add('hidden');
-    inputField.classList.remove('hidden');
-    inputField.value = numericGrade !== null ? numericGrade.toFixed(2) : '';
-    inputField.focus();
-    inputField.select();
+        gradeDisplay.classList.add('hidden');
+        inputField.classList.remove('hidden');
+        inputField.value = numericGrade !== null ? numericGrade.toFixed(2) : '';
+        inputField.focus();
+        inputField.select();
+    }
 }
 
 function handleGradeFocusOut(e) {
     const inputField = e.target;
     if (inputField.classList.contains('grade-input-field')) {
-        // For simulation, we just hide the input on focus out.
-        // It does not save.
-        const container = inputField.closest('.grade-container');
-        const displaySpan = container.querySelector('.grade-display');
-        inputField.classList.add('hidden');
-        displaySpan.classList.remove('hidden');
+        if (inputField.value.trim() === '') {
+            const container = inputField.closest('.grade-container');
+            const displaySpan = container.querySelector('.grade-display');
+            inputField.classList.add('hidden');
+            displaySpan.classList.remove('hidden');
+            inputField.classList.remove('modified-input');
+            renderSidePanel();
+        }
     }
 }
 
@@ -208,13 +174,114 @@ function handleGradeKeyDown(e) {
     if (e.target.classList.contains('grade-input-field')) {
         if (e.key === 'Enter' || e.key === 'Escape') {
             e.preventDefault();
-            e.target.blur(); // Trigger the focusout event to hide the input
+            if (e.key === 'Escape') {
+                e.target.value = '';
+            }
+            e.target.blur(); // Triggers the focusout event
         }
     }
 }
 
+// --- UNITS MODAL LOGIC ---
+document.getElementById('unites-btn').addEventListener('click', () => {
+    populateUnitesModal(mbsData);
+});
 
-// --- SETTINGS ---
-function loadSettings() {
-    niveauSelect.value = mbsData.settings.niveau || '';
+document.getElementById('close-unites-modal').addEventListener('click', () => {
+    saveCustomUnits();
+    renderAll();
+});
+
+function saveCustomUnits() {
+    if (document.getElementById('unites-mode').value !== 'perso') return;
+    let customUnites = {};
+    document.querySelectorAll('.unite-item input').forEach(input => {
+        customUnites[input.dataset.code] = parseFloat(input.value) || 1;
+    });
+    saveSetting('customUnites', customUnites);
+    mbsData = getData(); // Refresh data
+}
+
+// --- LIVE AVERAGE CALCULATION FROM DOM ---
+function calculateAveragesFromDOM() {
+    // This is a simplified version for demonstration. It mirrors the logic
+    // from calculations.js but reads directly from the live input fields.
+    // A full implementation would be more robust.
+    const TERM_WEIGHTS = { etape1: 0.2, etape2: 0.2, etape3: 0.6 };
+    const { niveau } = mbsData.settings;
+    
+    let termAverages = {};
+    let subjectAverages = {};
+
+    ['etape1', 'etape2', 'etape3'].forEach(etapeKey => {
+        const etapeData = mbsData[etapeKey];
+        subjectAverages[etapeKey] = {};
+        if (!etapeData || etapeData.length === 0) {
+            termAverages[etapeKey] = null;
+            return;
+        }
+
+        etapeData.forEach(subject => {
+            let totalWeightedGrade = 0;
+            let totalCompetencyWeight = 0;
+            subject.competencies.forEach((comp, compIndex) => {
+                const compWeightMatch = comp.name.match(/\((\d+)%\)/);
+                if (!compWeightMatch) return;
+                const compWeight = parseFloat(compWeightMatch[1]);
+                let totalAssignmentGrade = 0;
+                let totalAssignmentWeight = 0;
+                comp.assignments.forEach((assign, assignIndex) => {
+                    const uniqueId = `${subject.code}-${compIndex}-${assignIndex}`;
+                    const pondInput = document.querySelector(`.pond-input-field[data-row-id="${uniqueId}"]`);
+                    const gradeInput = document.querySelector(`.grade-input-field[data-row-id="${uniqueId}"]`);
+                    let grade = null;
+                    let weight = parseFloat(pondInput.value) || parseFloat(assign.pond);
+
+                    if (gradeInput && !gradeInput.classList.contains('hidden') && gradeInput.value.trim() !== '') {
+                        grade = parseFloat(gradeInput.value);
+                    } else {
+                        grade = getNumericGrade(assign.result);
+                    }
+
+                    if (grade !== null && !isNaN(weight) && weight > 0) {
+                        totalAssignmentGrade += grade * weight;
+                        totalAssignmentWeight += weight;
+                    }
+                });
+                if (totalAssignmentWeight > 0) {
+                    const competencyAverage = totalAssignmentGrade / totalAssignmentWeight;
+                    totalWeightedGrade += competencyAverage * compWeight;
+                    totalCompetencyWeight += compWeight;
+                }
+            });
+            const subjectAvg = totalCompetencyWeight > 0 ? totalWeightedGrade / totalCompetencyWeight : null;
+            subjectAverages[etapeKey][subject.code] = { name: subject.name, average: subjectAvg };
+        });
+
+        // Simplified term average for the live view
+        let termSum = 0;
+        let termCount = 0;
+        Object.values(subjectAverages[etapeKey]).forEach(subj => {
+            if (subj.average !== null) {
+                termSum += subj.average;
+                termCount++;
+            }
+        });
+        termAverages[etapeKey] = termCount > 0 ? termSum / termCount : null;
+    });
+
+    // Calculate global average
+    let globalWeightedSum = 0;
+    let totalWeightUsed = 0;
+    if (niveau) {
+        for (const etapeKey in termAverages) {
+            if (termAverages[etapeKey] !== null) {
+                globalWeightedSum += termAverages[etapeKey] * TERM_WEIGHTS[etapeKey];
+                totalWeightUsed += TERM_WEIGHTS[etapeKey];
+            }
+        }
+    }
+    const globalAverage = totalWeightUsed > 0 ? globalWeightedSum / totalWeightUsed : null;
+
+    return { termAverages, globalAverage, subjectAverages };
 }
