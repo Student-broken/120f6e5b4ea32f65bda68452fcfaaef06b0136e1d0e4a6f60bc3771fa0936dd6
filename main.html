@@ -4,77 +4,89 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tableau de Bord - Outil MBS</title>
+    <link rel="icon" href="assets/images/favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght=700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS -->
     <link rel="stylesheet" href="css/global.css">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/pages/main.css">
-    <script src="js/ui/theme.js"></script>
 </head>
 <body>
-    <div class="dashboard-layout">
-        <main class="main-content">
-            <header class="main-header">
-                <a href="index.html" class="back-link">← Retour</a>
-                <h1 id="user-name-header">Tableau de Bord</h1>
-                <div class="header-actions">
-                    <a href="data.html" class="btn">Mettre à jour</a>
-                    <a href="improve.html" class="btn btn-primary">Analyser</a>
-                </div>
-            </header>
+    <div class="site-header-container">
+        <a href="index.html" class="back-arrow" title="Retour à l'accueil">←</a>
+        <header class="site-header">Outil MBS</header>
+        <div class="header-actions">
+            <a href="data.html" class="btn btn-header">Mettre à jour les données</a>
+            <a href="improve.html" class="btn btn-header">Analyser ma performance</a>
+        </div>
+    </div>
 
-            <nav class="tabs">
+    <main class="main-container">
+        <section class="data-section">
+            <div class="tabs">
                 <button class="tab-btn active" data-tab="etape1">Étape 1</button>
                 <button class="tab-btn" data-tab="etape2">Étape 2</button>
                 <button class="tab-btn" data-tab="etape3">Étape 3</button>
-            </nav>
-
+            </div>
             <div id="tab-contents">
-                <div id="etape1" class="tab-content active"></div>
+                <div id="etape1" class="tab-content active"><p class="no-data">Chargement...</p></div>
                 <div id="etape2" class="tab-content"></div>
                 <div id="etape3" class="tab-content"></div>
             </div>
-        </main>
+        </section>
 
         <aside class="side-panel">
-            <h2>Synthèse</h2>
-            <div class="stats-card">
-                <div class="stat-item">
-                    <span class="label">Moyenne Générale</span>
-                    <span id="moyenne-generale" class="value loading">--%</span>
+            <div class="moyenne-widgets">
+                <div class="moyenne-widget">
+                    <h4>Moyenne générale</h4>
+                    <div id="moyenne-generale" class="moyenne-value">--</div>
                 </div>
-                <div class="stat-item">
-                    <span class="label">Moyenne de l'Étape</span>
-                    <span id="moyenne-etape" class="value loading">--%</span>
+                <div class="moyenne-widget">
+                    <h4>Moyenne de l'étape</h4>
+                    <div id="moyenne-etape" class="moyenne-value">--</div>
                 </div>
+            </div>
+            <div class="control-group">
+                <label for="niveau-secondaire">Niveau Secondaire</label>
+                <select id="niveau-secondaire">
+                    <option value="">-- Sélectionner --</option>
+                    <option value="sec4">Secondaire 4</option>
+                    <option value="sec5">Secondaire 5</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <button id="unites-btn" class="btn btn-control">Configurer les unités</button>
             </div>
 
-            <div class="settings-card">
-                <h3>Paramètres</h3>
-                <div class="setting-item">
-                    <label for="niveau-secondaire">Niveau</label>
-                    <select id="niveau-secondaire">
-                        <option value="">Sélectionner...</option>
-                        <option value="sec4">Secondaire 4</option>
-                        <option value="sec5">Secondaire 5</option>
-                    </select>
-                </div>
+            <div class="subject-averages">
+                <h4>Moyennes par matière</h4>
+                <ul id="subject-averages-list"><li class="no-data">Aucune donnée</li></ul>
             </div>
-            
-            <h3>Moyennes par Matière</h3>
-            <ul id="subject-averages-list" class="subject-list">
-                <!-- Dynamically populated -->
-            </ul>
         </aside>
+    </main>
+
+    <div class="modal-overlay" id="unites-modal">
+        <div class="modal-content">
+            <span class="modal-close" id="close-unites-modal">&times;</span>
+            <h3>Configuration des Unités</h3>
+            <div class="control-group">
+                <label for="unites-mode">Mode de calcul</label>
+                <select id="unites-mode">
+                    <option value="defaut">Unités par défaut</option>
+                    <option value="sans">Sans unités (tout = 1)</option>
+                    <option value="perso">Personnalisé</option>
+                </select>
+            </div>
+            <div id="unites-list"></div>
+        </div>
     </div>
 
-    <footer class="global-footer">
-        <span>Outil MBS v2.0</span>
-        <a href="ticket.html" class="footer-link">Signaler un problème</a>
-        <div class="theme-switcher">
-            <label for="theme-toggle">Mode Sombre</label>
-            <input type="checkbox" id="theme-toggle" class="toggle-switch">
-        </div>
+    <footer>
+        <p>Outil MBS (Moyenne, Bilan, Stratégie)</p>
+        <a href="ticket.html">Signaler un problème</a>
     </footer>
-    
+
     <script type="module" src="js/pages/main.js"></script>
 </body>
 </html>
