@@ -6,41 +6,45 @@
     <title>Analyse de Performance - Outil MBS</title>
     <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Chart.js for graphing -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --primary-color: #2980b9; --secondary-color: #2c3e50; --background-color: #f7f9fb;
+            --primary-color: #2980b9; --secondary-color: #2c3e50; --background-color: #f4f7f9;
             --widget-background: #ffffff; --text-color: #34495e; --light-grey: #bdc3c7;
             --footer-grey: #7f8c8d; --success-color: #27ae60; --danger-color: #e74c3c;
-            --shadow-header: 0 2px 4px rgba(0, 0, 0, 0.05); --shadow-widget: 0 8px 15px rgba(0, 0, 0, 0.08);
+            --shadow-soft: 0 4px 6px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.08);
+            --shadow-lifted: 0 10px 15px rgba(0,0,0,0.06), 0 4px 6px rgba(0,0,0,0.1);
         }
+        *, *::before, *::after { box-sizing: border-box; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         body { margin: 0; font-family: 'Inter', sans-serif; background-color: var(--background-color); color: var(--text-color); }
         .site-header-container {
-            background-color: var(--widget-background); box-shadow: var(--shadow-header);
-            border-bottom: 1px solid #e0e6eb; padding: 15px 25px; display: flex;
-            align-items: center; justify-content: space-between; position: relative;
+            background-color: var(--widget-background); box-shadow: var(--shadow-soft);
+            padding: 15px 25px; display: flex; align-items: center; position: relative;
         }
-        .header-left { display: flex; align-items: center; }
-        .header-center { position: absolute; left: 50%; transform: translateX(-50%); }
-        .header-right { display: flex; gap: 15px; }
-        .site-header { padding: 0; margin: 0; color: var(--secondary-color); font-size: 2.2em; font-weight: 700; font-family: 'Playfair Display', serif; }
-        .nav-arrow { font-size: 2em; color: var(--secondary-color); text-decoration: none; transition: all 0.2s; }
+        .header-left { flex: 1; }
+        .header-center { flex: 2; text-align: center; }
+        .header-right { flex: 1; display: flex; justify-content: flex-end; }
+        .site-header { margin: 0; color: var(--secondary-color); font-size: 2.2em; font-family: 'Playfair Display', serif; }
+        .nav-arrow { font-size: 2em; color: var(--secondary-color); text-decoration: none; transition: all 0.2s; cursor: pointer; }
         .nav-arrow:hover { color: var(--primary-color); transform: scale(1.05); }
-        .main-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        .page-title { font-family: 'Playfair Display', serif; text-align: center; font-size: 2.5em; margin: 20px 0 30px 0; }
-        .controls-bar { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 40px; }
-        select {
-            padding: 10px 15px; border-radius: 8px; border: 1px solid #ddd;
-            font-size: 1em; background-color: white; font-family: 'Inter', sans-serif;
-        }
+        .main-container { max-width: 1200px; margin: 0 auto; padding: 20px; animation: fadeIn 0.5s ease-out; }
+        .page-header { margin-bottom: 30px; }
+        .breadcrumb-nav { font-size: 1.1em; font-weight: 500; color: var(--light-grey); margin-bottom: 10px; }
+        .breadcrumb-nav a { color: var(--primary-color); text-decoration: none; }
+        .page-title { font-family: 'Playfair Display', serif; font-size: 2.5em; margin: 0; }
+        .controls-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 40px; }
+        select { padding: 10px 15px; border-radius: 8px; border: 1px solid #ddd; font-size: 1em; background-color: white; }
+        /* View transition styles */
+        .view { transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out; }
+        .view.hidden { opacity: 0; pointer-events: none; transform: scale(0.98); position: absolute; }
         .widgets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
         .subject-widget {
-            background-color: var(--widget-background); border-radius: 12px;
-            padding: 20px; box-shadow: var(--shadow-widget); cursor: pointer;
+            background: linear-gradient(145deg, #ffffff, #f5f7f9); border-radius: 12px;
+            padding: 20px; box-shadow: var(--shadow-soft); cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
         }
-        .subject-widget:hover { transform: translateY(-5px); box-shadow: 0 12px 20px rgba(0,0,0,0.1); }
+        .subject-widget:hover { transform: translateY(-5px); box-shadow: var(--shadow-lifted); }
         .widget-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
         .widget-title { font-size: 1.2em; font-weight: 600; margin: 0; }
         .widget-average { font-size: 2.5em; font-weight: 700; color: var(--primary-color); }
@@ -48,58 +52,49 @@
         .trend-up { color: var(--success-color); }
         .trend-down { color: var(--danger-color); }
         /* Expanded View */
-        #expanded-view-container { display: none; /* Initially hidden */ }
-        .expanded-header { margin-bottom: 20px; }
         .category-widgets-container { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 30px; }
         .category-widget {
-            background-color: #f0f4f7; border: 1px solid #e0e6eb; border-radius: 10px;
-            padding: 15px; flex-grow: 1; text-align: center; cursor: pointer;
-            transition: all 0.2s;
+            background-color: #fff; border: 2px solid transparent; border-radius: 30px;
+            padding: 12px 20px; text-align: center; cursor: pointer; transition: all 0.2s;
+            box-shadow: var(--shadow-soft);
         }
-        .category-widget.active, .category-widget:hover { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
-        .category-widget h4 { margin: 0 0 5px 0; font-weight: 500; font-size: 0.9em; }
-        .category-widget .average { font-size: 1.5em; font-weight: 700; }
-        .graph-container { background-color: var(--widget-background); padding: 20px; border-radius: 12px; box-shadow: var(--shadow-widget); }
+        .category-widget.active, .category-widget:hover { background-color: var(--primary-color); color: white; border-color: var(--primary-color); transform: translateY(-2px); }
+        .category-widget h4 { margin: 0; font-weight: 500; font-size: 0.9em; }
+        .graph-container { background-color: var(--widget-background); padding: 20px; border-radius: 12px; box-shadow: var(--shadow-soft); }
         /* Goal Planner */
-        .planner-section {
-            margin-top: 60px; padding-top: 40px; border-top: 1px solid #ddd;
-            background-color: var(--widget-background); padding: 30px;
-            border-radius: 12px; box-shadow: var(--shadow-widget);
-        }
-        .planner-controls { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 20px; align-items: center; }
-        .planner-controls label { font-weight: 600; }
-        .planner-controls input { width: 100%; box-sizing: border-box; padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 1em; }
-        #goal-result { margin-top: 20px; text-align: center; font-size: 1.2em; font-weight: 600; padding: 15px; border-radius: 8px; }
+        .planner-section { margin-top: 60px; padding-top: 40px; border-top: 2px solid #e0e6eb; }
+        .planner-card { background-color: var(--widget-background); padding: 30px; border-radius: 12px; box-shadow: var(--shadow-soft); }
+        .planner-controls { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: flex-end; }
+        .planner-controls label { font-weight: 600; display: block; margin-bottom: 5px; }
+        .planner-controls input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 1em; }
+        #goal-result { margin-top: 20px; font-size: 1.2em; font-weight: 600; padding: 15px; border-radius: 8px; text-align: center; }
         .result-success { background-color: #eafaf1; color: var(--success-color); }
         .result-warning { background-color: #fff9f0; color: #f39c12; }
         .result-error { background-color: #fdf3f2; color: var(--danger-color); }
         footer { text-align: center; padding: 25px; font-size: 0.9em; color: var(--footer-grey); border-top: 1px solid #eee; margin-top: 40px; }
         footer a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
         .btn {
-            display: inline-block; padding: 12px 20px; border: none; border-radius: 8px;
-            font-size: 0.95em; font-weight: 600; cursor: pointer; text-decoration: none;
-            color: white; background-color: var(--primary-color);
+            display: inline-block; padding: 12px 20px; border-radius: 8px;
+            font-size: 1em; font-weight: 600; cursor: pointer; text-decoration: none;
+            color: white; background-color: var(--primary-color); border: none;
         }
     </style>
 </head>
 <body>
 
     <header class="site-header-container">
-        <div class="header-left">
-            <a href="main.html" class="nav-arrow" title="Retour au tableau de bord">←</a>
-        </div>
-        <div class="header-center">
-            <h1 class="site-header">Outil MBS</h1>
-        </div>
-        <div class="header-right">
-            <a href="data.html" class="btn" style="background-color: var(--secondary-color);">Mettre à jour les données</a>
-        </div>
+        <div class="header-left"><a class="nav-arrow" title="Retour">←</a></div>
+        <div class="header-center"><h1 class="site-header">Outil MBS</h1></div>
+        <div class="header-right"></div>
     </header>
 
     <main class="main-container">
-        <h2 class="page-title">Analyse de la Performance</h2>
-
-        <div class="controls-bar">
+        <div class="page-header">
+            <nav id="breadcrumb-nav"></nav>
+            <h2 id="page-title" class="page-title">Analyse de la Performance</h2>
+        </div>
+        
+        <div id="grid-view-controls" class="controls-bar">
             <label for="etape-selector" style="font-weight: 600;">Afficher les données pour :</label>
             <select id="etape-selector">
                 <option value="etape1">Étape 1</option>
@@ -109,19 +104,13 @@
         </div>
 
         <!-- Main widgets grid -->
-        <div id="widgets-grid" class="widgets-grid">
-            <!-- Subject widgets will be injected here by JavaScript -->
+        <div id="widgets-grid" class="widgets-grid view">
+            <!-- Subject widgets will be injected here -->
         </div>
 
         <!-- Expanded view for a single subject -->
-        <div id="expanded-view-container">
-            <div class="expanded-header">
-                <h3 id="expanded-subject-title" class="page-title" style="font-size: 2em; margin-bottom: 10px;"></h3>
-                <button id="back-to-grid-btn" class="btn" style="background-color: var(--secondary-color); display: block; margin: 0 auto 20px auto;">← Retour à la vue d'ensemble</button>
-            </div>
-            <div id="category-widgets-container" class="category-widgets-container">
-                <!-- Category widgets will be injected here -->
-            </div>
+        <div id="expanded-view" class="view hidden">
+            <div id="category-widgets-container" class="category-widgets-container"></div>
             <div class="graph-container">
                 <canvas id="grades-chart"></canvas>
             </div>
@@ -129,26 +118,21 @@
 
         <!-- Goal Planner Section -->
         <section class="planner-section">
-            <h2 class="page-title" style="font-size: 2em; margin-top: 0;">Planificateur d'Objectifs</h2>
-            <div id="planner-controls" class="planner-controls">
-                <div>
-                    <label for="goal-subject-selector">Pour la matière :</label>
-                    <select id="goal-subject-selector"></select>
+            <div class="planner-card">
+                <h2 class="page-title" style="font-size: 2em; margin-top: 0; text-align: left;">Planificateur d'Objectifs</h2>
+                <div class="planner-controls">
+                    <div>
+                        <label for="goal-subject-selector">Pour la matière :</label>
+                        <select id="goal-subject-selector"></select>
+                    </div>
+                    <div>
+                        <label for="goal-grade-input">Je vise une moyenne de :</label>
+                        <input type="number" id="goal-grade-input" placeholder="ex: 85" min="0" max="100">
+                    </div>
                 </div>
-                <div>
-                    <label for="goal-grade-input">Je vise une moyenne de :</label>
-                    <input type="number" id="goal-grade-input" placeholder="ex: 85" min="0" max="100">
-                </div>
-                <div>
-                    <label>&nbsp;</label> <!-- Spacer -->
-                    <button id="calculate-goal-btn" class="btn" style="width: 100%;">Calculer</button>
-                </div>
-            </div>
-            <div id="goal-result" style="display: none;">
-                <!-- Result will be injected here -->
+                <div id="goal-result" style="display: none;"></div>
             </div>
         </section>
-
     </main>
     
     <footer>
