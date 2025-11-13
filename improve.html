@@ -35,21 +35,23 @@
             padding: 15px 25px;
             display: flex;
             align-items: center;
-            justify-content: center;
             position: relative;
             margin-bottom: 20px;
         }
+        .header-left { flex: 1; display: flex; justify-content: flex-start; }
+        .header-center { flex: 2; text-align: center; }
+        .header-right { flex: 1; } /* Empty spacer */
         .site-header {
             padding: 0; margin: 0; color: var(--secondary-color);
             font-size: 2.2em; font-weight: 700; font-family: 'Playfair Display', serif;
+            display: inline-block;
         }
         .nav-arrow {
-            position: absolute; left: 25px; top: 50%;
-            transform: translateY(-50%); font-size: 2em;
+            font-size: 2em;
             color: var(--secondary-color); text-decoration: none;
             transition: color 0.2s, transform 0.2s;
         }
-        .nav-arrow:hover { color: var(--primary-color); transform: translateY(-50%) scale(1.05); }
+        .nav-arrow:hover { color: var(--primary-color); transform: scale(1.05); }
         .sticky-tabs {
             position: sticky; top: 0; background-color: var(--background-color);
             z-index: 100; padding: 15px 0; border-bottom: 1px solid #e0e6eb;
@@ -76,7 +78,7 @@
         .widget-title { font-size: 1.2em; font-weight: 700; color: var(--secondary-color); margin: 0; }
         .widget-average { font-size: 2.5em; font-weight: 700; color: var(--primary-color); margin: 10px 0 30px 0; }
         .widget-trend {
-            display: flex; align-items: center; gap: 5px; font-weight: 600;
+            display: flex; align-items: center; gap: 5px; font-weight: 600; font-size: 0.9em;
             position: absolute; /* Position at bottom right */
             bottom: 20px;
             right: 20px;
@@ -121,8 +123,13 @@
 </head>
 <body>
     <header class="site-header-container">
-        <a href="main.html" class="nav-arrow" title="Retour au tableau de bord">←</a>
-        <h1 class="site-header">Analyse de Performance</h1>
+        <div class="header-left">
+            <a href="main.html" class="nav-arrow" title="Retour au tableau de bord">←</a>
+        </div>
+        <div class="header-center">
+            <h1 class="site-header">Analyse de Performance</h1>
+        </div>
+        <div class="header-right"></div> <!-- Spacer -->
     </header>
 
     <div class="sticky-tabs">
@@ -246,7 +253,7 @@
                     <h3 class="widget-title">${subject.name}</h3>
                     <p class="widget-average">${subject.average.toFixed(2)}%</p>
                     <div class="widget-trend ${trend.class}">
-                        <span class="trend-arrow">${trend.direction}</span>
+                        <span>${trend.direction}</span>
                         <span>${trend.change}</span>
                     </div>`;
                 widget.addEventListener('click', () => openDetailsModal(subject));
@@ -324,12 +331,15 @@
             let completedPonderation = 0;
             let futurePonderation = 0;
             let totalPonderation = 0;
+
             subject.competencies.forEach(comp => {
                 comp.assignments.forEach(assign => {
                     const ponderation = parseFloat(assign.pond);
                     if (isNaN(ponderation) || ponderation <= 0) return;
+                    
                     totalPonderation += ponderation;
                     const grade = getNumericGrade(assign.result);
+
                     if (grade !== null) {
                         pointsEarned += (grade / 100) * ponderation;
                         completedPonderation += ponderation;
@@ -338,15 +348,19 @@
                     }
                 });
             });
+
             if (totalPonderation <= 0) {
                 container.innerHTML = '<h3>Planificateur d\'Objectifs</h3><p>Aucun travail avec une pondération valide n\'a été trouvé.</p>';
                 return;
             }
+
             const currentAverage = completedPonderation > 0 ? (pointsEarned / completedPonderation) * 100 : 0;
+            
             if (futurePonderation < 0.01) {
                 container.innerHTML = '<h3>Planificateur d\'Objectifs</h3><p>Tous les travaux pour cette matière semblent notés.</p>';
                 return;
             }
+
             const completedPercentage = (completedPonderation / totalPonderation) * 100;
             container.innerHTML = `
                 <h3>Planificateur d'Objectifs</h3>
@@ -356,8 +370,10 @@
                     <input type="number" id="goal-input" min="0" max="100" value="85">%
                 </div>
                 <div id="goal-result" class="goal-result"></div>`;
+            
             const goalInput = container.querySelector('#goal-input');
             const goalResult = container.querySelector('#goal-result');
+            
             function calculate() {
                 const targetAvg = parseFloat(goalInput.value);
                 if (isNaN(targetAvg) || targetAvg < 0 || targetAvg > 100) {
@@ -365,11 +381,15 @@
                     goalResult.className = 'goal-result danger';
                     return;
                 }
+                
+                // This is the correct algebraic formula:
+                // Required = ( (Target * TotalWeight) - PointsEarned ) / FutureWeight
                 const totalPointsNeeded = (targetAvg / 100) * totalPonderation;
                 const pointsNeededFromFuture = totalPointsNeeded - pointsEarned;
                 const requiredAvgOnFuture = (pointsNeededFromFuture / futurePonderation) * 100;
+                
                 let message, resultClass;
-                if (requiredAvgOnFuture > 100) {
+                if (requiredAvgOnFuture > 100.0) {
                     message = `Pour atteindre <strong>${targetAvg}%</strong>, il faudrait <strong>${requiredAvgOnFuture.toFixed(1)}%</strong> sur les travaux restants. Cet objectif est impossible.`;
                     resultClass = 'danger';
                 } else if (requiredAvgOnFuture < 0) {
@@ -382,6 +402,7 @@
                 goalResult.innerHTML = message;
                 goalResult.className = `goal-result ${resultClass}`;
             }
+
             goalInput.addEventListener('input', calculate);
             calculate();
         }
