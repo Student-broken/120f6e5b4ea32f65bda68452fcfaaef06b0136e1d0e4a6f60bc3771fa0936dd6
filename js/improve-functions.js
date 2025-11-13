@@ -1,342 +1,283 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- CONSTANTS AND STATE ---
+    // --- GLOBAL STATE & CONSTANTS ---
     const gradeMap = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 85, 'B': 80, 'B-': 75, 'C+': 70, 'C': 65, 'C-': 60, 'D+': 55, 'D': 50, 'E': 45 };
     let mbsData = {};
-    let activeFilter = 'generale';
-    let activeChart = null;
+    let gradeChart = null;
+    let currentEtape = 'etape1';
 
     // --- DOM ELEMENTS ---
-    const performanceGrid = document.getElementById('performance-grid');
-    const filterBar = document.querySelector('.filter-bar');
-    const plannerModal = document.getElementById('planner-modal');
-    const plannerContent = document.getElementById('planner-content');
+    const etapeSelector = document.getElementById('etape-selector');
+    const widgetsGrid = document.getElementById('widgets-grid');
+    const expandedViewContainer = document.getElementById('expanded-view-container');
+    const backToGridBtn = document.getElementById('back-to-grid-btn');
+    const categoryWidgetsContainer = document.getElementById('category-widgets-container');
+    
+    const goalSubjectSelector = document.getElementById('goal-subject-selector');
+    const goalGradeInput = document.getElementById('goal-grade-input');
+    const calculateGoalBtn = document.getElementById('calculate-goal-btn');
+    const goalResultDiv = document.getElementById('goal-result');
 
     // --- INITIALIZATION ---
     function init() {
         mbsData = JSON.parse(localStorage.getItem('mbsData')) || {};
-
         if (!mbsData.valid || !mbsData.nom) {
-            document.querySelector('.main-container').innerHTML = `<p style="text-align:center; width:100%;">Aucune donnée de performance disponible. Veuillez <a href="data.html">ajouter vos données</a> pour commencer.</p>`;
+            document.querySelector('.main-container').innerHTML = `<p style="text-align:center; width:100%;">Aucune donnée disponible. Veuillez <a href="data.html">ajouter vos données</a> pour commencer.</p>`;
             return;
         }
 
-        renderPerformanceGrid(activeFilter);
+        initializeChart();
         setupEventListeners();
+        renderPageForEtape(currentEtape);
     }
 
-    // --- DATA HELPERS ---
+    // --- RENDERING LOGIC ---
+    function renderPageForEtape(etapeKey) {
+        currentEtape = etapeKey;
+        const subjects = mbsData[etapeKey] || [];
+        widgetsGrid.innerHTML = ''; // Clear previous widgets
+
+        subjects.forEach((subject, index) => {
+            const average = calculateSubjectAverage(subject);
+            const trend = getTrend(etapeKey, subject.code);
+
+            const widget = document.createElement('div');
+            widget.className = 'subject-widget';
+            widget.dataset.subjectIndex = index;
+            widget.innerHTML = `
+                <div class="widget-header">
+                    <div>
+                        <h3 class="widget-title">${subject.name}</h3>
+                        <div class="widget-average">${average !== null ? average.toFixed(2) + '%' : 'N/A'}</div>
+                    </div>
+                    <div class="widget-trend ${trend.direction === 'up' ? 'trend-up' : 'trend-down'}">
+                        <span>${trend.arrow}</span>
+                        <span>${trend.change}</span>
+                    </div>
+                </div>
+            `;
+            widgetsGrid.appendChild(widget);
+        });
+
+        populateGoalPlanner(subjects);
+        hideExpandedView();
+    }
+
+    function showExpandedView(subjectIndex) {
+        widgetsGrid.style.display = 'none';
+        expandedViewContainer.style.display = 'block';
+
+        const subject = mbsData[currentEtape][subjectIndex];
+        document.getElementById('expanded-subject-title').innerText = subject.name;
+        categoryWidgetsContainer.innerHTML = '';
+
+        subject.competencies.forEach((comp, index) => {
+            const compAvg = calculateCompetencyAverage(comp);
+            const catWidget = document.createElement('div');
+            catWidget.className = 'category-widget';
+            catWidget.dataset.compIndex = index;
+            catWidget.innerHTML = `
+                <h4>${comp.name.replace('Compétence - ', '')}</h4>
+                <div class="average">${compAvg !== null ? compAvg.toFixed(1) + '%' : 'N/A'}</div>
+            `;
+            categoryWidgetsContainer.appendChild(catWidget);
+        });
+
+        // Activate first category and render its chart by default
+        if (categoryWidgetsContainer.firstChild) {
+            categoryWidgetsContainer.firstChild.classList.add('active');
+            updateChart(subject, 0);
+        }
+    }
+    
+    function hideExpandedView() {
+        widgetsGrid.style.display = 'grid';
+        expandedViewContainer.style.display = 'none';
+    }
+
+    function populateGoalPlanner(subjects) {
+        goalSubjectSelector.innerHTML = '';
+        subjects.forEach((subject, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = subject.name;
+            goalSubjectSelector.appendChild(option);
+        });
+    }
+
+    // --- CHART LOGIC ---
+    function initializeChart() {
+        const ctx = document.getElementById('grades-chart').getContext('2d');
+        gradeChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Note Obtenue (%)',
+                    data: [],
+                    backgroundColor: 'rgba(41, 128, 185, 0.6)',
+                    borderColor: 'rgba(41, 128, 185, 1)',
+                    borderWidth: 1,
+                    borderRadius: 5,
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: true, max: 100 }
+                },
+                responsive: true,
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    function updateChart(subject, compIndex) {
+        const competency = subject.competencies[compIndex];
+        const gradedAssignments = competency.assignments.map(assign => ({
+            name: assign.work.replace(/<br>/g, ' '),
+            grade: getNumericGrade(assign.result)
+        })).filter(a => a.grade !== null);
+
+        gradeChart.data.labels = gradedAssignments.map(a => a.name);
+        gradeChart.data.datasets[0].data = gradedAssignments.map(a => a.grade);
+        gradeChart.update();
+    }
+    
+    // --- CALCULATION LOGIC ---
     function getNumericGrade(result) {
         if (!result) return null;
         const trimmed = result.trim();
         if (gradeMap[trimmed]) return gradeMap[trimmed];
-        const percentageMatch = trimmed.match(/(\d+[,.]?\d*)\s*%/);
-        if (percentageMatch) return parseFloat(percentageMatch[1].replace(',', '.'));
         const scoreMatch = trimmed.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/);
         if (scoreMatch) {
             const score = parseFloat(scoreMatch[1].replace(',', '.'));
             const max = parseFloat(scoreMatch[2].replace(',', '.'));
-            return max > 0 ? (score / max) * 100 : null;
+            return (max > 0) ? (score / max) * 100 : null;
         }
         return null;
     }
 
     function calculateCompetencyAverage(competency) {
-        let totalGrade = 0;
+        let totalGradeWeight = 0;
         let totalWeight = 0;
         competency.assignments.forEach(assign => {
             const grade = getNumericGrade(assign.result);
             const weight = parseFloat(assign.pond);
             if (grade !== null && !isNaN(weight) && weight > 0) {
-                totalGrade += grade * weight;
+                totalGradeWeight += grade * weight;
                 totalWeight += weight;
             }
         });
-        return totalWeight > 0 ? totalGrade / totalWeight : null;
+        return totalWeight > 0 ? totalGradeWeight / totalWeight : null;
     }
 
     function calculateSubjectAverage(subject) {
-        let totalWeightedGrade = 0;
-        let totalCompetencyWeight = 0;
+        let totalCompGradeWeight = 0;
+        let totalCompWeight = 0;
         subject.competencies.forEach(comp => {
             const compWeightMatch = comp.name.match(/\((\d+)%\)/);
             if (compWeightMatch) {
                 const compWeight = parseFloat(compWeightMatch[1]);
                 const compAvg = calculateCompetencyAverage(comp);
                 if (compAvg !== null) {
-                    totalWeightedGrade += compAvg * compWeight;
-                    totalCompetencyWeight += compWeight;
+                    totalCompGradeWeight += compAvg * compWeight;
+                    totalCompWeight += compWeight;
                 }
             }
         });
-        return totalCompetencyWeight > 0 ? totalWeightedGrade / totalCompetencyWeight : null;
+        return totalCompWeight > 0 ? totalCompGradeWeight / totalCompWeight : null;
     }
 
-    // --- RENDER FUNCTIONS ---
-    function renderPerformanceGrid(filter) {
-        performanceGrid.innerHTML = '';
-        const subjectsToRender = getSubjectsByFilter(filter);
-
-        subjectsToRender.forEach(subjectData => {
-            const card = document.createElement('div');
-            card.className = 'subject-card';
-            card.dataset.subjectCode = subjectData.subject.code;
-            card.dataset.etape = subjectData.etape;
-
-            const average = calculateSubjectAverage(subjectData.subject);
-            const trend = calculateTrend(subjectData.etape);
-
-            card.innerHTML = `
-                <div class="card-header">
-                    <div>
-                        <h3 class="card-title">${subjectData.subject.name}</h3>
-                        <div class="card-main-avg">${average !== null ? average.toFixed(1) + '%' : 'N/A'}</div>
-                    </div>
-                    <div class="trend-indicator">
-                        <div class="trend-arrow ${trend.direction}">${trend.direction === 'up' ? '▲' : '▼'}</div>
-                        <div>
-                            <div class="trend-change ${trend.direction}">${trend.change}</div>
-                            <div style="font-size: 0.8em; color: #7f8c8d;">Tendance Étape</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="expanded-content"></div>
-            `;
-            performanceGrid.appendChild(card);
-        });
-    }
-    
-    function renderExpandedCardContent(card) {
-        const subjectCode = card.dataset.subjectCode;
-        const etape = card.dataset.etape;
-        const subject = mbsData[etape].find(s => s.code === subjectCode);
-        const contentDiv = card.querySelector('.expanded-content');
-
-        let competencyHTML = '<div class="competency-grid">';
-        subject.competencies.forEach((comp, index) => {
-            const avg = calculateCompetencyAverage(comp);
-            competencyHTML += `
-                <div class="competency-card" data-comp-index="${index}">
-                    <h5>${comp.name.replace(/Compétence - /, '')}</h5>
-                    <div class="avg-value">${avg !== null ? avg.toFixed(1) + '%' : 'N/A'}</div>
-                </div>
-            `;
-        });
-        competencyHTML += '</div>';
-
-        const graphHTML = `
-            <div class="graph-container">
-                <canvas></canvas>
-            </div>`;
-        
-        contentDiv.innerHTML = competencyHTML + graphHTML;
-    }
-
-    // --- TREND & FILTER LOGIC ---
-    function getSubjectsByFilter(filter) {
-        if (filter === 'generale') {
-            const allSubjects = new Map();
-            ['etape1', 'etape2', 'etape3'].forEach(etape => {
-                if (mbsData[etape]) {
-                    mbsData[etape].forEach(subject => {
-                        // Prioritize later etapes for the 'generale' view
-                        allSubjects.set(subject.code, { subject, etape });
-                    });
-                }
-            });
-            return Array.from(allSubjects.values());
-        } else {
-            return (mbsData[filter] || []).map(subject => ({ subject, etape: filter }));
-        }
-    }
-
-    function calculateTrend(etapeKey) {
+    function getTrend(etapeKey) {
         const history = mbsData.historique?.[etapeKey]?.moyennes;
         if (!history || history.length < 2) {
-            return { direction: 'up', change: '+0.0%' };
+            return { direction: 'up', arrow: '▲', change: 'Nouveau' };
         }
-        const current = history[history.length - 1];
+        const last = history[history.length - 1];
         const previous = history[history.length - 2];
-        const diff = current - previous;
+        const change = last - previous;
 
-        return {
-            direction: diff >= 0 ? 'up' : 'down',
-            change: `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`
-        };
-    }
-
-    // --- INTERACTIVITY & EVENTS ---
-    function setupEventListeners() {
-        filterBar.addEventListener('click', e => {
-            if (e.target.classList.contains('filter-btn')) {
-                filterBar.querySelector('.active').classList.remove('active');
-                e.target.classList.add('active');
-                activeFilter = e.target.dataset.filter;
-                renderPerformanceGrid(activeFilter);
-            }
-        });
-
-        performanceGrid.addEventListener('click', e => {
-            const card = e.target.closest('.subject-card');
-            if (card && !card.classList.contains('expanded')) {
-                // Collapse any other card that might be open
-                const currentlyExpanded = performanceGrid.querySelector('.subject-card.expanded');
-                if (currentlyExpanded) {
-                    currentlyExpanded.classList.remove('expanded');
-                    currentlyExpanded.querySelector('.expanded-content').innerHTML = '';
-                }
-                // Expand the clicked card
-                card.classList.add('expanded');
-                renderExpandedCardContent(card);
-            }
-        });
-
-        performanceGrid.addEventListener('mouseover', e => {
-            const compCard = e.target.closest('.competency-card');
-            if (compCard) {
-                const parentCard = compCard.closest('.subject-card.expanded');
-                if (parentCard) {
-                    updateGraph(parentCard, compCard.dataset.compIndex);
-                }
-            }
-        });
-        
-        document.getElementById('open-planner-btn').addEventListener('click', openPlanner);
-    }
-
-    // --- GRAPH LOGIC ---
-    function updateGraph(parentCard, compIndex) {
-        const subjectCode = parentCard.dataset.subjectCode;
-        const etape = parentCard.dataset.etape;
-        const subject = mbsData[etape].find(s => s.code === subjectCode);
-        const competency = subject.competencies[compIndex];
-        const canvas = parentCard.querySelector('canvas');
-
-        const labels = competency.assignments.map(a => a.work.replace(/<br>/g, ' ') || 'Travail');
-        const data = competency.assignments.map(a => getNumericGrade(a.result));
-
-        if (activeChart) {
-            activeChart.destroy();
-        }
-        
-        activeChart = new Chart(canvas, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Note (%)',
-                    data: data,
-                    backgroundColor: 'rgba(41, 128, 185, 0.6)',
-                    borderColor: 'rgba(41, 128, 185, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: { beginAtZero: true, max: 100 }
-                },
-                plugins: {
-                    title: { display: true, text: `Notes pour: ${competency.name}` }
-                }
-            }
-        });
-    }
-
-    // --- GOAL PLANNER LOGIC ---
-    function openPlanner() {
-        const subjects = getSubjectsByFilter('generale');
-        if (subjects.length === 0) {
-            plannerContent.innerHTML = `<p>Aucune matière disponible. Ajoutez d'abord vos données.</p>`;
+        if (change < 0) {
+            return { direction: 'down', arrow: '▼', change: `${change.toFixed(1)}%` };
         } else {
-            let optionsHTML = subjects.map(s => `<option value="${s.etape}|${s.subject.code}">${s.subject.name} (${s.etape})</option>`).join('');
-            plannerContent.innerHTML = `
-                <div style="margin-bottom: 20px;">
-                    <label for="planner-subject-select" style="display:block; margin-bottom: 5px; font-weight: 600;">Choisissez une matière :</label>
-                    <select id="planner-subject-select" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc;">${optionsHTML}</select>
-                </div>
-                <div id="planner-details"></div>
-            `;
-            plannerModal.classList.add('active');
-            document.getElementById('planner-subject-select').addEventListener('change', renderPlannerDetails);
-            renderPlannerDetails({ target: document.getElementById('planner-subject-select') }); // Initial render
+            return { direction: 'up', arrow: '▲', change: `+${change.toFixed(1)}%` };
         }
-        document.getElementById('close-planner-btn').addEventListener('click', () => plannerModal.classList.remove('active'));
     }
 
-    function renderPlannerDetails(event) {
-        const [etape, subjectCode] = event.target.value.split('|');
-        const subject = mbsData[etape].find(s => s.code === subjectCode);
-        const detailsDiv = document.getElementById('planner-details');
-        
-        const currentAvg = calculateSubjectAverage(subject);
-        
-        detailsDiv.innerHTML = `
-            <p>Moyenne actuelle : <strong>${currentAvg !== null ? currentAvg.toFixed(2) + '%' : 'N/A'}</strong></p>
-            <div id="future-assignments"></div>
-            <button id="add-assignment-btn" class="btn btn-secondary" style="margin: 15px 0;">+ Ajouter un travail futur</button>
-            <div style="margin-top: 20px;">
-                <label for="target-grade-input" style="font-weight: 600;">Note moyenne visée pour ces travaux (%)</label>
-                <input type="number" id="target-grade-input" value="85" style="width: 100px; text-align: center; padding: 8px; margin-left: 10px;">
-            </div>
-            <div id="projection-result">Moyenne finale projetée : --</div>
-        `;
-        document.getElementById('add-assignment-btn').addEventListener('click', addFutureAssignment);
-        detailsDiv.addEventListener('input', recalculateProjection);
-        recalculateProjection();
-    }
-    
-    function addFutureAssignment() {
-        const container = document.getElementById('future-assignments');
-        const div = document.createElement('div');
-        div.style.display = 'flex';
-        div.style.gap = '10px';
-        div.style.marginBottom = '10px';
-        div.innerHTML = `
-            <input type="text" placeholder="Nom du travail (ex: Examen Final)" style="flex: 2; padding: 8px;">
-            <input type="number" class="future-pond" placeholder="Pond. (%)" style="flex: 1; padding: 8px;">
-        `;
-        container.appendChild(div);
-    }
-
-    function recalculateProjection() {
-        const select = document.getElementById('planner-subject-select');
-        const [etape, subjectCode] = select.value.split('|');
-        const subject = mbsData[etape].find(s => s.code === subjectCode);
-        
-        let currentTotalGrade = 0;
-        let currentTotalWeight = 0;
-        subject.competencies.forEach(comp => {
-            const compWeightMatch = comp.name.match(/\((\d+)%\)/);
-            if (compWeightMatch) {
-                const compWeight = parseFloat(compWeightMatch[1]);
-                const compAvg = calculateCompetencyAverage(comp);
-                if (compAvg !== null) {
-                    currentTotalGrade += compAvg * compWeight;
-                    currentTotalWeight += compWeight;
-                }
-            }
-        });
-
-        let futureTotalWeight = 0;
-        document.querySelectorAll('.future-pond').forEach(input => {
-            const weight = parseFloat(input.value);
-            if (!isNaN(weight)) futureTotalWeight += weight;
-        });
-
-        const targetGrade = parseFloat(document.getElementById('target-grade-input').value);
-        const projectionResultEl = document.getElementById('projection-result');
-
-        if (isNaN(targetGrade) || (currentTotalWeight + futureTotalWeight) === 0) {
-            projectionResultEl.textContent = 'Moyenne finale projetée : --';
+    function calculateGoal() {
+        const subjectIndex = goalSubjectSelector.value;
+        const targetGrade = parseFloat(goalGradeInput.value);
+        if (isNaN(targetGrade) || subjectIndex === '') {
+            alert("Veuillez sélectionner une matière et entrer une note valide.");
             return;
         }
 
-        const futureTotalGrade = targetGrade * futureTotalWeight;
-        const finalGrade = (currentTotalGrade + futureTotalGrade) / (currentTotalWeight + futureTotalWeight);
-        
-        projectionResultEl.textContent = `Moyenne finale projetée : ${finalGrade.toFixed(2)}%`;
+        const subject = mbsData[currentEtape][subjectIndex];
+        let completedWeight = 0, futureWeight = 0, currentWeightedSum = 0;
+
+        subject.competencies.forEach(comp => {
+            comp.assignments.forEach(assign => {
+                const weight = parseFloat(assign.pond);
+                if (isNaN(weight) || weight <= 0) return;
+                
+                const grade = getNumericGrade(assign.result);
+                if (grade !== null) {
+                    completedWeight += weight;
+                    currentWeightedSum += grade * weight;
+                } else {
+                    futureWeight += weight;
+                }
+            });
+        });
+
+        goalResultDiv.style.display = 'block';
+        goalResultDiv.className = ''; // Reset classes
+
+        if (futureWeight === 0) {
+            goalResultDiv.textContent = "Aucun travail futur n'est disponible dans cette matière pour influencer la moyenne.";
+            goalResultDiv.classList.add('result-warning');
+            return;
+        }
+
+        const totalWeight = completedWeight + futureWeight;
+        const requiredAvg = ((targetGrade * totalWeight) - currentWeightedSum) / futureWeight;
+
+        if (requiredAvg > 100) {
+            goalResultDiv.innerHTML = `Pour atteindre <strong>${targetGrade}%</strong>, vous auriez besoin d'une moyenne de <strong style="color:var(--danger-color)">${requiredAvg.toFixed(1)}%</strong> sur les travaux restants. Cet objectif est probablement irréalisable.`;
+            goalResultDiv.classList.add('result-error');
+        } else if (requiredAvg < 0) {
+            goalResultDiv.innerHTML = `Pour atteindre <strong>${targetGrade}%</strong>, vous avez seulement besoin de <strong style="color:var(--success-color)">${requiredAvg.toFixed(1)}%</strong> sur les travaux restants. Vous êtes en excellente position !`;
+            goalResultDiv.classList.add('result-success');
+        } else {
+            goalResultDiv.innerHTML = `Pour atteindre une moyenne finale de <strong>${targetGrade}%</strong>, vous devez obtenir une moyenne de <strong>${requiredAvg.toFixed(1)}%</strong> sur tous les travaux restants.`;
+            goalResultDiv.classList.add('result-success');
+        }
+    }
+
+    // --- EVENT LISTENERS ---
+    function setupEventListeners() {
+        etapeSelector.addEventListener('change', (e) => renderPageForEtape(e.target.value));
+        widgetsGrid.addEventListener('click', (e) => {
+            const widget = e.target.closest('.subject-widget');
+            if (widget) {
+                showExpandedView(widget.dataset.subjectIndex);
+            }
+        });
+        backToGridBtn.addEventListener('click', hideExpandedView);
+        categoryWidgetsContainer.addEventListener('click', (e) => {
+            const catWidget = e.target.closest('.category-widget');
+            if (catWidget) {
+                // Update active state
+                categoryWidgetsContainer.querySelector('.active')?.classList.remove('active');
+                catWidget.classList.add('active');
+                
+                // Update chart
+                const subjectIndex = document.querySelector('#goal-subject-selector option:checked').value; // A bit of a hack to get current subject
+                const subject = mbsData[currentEtape][subjectIndex];
+                updateChart(subject, catWidget.dataset.compIndex);
+            }
+        });
+        calculateGoalBtn.addEventListener('click', calculateGoal);
     }
 
     // --- START THE APP ---
