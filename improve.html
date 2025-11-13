@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analyse de Performance - Outil MBS</title>
+    <title>Performance - Outil MBS</title>
     <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Chart.js library for graphs -->
@@ -17,139 +17,490 @@
         }
         body {
             margin: 0;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--background-color); color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
         }
         .site-header-container {
             background-color: var(--widget-background); box-shadow: var(--shadow-header);
-            border-bottom: 1px solid #e0e6eb; padding: 15px 25px; display: flex;
-            align-items: center; position: relative;
+            border-bottom: 1px solid #e0e6eb; padding: 15px 25px;
+            display: flex; align-items: center; position: relative;
         }
+        .header-center { position: absolute; left: 50%; transform: translateX(-50%); }
         .site-header {
-            margin: 0 auto; color: var(--secondary-color); font-size: 2.2em;
-            font-weight: 700; font-family: 'Playfair Display', serif;
+            padding: 0; margin: 0; color: var(--secondary-color);
+            font-size: 2.2em; font-weight: 700; font-family: 'Playfair Display', serif;
         }
         .nav-arrow {
-            position: absolute; left: 25px; top: 50%; transform: translateY(-50%);
             font-size: 2em; color: var(--secondary-color); text-decoration: none;
             transition: color 0.2s, transform 0.2s;
         }
-        .nav-arrow:hover { color: var(--primary-color); transform: translateY(-50%) scale(1.05); }
+        .nav-arrow:hover { color: var(--primary-color); transform: scale(1.05); }
         .filter-bar {
-            position: sticky; top: 0; background-color: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(8px); z-index: 100; padding: 15px 20px;
-            display: flex; justify-content: center; gap: 10px;
-            border-bottom: 1px solid #e0e6eb; margin-bottom: 30px;
+            position: sticky; top: 0; background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px); z-index: 100;
+            padding: 15px 20px; box-shadow: var(--shadow-header);
+            display: flex; justify-content: center; gap: 10px; margin-bottom: 30px;
         }
         .filter-btn {
-            padding: 10px 20px; border: 1px solid var(--light-grey); border-radius: 20px;
-            background: none; font-size: 1em; font-weight: 600; color: var(--text-color);
-            cursor: pointer; transition: all 0.2s;
+            padding: 10px 20px; border: 1px solid #ddd; border-radius: 20px;
+            background: none; cursor: pointer; font-weight: 600; font-size: 0.95em;
+            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
         }
-        .filter-btn:hover { background-color: #eaf2f8; border-color: var(--primary-color); }
-        .filter-btn.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
-        .main-container { max-width: 1400px; margin: 0 auto; padding: 0 20px; }
-        .performance-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        .filter-btn:hover { background-color: #f0f4f7; }
+        .filter-btn.active {
+            background-color: var(--primary-color); color: white;
+            border-color: var(--primary-color);
+        }
+        .main-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        .widgets-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 25px;
         }
-        .performance-card {
+        .subject-widget {
             background-color: var(--widget-background); border-radius: 12px;
-            box-shadow: var(--shadow-widget); padding: 20px; cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: var(--shadow-widget); padding: 20px;
+            cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
         }
-        .performance-card:hover { transform: translateY(-3px); box-shadow: 0 12px 20px rgba(0,0,0,0.1); }
-        .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
-        .card-header h3 { margin: 0; font-size: 1.2em; }
-        .card-average { font-size: 2.5em; font-weight: 700; color: var(--primary-color); text-align: right; }
-        .trend-indicator { display: flex; align-items: center; gap: 5px; font-weight: 600; font-size: 0.9em; }
-        .trend-up { color: var(--success-color); }
-        .trend-down { color: var(--danger-color); }
-        .arrow { font-size: 1.2em; }
-        .card-expanded-content {
+        .subject-widget:hover { transform: translateY(-3px); box-shadow: 0 12px 20px rgba(0,0,0,0.1); }
+        .widget-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .widget-title { font-size: 1.2em; font-weight: 600; margin: 0; }
+        .widget-average { font-size: 2.5em; font-weight: 700; margin: 10px 0; color: var(--primary-color); }
+        .trend-indicator {
+            display: flex; align-items: center; gap: 5px; font-weight: 600;
+            font-size: 0.9em; padding: 5px 8px; border-radius: 15px;
+        }
+        .trend-indicator.up { color: var(--success-color); background-color: #eafaf1; }
+        .trend-indicator.down { color: var(--danger-color); background-color: #fdeded; }
+        .widget-details {
             max-height: 0; overflow: hidden;
-            transition: max-height 0.5s ease-in-out, margin-top 0.5s ease-in-out;
+            transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .performance-card.expanded .card-expanded-content {
-            max-height: 1000px; /* Large enough to fit content */
-            margin-top: 20px;
-        }
-        .competency-grid {
-            display: flex; flex-wrap: wrap; gap: 10px;
-            border-top: 1px solid #eee; padding-top: 20px;
-        }
+        .subject-widget.expanded .widget-details { max-height: 1000px; }
+        .competency-widgets { border-top: 1px solid #eee; margin-top: 20px; padding-top: 20px; display: flex; flex-wrap: wrap; gap: 10px; }
         .competency-widget {
-            flex-grow: 1; background-color: #f7f9fb; padding: 10px 15px;
-            border-radius: 8px; border: 1px solid #e0e6eb;
-            transition: all 0.2s;
+            flex-grow: 1; background-color: #f0f4f7; border-radius: 8px;
+            padding: 10px; text-align: center; border: 2px solid transparent;
+            transition: border-color 0.2s, background-color 0.2s;
         }
-        .competency-widget:hover { border-color: var(--primary-color); background-color: #eaf2f8; }
-        .competency-widget.active { border-color: var(--primary-color); background-color: #eaf2f8; box-shadow: 0 0 0 2px var(--primary-color); }
-        .competency-widget h4 { margin: 0 0 5px 0; font-size: 0.9em; }
-        .competency-widget .avg { font-size: 1.2em; font-weight: 700; color: var(--primary-color); }
-        .graph-container { margin-top: 20px; }
-        .goal-setter-btn {
-            position: fixed; bottom: 30px; right: 30px; background-color: var(--secondary-color);
-            color: white; border-radius: 50%; width: 60px; height: 60px;
-            border: none; cursor: pointer; box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-            font-size: 1.8em; display: flex; justify-content: center; align-items: center;
-            transition: transform 0.2s;
+        .competency-widget.active, .competency-widget:hover { border-color: var(--primary-color); background-color: #eaf2f8; }
+        .competency-name { font-size: 0.8em; font-weight: 500; }
+        .competency-average { font-size: 1.2em; font-weight: 700; color: var(--secondary-color); }
+        .chart-container { margin-top: 20px; }
+        .goal-planner {
+            margin-top: 50px; padding: 30px; background-color: var(--widget-background);
+            border-radius: 12px; box-shadow: var(--shadow-widget);
         }
-        .goal-setter-btn:hover { transform: scale(1.05); }
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s; }
-        .modal-overlay.active { opacity: 1; visibility: visible; }
-        .modal-content { background-color: white; padding: 30px; border-radius: 12px; width: 450px; }
-        .modal-close { position: absolute; top: 10px; right: 15px; font-size: 2em; cursor: pointer; color: var(--light-grey); }
-        .control-group { margin-bottom: 20px; }
-        .control-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .control-group select, .control-group input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
-        #goal-result { margin-top: 20px; padding: 15px; border-radius: 8px; font-weight: 600; text-align: center; }
-        footer { text-align: center; padding: 25px; font-size: 0.9em; color: var(--footer-grey); border-top: 1px solid #eee; margin-top: 40px; }
-        footer a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
+        .goal-planner h2 { font-family: 'Playfair Display', serif; margin-top: 0; }
+        .planner-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: center; }
+        .planner-input select, .planner-input input {
+            width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box;
+        }
+        #goal-result {
+            margin-top: 20px; padding: 15px; border-radius: 8px; text-align: center;
+            font-size: 1.1em; font-weight: 600; background-color: #eaf2f8; color: var(--primary-color);
+        }
+        footer { text-align: center; padding: 25px; font-size: 0.9em; color: var(--footer-grey); margin-top: 40px; }
     </style>
 </head>
 <body>
     <header class="site-header-container">
         <a href="main.html" class="nav-arrow" title="Retour au tableau de bord">←</a>
-        <h1 class="site-header">Analyse de Performance</h1>
+        <div class="header-center">
+            <h1 class="site-header">Analyse de Performance</h1>
+        </div>
     </header>
 
     <div class="filter-bar">
-        <button class="filter-btn active" data-filter="generale">Générale</button>
-        <button class="filter-btn" data-filter="etape1">Étape 1</button>
-        <button class="filter-btn" data-filter="etape2">Étape 2</button>
-        <button class="filter-btn" data-filter="etape3">Étape 3</button>
+        <button class="filter-btn active" data-etape="generale">Générale</button>
+        <button class="filter-btn" data-etape="etape1">Étape 1</button>
+        <button class="filter-btn" data-etape="etape2">Étape 2</button>
+        <button class="filter-btn" data-etape="etape3">Étape 3</button>
     </div>
 
     <main class="main-container">
-        <div id="performance-grid" class="performance-grid">
-            <!-- Subject cards will be injected here by JavaScript -->
-        </div>
+        <section id="widgets-container">
+            <div id="widgets-grid" class="widgets-grid">
+                <!-- Subject widgets will be injected here by JavaScript -->
+            </div>
+        </section>
+
+        <section id="goal-planner" class="goal-planner">
+            <h2>Planificateur d'Objectifs</h2>
+            <div class="planner-grid">
+                <div class="planner-input">
+                    <label for="goal-subject">Choisir une matière :</label>
+                    <select id="goal-subject"></select>
+                </div>
+                <div class="planner-input">
+                    <label for="goal-target-grade">Moyenne finale désirée (%) :</label>
+                    <input type="number" id="goal-target-grade" min="0" max="100" placeholder="Ex: 85">
+                </div>
+            </div>
+            <div id="goal-result">
+                Sélectionnez une matière et entrez un objectif pour voir le calcul.
+            </div>
+        </section>
     </main>
-
-    <button id="goal-setter-btn" class="goal-setter-btn" title="Planifier un objectif">🎯</button>
-
-    <div class="modal-overlay" id="goal-modal">
-        <div class="modal-content">
-            <span class="modal-close" id="close-goal-modal">&times;</span>
-            <h3 style="font-family: 'Playfair Display', serif;">Planificateur d'Objectif</h3>
-            <div class="control-group">
-                <label for="goal-subject-select">Choisir une matière :</label>
-                <select id="goal-subject-select"></select>
-            </div>
-            <div class="control-group">
-                <label for="goal-target-input">Moyenne finale désirée (%) :</label>
-                <input type="number" id="goal-target-input" min="0" max="100" placeholder="Ex: 85">
-            </div>
-            <div id="goal-result"></div>
-        </div>
-    </div>
 
     <footer>
         <p>Outil MBS - Moyenne, Bilan, Stratégie</p>
-        <p><a href="ticket.html">Signaler un problème</a></p>
     </footer>
 
-    <script src="js/improve-functions.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- STATE & CONSTANTS ---
+            let mbsData = {};
+            let activeFilter = 'generale';
+            let activeCharts = {}; // Store active Chart.js instances
+
+            // --- INITIALIZATION ---
+            function init() {
+                mbsData = JSON.parse(localStorage.getItem('mbsData')) || {};
+
+                if (!mbsData.valid) {
+                    document.querySelector('.main-container').innerHTML = `<p style="text-align:center;">Aucune donnée à analyser. Veuillez d'abord <a href="data.html">ajouter vos données</a>.</p>`;
+                    return;
+                }
+                
+                setupEventListeners();
+                renderPage(activeFilter);
+            }
+
+            // --- EVENT LISTENERS ---
+            function setupEventListeners() {
+                // Filter bar
+                document.querySelector('.filter-bar').addEventListener('click', (e) => {
+                    if (e.target.matches('.filter-btn')) {
+                        document.querySelector('.filter-btn.active').classList.remove('active');
+                        e.target.classList.add('active');
+                        activeFilter = e.target.dataset.etape;
+                        renderPage(activeFilter);
+                    }
+                });
+
+                // Goal planner
+                document.getElementById('goal-subject').addEventListener('change', calculateGoal);
+                document.getElementById('goal-target-grade').addEventListener('input', calculateGoal);
+
+                // Widget Clicks (Event Delegation)
+                document.getElementById('widgets-grid').addEventListener('click', handleWidgetClick);
+            }
+
+            // --- CORE RENDERING ---
+            function renderPage(etapeKey) {
+                const widgetsGrid = document.getElementById('widgets-grid');
+                widgetsGrid.innerHTML = ''; // Clear previous widgets
+                destroyAllCharts();
+
+                const subjectsToRender = getSubjectsForFilter(etapeKey);
+
+                if (subjectsToRender.length === 0) {
+                    widgetsGrid.innerHTML = `<p>Aucune matière à afficher pour cette sélection.</p>`;
+                } else {
+                    subjectsToRender.forEach(subjectData => {
+                        widgetsGrid.appendChild(createSubjectWidget(subjectData));
+                    });
+                }
+                updateGoalPlannerSubjects(etapeKey);
+                calculateGoal(); // Recalculate goal with new subject list
+            }
+
+            // --- WIDGET CREATION & INTERACTION ---
+            function createSubjectWidget(subjectData) {
+                const { subject, etapeKey } = subjectData;
+                const widget = document.createElement('div');
+                widget.className = 'subject-widget';
+                widget.dataset.etape = etapeKey;
+                widget.dataset.code = subject.code;
+
+                const average = calculateSubjectAverage(subject);
+                const trend = getTrend(etapeKey, subject.code, average);
+                
+                widget.innerHTML = `
+                    <div class="widget-header">
+                        <div>
+                            <h3 class="widget-title">${subject.name}</h3>
+                            <p class="widget-average">${average !== null ? average.toFixed(2) + '%' : 'N/A'}</p>
+                        </div>
+                        <div class="trend-indicator ${trend.direction}">
+                            <span>${trend.arrow}</span>
+                            <span>${trend.change}</span>
+                        </div>
+                    </div>
+                    <div class="widget-details">
+                        <!-- Competency widgets and chart will be injected here -->
+                    </div>
+                `;
+                return widget;
+            }
+
+            function handleWidgetClick(e) {
+                const widget = e.target.closest('.subject-widget');
+                if (!widget) return;
+
+                // Handle sub-widget clicks for chart update
+                const competencyWidget = e.target.closest('.competency-widget');
+                if (competencyWidget) {
+                    if (widget.querySelector('.competency-widget.active')) {
+                        widget.querySelector('.competency-widget.active').classList.remove('active');
+                    }
+                    competencyWidget.classList.add('active');
+                    const compIndex = parseInt(competencyWidget.dataset.index);
+                    const subject = findSubject(widget.dataset.etape, widget.dataset.code);
+                    createOrUpdateChart(widget, subject.competencies[compIndex]);
+                    return;
+                }
+
+                // Handle main widget expansion/collapse
+                const isExpanded = widget.classList.toggle('expanded');
+                if (isExpanded) {
+                    expandWidget(widget);
+                } else {
+                    collapseWidget(widget);
+                }
+            }
+
+            function expandWidget(widget) {
+                const detailsContainer = widget.querySelector('.widget-details');
+                const subject = findSubject(widget.dataset.etape, widget.dataset.code);
+                if (!subject) return;
+
+                // Create competency widgets
+                const competencyContainer = document.createElement('div');
+                competencyContainer.className = 'competency-widgets';
+                subject.competencies.forEach((comp, index) => {
+                    const compAvg = calculateCompetencyAverage(comp);
+                    const compWidget = document.createElement('div');
+                    compWidget.className = 'competency-widget';
+                    compWidget.dataset.index = index;
+                    compWidget.innerHTML = `
+                        <div class="competency-name">${comp.name.replace('Compétence - ', '')}</div>
+                        <div class="competency-average">${compAvg !== null ? compAvg.toFixed(1) + '%' : 'N/A'}</div>
+                    `;
+                    competencyContainer.appendChild(compWidget);
+                });
+                detailsContainer.appendChild(competencyContainer);
+
+                // Create chart container and canvas
+                const chartContainer = document.createElement('div');
+                chartContainer.className = 'chart-container';
+                const canvas = document.createElement('canvas');
+                chartContainer.appendChild(canvas);
+                detailsContainer.appendChild(chartContainer);
+
+                // Highlight first competency and create initial chart
+                if (competencyContainer.firstChild) {
+                    competencyContainer.firstChild.classList.add('active');
+                    createOrUpdateChart(widget, subject.competencies[0]);
+                }
+            }
+            
+            function collapseWidget(widget) {
+                const detailsContainer = widget.querySelector('.widget-details');
+                destroyChart(widget);
+                detailsContainer.innerHTML = '';
+            }
+
+            // --- CHART LOGIC ---
+            function createOrUpdateChart(widget, competencyData) {
+                const canvas = widget.querySelector('canvas');
+                if (!canvas) return;
+                
+                const gradedAssignments = competencyData.assignments.filter(a => getNumericGrade(a.result) !== null);
+
+                const chartData = {
+                    labels: gradedAssignments.map(a => a.work.replace('<br>', ' ')),
+                    datasets: [{
+                        label: 'Note (%)',
+                        data: gradedAssignments.map(a => getNumericGrade(a.result)),
+                        backgroundColor: 'rgba(41, 128, 185, 0.6)',
+                        borderColor: 'rgba(41, 128, 185, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                    }]
+                };
+
+                // Destroy existing chart for this widget if it exists
+                destroyChart(widget);
+
+                // Create new chart
+                activeCharts[widget.dataset.code] = new Chart(canvas, {
+                    type: 'bar',
+                    data: chartData,
+                    options: {
+                        scales: { y: { beginAtZero: true, max: 100 } },
+                        plugins: { legend: { display: false } },
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            }
+
+            function destroyChart(widget) {
+                const chartInstance = activeCharts[widget.dataset.code];
+                if (chartInstance) {
+                    chartInstance.destroy();
+                    delete activeCharts[widget.dataset.code];
+                }
+            }
+            
+            function destroyAllCharts() {
+                Object.values(activeCharts).forEach(chart => chart.destroy());
+                activeCharts = {};
+            }
+
+            // --- GOAL PLANNER LOGIC ---
+            function updateGoalPlannerSubjects(etapeKey) {
+                const select = document.getElementById('goal-subject');
+                select.innerHTML = '<option value="">-- Choisir une matière --</option>';
+                const subjects = getSubjectsForFilter(etapeKey);
+
+                subjects.forEach(({ subject, etapeKey }) => {
+                    const option = document.createElement('option');
+                    option.value = `${etapeKey}|${subject.code}`;
+                    option.textContent = `${subject.name} (${etapeKey.replace('etape', 'Étape ')}`;
+                    select.appendChild(option);
+                });
+            }
+
+            function calculateGoal() {
+                const select = document.getElementById('goal-subject');
+                const targetGradeInput = document.getElementById('goal-target-grade');
+                const resultDiv = document.getElementById('goal-result');
+
+                if (!select.value || !targetGradeInput.value) {
+                    resultDiv.textContent = 'Sélectionnez une matière et entrez un objectif pour voir le calcul.';
+                    return;
+                }
+
+                const [etapeKey, subjectCode] = select.value.split('|');
+                const subject = findSubject(etapeKey, subjectCode);
+                const targetAvg = parseFloat(targetGradeInput.value);
+
+                let currentTotalWeight = 0;
+                let weightedSum = 0;
+
+                subject.competencies.forEach(comp => {
+                    comp.assignments.forEach(assign => {
+                        const grade = getNumericGrade(assign.result);
+                        const weight = parseFloat(assign.pond);
+                        if (grade !== null && !isNaN(weight) && weight > 0) {
+                            weightedSum += grade * weight;
+                            currentTotalWeight += weight;
+                        }
+                    });
+                });
+                
+                const currentAvg = (currentTotalWeight > 0) ? weightedSum / currentTotalWeight : 0;
+                
+                // Assuming max weight is 100 for a subject's term grade
+                const remainingWeight = 100 - currentTotalWeight;
+
+                if (remainingWeight <= 0) {
+                    resultDiv.textContent = `Félicitations, tous les travaux pour cette matière sont complétés ! Votre moyenne est de ${currentAvg.toFixed(2)}%.`;
+                    return;
+                }
+                
+                const neededGrade = ( (targetAvg * 100) - (currentAvg * currentTotalWeight) ) / remainingWeight;
+
+                if (neededGrade > 100) {
+                    resultDiv.style.backgroundColor = '#fdeded';
+                    resultDiv.style.color = 'var(--danger-color)';
+                    resultDiv.textContent = `Pour atteindre ${targetAvg}%, il vous faudrait une moyenne de ${neededGrade.toFixed(2)}% sur les travaux restants, ce qui est impossible.`;
+                } else if (neededGrade < 0) {
+                     resultDiv.style.backgroundColor = '#eafaf1';
+                    resultDiv.style.color = 'var(--success-color)';
+                    resultDiv.textContent = `Excellent ! Vous avez déjà dépassé votre objectif de ${targetAvg}%. Continuez comme ça !`;
+                } else {
+                    resultDiv.style.backgroundColor = '#eaf2f8';
+                    resultDiv.style.color = 'var(--primary-color)';
+                    resultDiv.textContent = `Pour atteindre ${targetAvg}%, vous devez obtenir une moyenne de ${neededGrade.toFixed(2)}% sur les travaux restants.`;
+                }
+            }
+
+            // --- DATA HELPERS & CALCULATIONS ---
+            const getNumericGrade = (result) => {
+                if (!result) return null;
+                const gradeMap = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 85, 'B': 80, 'B-': 75, 'C+': 70, 'C': 65, 'C-': 60, 'D+': 55, 'D': 50, 'E': 45 };
+                const trimmed = result.trim();
+                if (gradeMap[trimmed]) return gradeMap[trimmed];
+                const scoreMatch = trimmed.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/);
+                if (scoreMatch) {
+                    const score = parseFloat(scoreMatch[1].replace(',', '.'));
+                    const max = parseFloat(scoreMatch[2].replace(',', '.'));
+                    return max > 0 ? (score / max) * 100 : null;
+                }
+                return null;
+            };
+
+            const calculateCompetencyAverage = (comp) => {
+                let totalGrade = 0, totalWeight = 0;
+                comp.assignments.forEach(assign => {
+                    const grade = getNumericGrade(assign.result);
+                    const weight = parseFloat(assign.pond);
+                    if (grade !== null && !isNaN(weight) && weight > 0) {
+                        totalGrade += grade * weight;
+                        totalWeight += weight;
+                    }
+                });
+                return totalWeight > 0 ? totalGrade / totalWeight : null;
+            };
+
+            const calculateSubjectAverage = (subject) => {
+                let totalGrade = 0, totalWeight = 0;
+                subject.competencies.forEach(comp => {
+                    const compWeightMatch = comp.name.match(/\((\d+)%\)/);
+                    if (compWeightMatch) {
+                        const compWeight = parseFloat(compWeightMatch[1]);
+                        const compAvg = calculateCompetencyAverage(comp);
+                        if (compAvg !== null) {
+                            totalGrade += compAvg * compWeight;
+                            totalWeight += compWeight;
+                        }
+                    }
+                });
+                return totalWeight > 0 ? totalGrade / totalWeight : null;
+            };
+
+            const getSubjectsForFilter = (etapeKey) => {
+                let subjects = [];
+                if (etapeKey === 'generale') {
+                    ['etape1', 'etape2', 'etape3'].forEach(key => {
+                        if (mbsData[key]) subjects.push(...mbsData[key].map(s => ({ subject: s, etapeKey: key })));
+                    });
+                } else if (mbsData[etapeKey]) {
+                    subjects = mbsData[etapeKey].map(s => ({ subject: s, etapeKey }));
+                }
+                return subjects;
+            };
+
+            const findSubject = (etapeKey, subjectCode) => {
+                return mbsData[etapeKey]?.find(s => s.code === subjectCode);
+            };
+
+            const getTrend = (etapeKey, subjectCode, currentAverage) => {
+                const history = mbsData.historique?.[etapeKey]?.moyennes;
+                if (!history || history.length < 2 || currentAverage === null) {
+                    return { direction: 'up', arrow: '▲', change: 'Nouveau' };
+                }
+                
+                // Find subject-specific average history (more accurate if we store it this way)
+                // For now, we use the global etape history as a proxy
+                const previousAverage = history[history.length - 2];
+                const difference = currentAverage - previousAverage;
+                
+                if (difference < -0.01) { // A small tolerance for floating point issues
+                    return { direction: 'down', arrow: '▼', change: `${difference.toFixed(1)}%` };
+                } else {
+                    const changeStr = difference > 0.01 ? `+${difference.toFixed(1)}%` : 'Stable';
+                    return { direction: 'up', arrow: '▲', change: changeStr };
+                }
+            };
+            
+            // --- START THE APP ---
+            init();
+        });
+    </script>
 </body>
 </html>
