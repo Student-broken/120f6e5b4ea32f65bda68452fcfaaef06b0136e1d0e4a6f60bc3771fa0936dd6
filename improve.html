@@ -206,10 +206,14 @@
             let totalPoints = 0;
             let totalWeight = 0;
             subject.competencies.forEach(comp => {
-                const result = calculateAverage(comp.assignments);
-                if (result) {
-                    totalPoints += result.average * result.weight;
-                    totalWeight += result.weight;
+                const compWeightMatch = comp.name.match(/\((\d+)%\)/);
+                if (compWeightMatch) {
+                    const compWeight = parseFloat(compWeightMatch[1]);
+                    const compResult = calculateAverage(comp.assignments);
+                    if (compResult) {
+                        totalPoints += compResult.average * compWeight;
+                        totalWeight += compWeight;
+                    }
                 }
             });
             return totalWeight > 0 ? totalPoints / totalWeight : null;
@@ -276,8 +280,9 @@
             const competencyContainer = modalContent.querySelector('.competency-widgets');
             const uniqueCompetencies = new Map();
             subject.competencies.forEach(comp => {
-                if (!uniqueCompetencies.has(comp.name)) uniqueCompetencies.set(comp.name, { name: comp.name, assignments: [] });
-                uniqueCompetencies.get(comp.name).assignments.push(...comp.assignments);
+                const compName = comp.name.split('(')[0].trim();
+                if (!uniqueCompetencies.has(compName)) uniqueCompetencies.set(compName, { name: comp.name, assignments: [] });
+                uniqueCompetencies.get(compName).assignments.push(...comp.assignments);
             });
             const compsForChart = Array.from(uniqueCompetencies.values());
             compsForChart.forEach((comp, index) => {
@@ -326,45 +331,43 @@
             });
         }
         
+        // --- CORRECTED GOAL CALCULATOR ---
         function setupGoalCalculator(subject, container) {
-            let pointsEarned = 0;
-            let completedPonderation = 0;
-            let futurePonderation = 0;
-            let totalPonderation = 0;
+            let pointsEarnedFromCompletedComps = 0;
+            let weightOfCompletedComps = 0;
+            let weightOfFutureComps = 0;
 
             subject.competencies.forEach(comp => {
-                comp.assignments.forEach(assign => {
-                    const ponderation = parseFloat(assign.pond);
-                    if (isNaN(ponderation) || ponderation <= 0) return;
-                    
-                    totalPonderation += ponderation;
-                    const grade = getNumericGrade(assign.result);
+                const compWeightMatch = comp.name.match(/\((\d+)%\)/);
+                if (!compWeightMatch) return; // Skip if competency has no weight
+                
+                const compWeight = parseFloat(compWeightMatch[1]);
+                const compResult = calculateAverage(comp.assignments);
 
-                    if (grade !== null) {
-                        pointsEarned += (grade / 100) * ponderation;
-                        completedPonderation += ponderation;
-                    } else {
-                        futurePonderation += ponderation;
-                    }
-                });
+                if (compResult) { // This competency has graded assignments
+                    pointsEarnedFromCompletedComps += compResult.average * (compWeight / 100);
+                    weightOfCompletedComps += compWeight;
+                } else { // This competency has no graded assignments yet
+                    weightOfFutureComps += compWeight;
+                }
             });
-
-            if (totalPonderation <= 0) {
-                container.innerHTML = '<h3>Planificateur d\'Objectifs</h3><p>Aucun travail avec une pondération valide n\'a été trouvé.</p>';
-                return;
-            }
-
-            const currentAverage = completedPonderation > 0 ? (pointsEarned / completedPonderation) * 100 : 0;
             
-            if (futurePonderation < 0.01) {
-                container.innerHTML = '<h3>Planificateur d\'Objectifs</h3><p>Tous les travaux pour cette matière semblent notés.</p>';
+            const totalSubjectWeight = weightOfCompletedComps + weightOfFutureComps;
+            if (totalSubjectWeight < 0.01) {
+                container.innerHTML = '<h3>Planificateur d\'Objectifs</h3><p>Aucune compétence avec une pondération (%) valide n\'a été trouvée.</p>';
                 return;
             }
 
-            const completedPercentage = (completedPonderation / totalPonderation) * 100;
+            const currentAverage = weightOfCompletedComps > 0 ? (pointsEarnedFromCompletedComps / weightOfCompletedComps) * 100 : 0;
+            
+            if (weightOfFutureComps < 0.01) {
+                container.innerHTML = '<h3>Planificateur d\'Objectifs</h3><p>Toutes les compétences pour cette matière semblent avoir été entamées.</p>';
+                return;
+            }
+
             container.innerHTML = `
                 <h3>Planificateur d'Objectifs</h3>
-                <p>Moyenne actuelle : <strong>${currentAverage.toFixed(2)}%</strong> (sur <strong>${completedPercentage.toFixed(1)}%</strong> de la matière complétée).</p>
+                <p>Moyenne actuelle : <strong>${currentAverage.toFixed(2)}%</strong> (sur <strong>${weightOfCompletedComps}%</strong> de la matière complétée).</p>
                 <div class="goal-input">
                     <label for="goal">Objectif final :</label>
                     <input type="number" id="goal-input" min="0" max="100" value="85">%
@@ -383,20 +386,20 @@
                 }
                 
                 // This is the correct algebraic formula:
-                // Required = ( (Target * TotalWeight) - PointsEarned ) / FutureWeight
-                const totalPointsNeeded = (targetAvg / 100) * totalPonderation;
-                const pointsNeededFromFuture = totalPointsNeeded - pointsEarned;
-                const requiredAvgOnFuture = (pointsNeededFromFuture / futurePonderation) * 100;
+                // Required = ( TargetPoints - EarnedPoints ) / FutureWeight
+                const totalPointsNeededForTarget = targetAvg; // Since total weight is 100%
+                const pointsNeededFromFuture = totalPointsNeededForTarget - pointsEarnedFromCompletedComps;
+                const requiredAvgOnFuture = (pointsNeededFromFuture / weightOfFutureComps) * 100;
                 
                 let message, resultClass;
                 if (requiredAvgOnFuture > 100.0) {
-                    message = `Pour atteindre <strong>${targetAvg}%</strong>, il faudrait <strong>${requiredAvgOnFuture.toFixed(1)}%</strong> sur les travaux restants. Cet objectif est impossible.`;
+                    message = `Pour atteindre <strong>${targetAvg}%</strong>, il faudrait <strong>${requiredAvgOnFuture.toFixed(1)}%</strong> sur les compétences restantes. Cet objectif est impossible.`;
                     resultClass = 'danger';
                 } else if (requiredAvgOnFuture < 0) {
                     message = `Félicitations ! Vous avez déjà atteint l'objectif de <strong>${targetAvg}%</strong>.`;
                     resultClass = 'success';
                 } else {
-                    message = `Pour atteindre <strong>${targetAvg}%</strong>, il vous faut une moyenne de <strong>${requiredAvgOnFuture.toFixed(1)}%</strong> sur les travaux restants.`;
+                    message = `Pour atteindre <strong>${targetAvg}%</strong>, il vous faut une moyenne de <strong>${requiredAvgOnFuture.toFixed(1)}%</strong> sur les <strong>${weightOfFutureComps}%</strong> de matière restante.`;
                     resultClass = 'warning';
                 }
                 goalResult.innerHTML = message;
