@@ -6,7 +6,6 @@
     <title>Performance - Outil MBS</title>
     <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Chart.js library for graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -36,7 +35,7 @@
             padding: 15px 25px;
             display: flex;
             align-items: center;
-            justify-content: center; /* Center the title */
+            justify-content: center;
             position: relative;
             margin-bottom: 20px;
         }
@@ -45,72 +44,45 @@
             font-size: 2.2em; font-weight: 700; font-family: 'Playfair Display', serif;
         }
         .nav-arrow {
-            position: absolute;
-            left: 25px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 2em;
-            color: var(--secondary-color);
-            text-decoration: none;
+            position: absolute; left: 25px; top: 50%;
+            transform: translateY(-50%); font-size: 2em;
+            color: var(--secondary-color); text-decoration: none;
             transition: color 0.2s, transform 0.2s;
         }
         .nav-arrow:hover { color: var(--primary-color); transform: translateY(-50%) scale(1.05); }
-
         .sticky-tabs {
-            position: sticky;
-            top: 0;
-            background-color: var(--background-color);
-            z-index: 100;
-            padding: 15px 0;
-            border-bottom: 1px solid #e0e6eb;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            display: flex;
-            justify-content: center;
-            gap: 10px;
+            position: sticky; top: 0; background-color: var(--background-color);
+            z-index: 100; padding: 15px 0; border-bottom: 1px solid #e0e6eb;
+            display: flex; justify-content: center; gap: 10px;
         }
         .tab-btn {
-            padding: 10px 20px;
-            border: 1px solid var(--light-grey);
-            border-radius: 20px;
-            background-color: transparent;
-            color: var(--text-color);
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
+            padding: 10px 20px; border: 1px solid var(--light-grey); border-radius: 20px;
+            background-color: transparent; color: var(--text-color); font-weight: 600;
+            cursor: pointer; transition: all 0.2s;
         }
         .tab-btn:hover { background-color: #eaf2f8; }
-        .tab-btn.active {
-            background-color: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
-        }
+        .tab-btn.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
         .widget-grid {
-            max-width: 1400px;
-            margin: 30px auto;
-            padding: 0 20px;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 25px;
+            max-width: 1400px; margin: 30px auto; padding: 0 20px;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px;
         }
         .subject-widget {
-            background-color: var(--widget-background);
-            border-radius: 12px;
-            box-shadow: var(--shadow-widget);
-            padding: 20px;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            background-color: var(--widget-background); border-radius: 12px;
+            box-shadow: var(--shadow-widget); padding: 20px;
+            cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+            position: relative; /* Anchor for trend arrow */
         }
-        .subject-widget:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 20px rgba(0,0,0,0.1);
-        }
-        .widget-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .subject-widget:hover { transform: translateY(-5px); box-shadow: 0 12px 20px rgba(0,0,0,0.1); }
         .widget-title { font-size: 1.2em; font-weight: 700; color: var(--secondary-color); margin: 0; }
-        .widget-average { font-size: 2.5em; font-weight: 700; color: var(--primary-color); margin: 10px 0; }
-        .widget-trend { display: flex; align-items: center; gap: 5px; font-weight: 600; }
+        .widget-average { font-size: 2.5em; font-weight: 700; color: var(--primary-color); margin: 10px 0 30px 0; }
+        .widget-trend {
+            display: flex; align-items: center; gap: 5px; font-weight: 600;
+            position: absolute; /* Position at bottom right */
+            bottom: 20px;
+            right: 20px;
+        }
         .widget-trend.up { color: var(--success-color); }
         .widget-trend.down { color: var(--danger-color); }
-        
         .modal-overlay {
             position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(5px); z-index: 1000; display: flex;
@@ -119,15 +91,14 @@
         }
         .modal-overlay.active { opacity: 1; visibility: visible; }
         .modal-content {
-            background-color: var(--background-color); border-radius: 16px;
-            width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto;
+            background-color: var(--background-color); border-radius: 16px; width: 90%;
+            max-width: 800px; max-height: 90vh; overflow-y: auto;
             transform: scale(0.95); transition: transform 0.3s;
         }
         .modal-overlay.active .modal-content { transform: scale(1); }
         .modal-header { padding: 20px 25px; background-color: var(--secondary-color); color: white; border-radius: 16px 16px 0 0; }
         .modal-title { font-family: 'Playfair Display', serif; font-size: 1.8em; margin: 0; }
         .modal-body { padding: 25px; }
-        
         .competency-widgets { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
         .comp-widget {
             flex: 1; min-width: 150px; background-color: var(--widget-background);
@@ -137,7 +108,6 @@
         .comp-widget.active { border-color: var(--primary-color); box-shadow: 0 0 0 2px var(--primary-color); }
         .comp-widget h4 { margin: 0 0 5px 0; font-size: 0.9em; font-weight: 600; }
         .comp-widget .avg { font-size: 1.5em; font-weight: 700; color: var(--primary-color); }
-        
         .calculator-container { background-color: var(--widget-background); border-radius: 8px; padding: 20px; border: 1px solid #e0e6eb; }
         .calculator-container h3 { margin-top: 0; color: var(--secondary-color); }
         .goal-input { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
@@ -146,7 +116,6 @@
         .goal-result.success { background-color: #eafaf1; color: var(--success-color); }
         .goal-result.warning { background-color: #fff9f0; color: var(--warning-color); }
         .goal-result.danger { background-color: #fdf3f2; color: var(--danger-color); }
-
         footer { text-align: center; padding: 25px; font-size: 0.9em; color: var(--footer-grey); border-top: 1px solid #eee; margin-top: 40px; }
     </style>
 </head>
@@ -179,7 +148,6 @@
 
         const widgetGrid = document.getElementById('widget-grid');
         const detailsModal = document.getElementById('details-modal');
-        const modalContent = document.getElementById('modal-content');
 
         function init() {
             mbsData = JSON.parse(localStorage.getItem('mbsData')) || {};
@@ -197,9 +165,7 @@
                 btn.classList.add('active');
                 renderWidgets(btn.dataset.etape);
             }));
-            detailsModal.addEventListener('click', (e) => {
-                if (e.target === detailsModal) closeDetailsModal();
-            });
+            detailsModal.addEventListener('click', e => { if (e.target === detailsModal) closeDetailsModal(); });
         }
 
         function getNumericGrade(result) {
@@ -245,63 +211,54 @@
         function renderWidgets(etapeKey) {
             widgetGrid.innerHTML = '';
             let subjectsToRender = [];
-
             if (etapeKey === 'generale') {
                 const allSubjects = new Map();
                 ['etape1', 'etape2', 'etape3'].forEach(etape => {
                     (mbsData[etape] || []).forEach(subject => {
                         if (!allSubjects.has(subject.code)) {
-                            allSubjects.set(subject.code, { name: subject.name, allCompetencies: [] });
+                            allSubjects.set(subject.code, { name: subject.name, competencies: [] });
                         }
-                        allSubjects.get(subject.code).allCompetencies.push(...subject.competencies);
+                        allSubjects.get(subject.code).competencies.push(...subject.competencies);
                     });
                 });
-                subjectsToRender = Array.from(allSubjects.entries()).map(([code, data]) => {
-                    const subjectData = { code, name: data.name, competencies: data.allCompetencies };
-                    return { ...subjectData, average: calculateSubjectAverage(subjectData) };
-                });
+                subjectsToRender = Array.from(allSubjects.entries()).map(([code, data]) => ({
+                    code, name: data.name, competencies: data.competencies,
+                    average: calculateSubjectAverage({ competencies: data.competencies })
+                }));
             } else {
                 subjectsToRender = (mbsData[etapeKey] || []).map(subject => ({
-                    ...subject,
-                    average: calculateSubjectAverage(subject)
+                    ...subject, average: calculateSubjectAverage(subject)
                 }));
             }
-
             subjectsToRender.forEach(subject => {
                 if (subject.average === null) return;
-                
-                let trend = { direction: 'up', change: 'Nouveau', class: 'up' };
-                if (etapeKey !== 'generale' && mbsData.historique && mbsData.historique[etapeKey]) {
+                let trend = { direction: '▲', change: 'Nouveau', class: 'up' };
+                if (etapeKey !== 'generale' && mbsData.historique?.[etapeKey]?.moyennes?.length > 1) {
                     const moyennes = mbsData.historique[etapeKey].moyennes;
-                    if (moyennes && moyennes.length > 1) {
-                        const change = moyennes[moyennes.length - 1] - moyennes[moyennes.length - 2];
-                        trend.change = `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`;
-                        trend.direction = change < 0 ? '▼' : '▲';
-                        trend.class = change < 0 ? 'down' : 'up';
-                    }
+                    const change = moyennes[moyennes.length - 1] - moyennes[moyennes.length - 2];
+                    trend.change = `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`;
+                    trend.direction = change < 0 ? '▼' : '▲';
+                    trend.class = change < 0 ? 'down' : 'up';
                 }
-                
                 const widget = document.createElement('div');
                 widget.className = 'subject-widget';
                 widget.innerHTML = `
-                    <div class="widget-header">
-                        <h3 class="widget-title">${subject.name}</h3>
-                        <div class="widget-trend ${trend.class}">
-                            <span class="trend-arrow">${trend.direction}</span>
-                            <span>${trend.change}</span>
-                        </div>
-                    </div>
+                    <h3 class="widget-title">${subject.name}</h3>
                     <p class="widget-average">${subject.average.toFixed(2)}%</p>
-                `;
+                    <div class="widget-trend ${trend.class}">
+                        <span class="trend-arrow">${trend.direction}</span>
+                        <span>${trend.change}</span>
+                    </div>`;
                 widget.addEventListener('click', () => openDetailsModal(subject));
                 widgetGrid.appendChild(widget);
             });
-             if (widgetGrid.innerHTML === '') {
-                widgetGrid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Aucune donnée pour cette période.</p>`;
+            if (!widgetGrid.children.length) {
+                widgetGrid.innerHTML = `<p style="grid-column: 1 / -1; text-align:center;">Aucune donnée pour cette période.</p>`;
             }
         }
         
         function openDetailsModal(subject) {
+            const modalContent = document.getElementById('modal-content');
             modalContent.innerHTML = `
                 <div class="modal-header"><h2 class="modal-title">${subject.name} (${subject.code})</h2></div>
                 <div class="modal-body">
@@ -309,14 +266,12 @@
                     <div class="graph-container"><canvas id="assignmentsChart"></canvas></div>
                     <div class="calculator-container"></div>
                 </div>`;
-            
             const competencyContainer = modalContent.querySelector('.competency-widgets');
             const uniqueCompetencies = new Map();
             subject.competencies.forEach(comp => {
                 if (!uniqueCompetencies.has(comp.name)) uniqueCompetencies.set(comp.name, { name: comp.name, assignments: [] });
                 uniqueCompetencies.get(comp.name).assignments.push(...comp.assignments);
             });
-            
             const compsForChart = Array.from(uniqueCompetencies.values());
             compsForChart.forEach((comp, index) => {
                 const compResult = calculateAverage(comp.assignments);
@@ -327,12 +282,10 @@
                 compWidget.innerHTML = `<h4>${comp.name}</h4><div class="avg">${compResult.average.toFixed(1)}%</div>`;
                 competencyContainer.appendChild(compWidget);
             });
-
-            if (compsForChart.length > 0) {
+            if (competencyContainer.children.length > 0) {
                 createOrUpdateChart(compsForChart[0]);
-                competencyContainer.children[0]?.classList.add('active');
+                competencyContainer.children[0].classList.add('active');
             }
-            
             competencyContainer.querySelectorAll('.comp-widget').forEach(widget => {
                 widget.addEventListener('click', () => {
                     competencyContainer.querySelector('.active')?.classList.remove('active');
@@ -340,7 +293,6 @@
                     createOrUpdateChart(compsForChart[widget.dataset.index]);
                 });
             });
-
             setupGoalCalculator(subject, modalContent.querySelector('.calculator-container'));
             detailsModal.classList.add('active');
         }
@@ -360,9 +312,7 @@
                     datasets: [{
                         label: 'Note Obtenue (%)',
                         data: gradedAssignments.map(a => getNumericGrade(a.result)),
-                        backgroundColor: 'rgba(41, 128, 185, 0.6)',
-                        borderColor: 'rgba(41, 128, 185, 1)',
-                        borderWidth: 1
+                        backgroundColor: 'rgba(41, 128, 185, 0.6)'
                     }]
                 },
                 options: { scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } }
@@ -371,65 +321,53 @@
         
         function setupGoalCalculator(subject, container) {
             let pointsEarned = 0;
-            let completedWeight = 0;
-            let futureWeight = 0;
-            let totalWeight = 0;
-
+            let completedPonderation = 0;
+            let futurePonderation = 0;
+            let totalPonderation = 0;
             subject.competencies.forEach(comp => {
                 comp.assignments.forEach(assign => {
-                    const weight = parseFloat(assign.pond);
-                    if (isNaN(weight) || weight <= 0) return;
-                    
-                    totalWeight += weight;
+                    const ponderation = parseFloat(assign.pond);
+                    if (isNaN(ponderation) || ponderation <= 0) return;
+                    totalPonderation += ponderation;
                     const grade = getNumericGrade(assign.result);
-
                     if (grade !== null) {
-                        pointsEarned += (grade / 100) * weight;
-                        completedWeight += weight;
+                        pointsEarned += (grade / 100) * ponderation;
+                        completedPonderation += ponderation;
                     } else {
-                        futureWeight += weight;
+                        futurePonderation += ponderation;
                     }
                 });
             });
-
-            if (totalWeight <= 0) {
-                container.innerHTML = '<h3>Planificateur d\'Objectifs</h3><p>Aucun travail avec une pondération n\'a été trouvé pour cette matière.</p>';
+            if (totalPonderation <= 0) {
+                container.innerHTML = '<h3>Planificateur d\'Objectifs</h3><p>Aucun travail avec une pondération valide n\'a été trouvé.</p>';
                 return;
             }
-
-            const currentAverage = completedWeight > 0 ? (pointsEarned / completedWeight) * 100 : 0;
-            
-            if (futureWeight < 0.01) { // Use a small threshold for floating point
-                container.innerHTML = '<h3>Planificateur d\'Objectifs</h3><p>Tous les travaux pour cette matière semblent avoir été notés.</p>';
+            const currentAverage = completedPonderation > 0 ? (pointsEarned / completedPonderation) * 100 : 0;
+            if (futurePonderation < 0.01) {
+                container.innerHTML = '<h3>Planificateur d\'Objectifs</h3><p>Tous les travaux pour cette matière semblent notés.</p>';
                 return;
             }
-
-            const completedPercentage = (completedWeight / totalWeight) * 100;
+            const completedPercentage = (completedPonderation / totalPonderation) * 100;
             container.innerHTML = `
                 <h3>Planificateur d'Objectifs</h3>
-                <p>Moyenne actuelle: <strong>${currentAverage.toFixed(2)}%</strong> (sur <strong>${completedPercentage.toFixed(1)}%</strong> de la matière complétée).</p>
+                <p>Moyenne actuelle : <strong>${currentAverage.toFixed(2)}%</strong> (sur <strong>${completedPercentage.toFixed(1)}%</strong> de la matière complétée).</p>
                 <div class="goal-input">
-                    <label for="goal">Objectif de moyenne finale:</label>
+                    <label for="goal">Objectif final :</label>
                     <input type="number" id="goal-input" min="0" max="100" value="85">%
                 </div>
-                <div id="goal-result" class="goal-result"></div>
-            `;
-            
+                <div id="goal-result" class="goal-result"></div>`;
             const goalInput = container.querySelector('#goal-input');
             const goalResult = container.querySelector('#goal-result');
-            
             function calculate() {
                 const targetAvg = parseFloat(goalInput.value);
                 if (isNaN(targetAvg) || targetAvg < 0 || targetAvg > 100) {
-                    goalResult.innerHTML = 'Veuillez entrer un objectif valide entre 0 et 100.';
+                    goalResult.innerHTML = 'Veuillez entrer un objectif entre 0 et 100.';
                     goalResult.className = 'goal-result danger';
                     return;
                 }
-                
-                const totalPointsNeeded = (targetAvg / 100) * totalWeight;
+                const totalPointsNeeded = (targetAvg / 100) * totalPonderation;
                 const pointsNeededFromFuture = totalPointsNeeded - pointsEarned;
-                const requiredAvgOnFuture = (pointsNeededFromFuture / futureWeight) * 100;
-                
+                const requiredAvgOnFuture = (pointsNeededFromFuture / futurePonderation) * 100;
                 let message, resultClass;
                 if (requiredAvgOnFuture > 100) {
                     message = `Pour atteindre <strong>${targetAvg}%</strong>, il faudrait <strong>${requiredAvgOnFuture.toFixed(1)}%</strong> sur les travaux restants. Cet objectif est impossible.`;
@@ -438,13 +376,12 @@
                     message = `Félicitations ! Vous avez déjà atteint l'objectif de <strong>${targetAvg}%</strong>.`;
                     resultClass = 'success';
                 } else {
-                    message = `Pour atteindre <strong>${targetAvg}%</strong>, vous devez obtenir une moyenne de <strong>${requiredAvgOnFuture.toFixed(1)}%</strong> sur les travaux restants.`;
+                    message = `Pour atteindre <strong>${targetAvg}%</strong>, il vous faut une moyenne de <strong>${requiredAvgOnFuture.toFixed(1)}%</strong> sur les travaux restants.`;
                     resultClass = 'warning';
                 }
                 goalResult.innerHTML = message;
                 goalResult.className = `goal-result ${resultClass}`;
             }
-
             goalInput.addEventListener('input', calculate);
             calculate();
         }
