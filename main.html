@@ -4,77 +4,505 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tableau de Bord - Outil MBS</title>
-    <link rel="stylesheet" href="css/global.css">
-    <link rel="stylesheet" href="css/components.css">
-    <link rel="stylesheet" href="css/pages/main.css">
-    <script src="js/ui/theme.js"></script>
+    <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2980b9; --secondary-color: #2c3e50; --side-panel-color: #ffffff;
+            --widget-darker-color: #f0f4f7; --background-color: #f7f9fb; --widget-background: #ffffff;
+            --text-color: #34495e; --light-grey: #bdc3c7; --footer-grey: #95a5a6;
+            --danger-color: #e74c3c; --shadow-header: 0 2px 4px rgba(0, 0, 0, 0.05);
+            --shadow-widget: 0 8px 15px rgba(0, 0, 0, 0.08);
+        }
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--background-color); color: var(--text-color); }
+        .site-header-container { background-color: var(--widget-background); box-shadow: var(--shadow-header); border-bottom: 1px solid #e0e6eb; padding: 15px 0; position: relative; margin-bottom: 20px; }
+        .site-header { text-align: center; padding: 0; margin: 0; color: var(--secondary-color); font-size: 2.2em; font-weight: 700; font-family: 'Playfair Display', serif; letter-spacing: 0.05em; }
+        .main-container { display: flex; max-width: 1600px; margin: 0 auto; padding: 0 20px; align-items: flex-start; gap: 30px; }
+        .data-section { flex: 3; }
+        .side-panel { flex: 1; position: sticky; top: 20px; background-color: var(--side-panel-color); border-radius: 12px; padding: 25px; box-shadow: var(--shadow-widget); }
+        .moyenne-widgets { display: flex; gap: 15px; margin-bottom: 25px; }
+        .moyenne-widget { flex: 1; background-color: var(--widget-darker-color); border-radius: 10px; padding: 15px; text-align: center; box-shadow: none; border: 1px solid #e0e6eb; }
+        .moyenne-widget h4 { margin: 0 0 8px 0; font-size: 0.85em; color: var(--secondary-color); font-weight: 500; }
+        .moyenne-value { font-size: 2.2em; font-weight: bold; color: var(--primary-color); }
+        .moyenne-value.invalid { color: var(--danger-color); }
+        .control-group { margin-bottom: 20px; }
+        .control-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
+        .control-group select, .control-group .btn { width: 100%; }
+        select { padding: 12px; border-radius: 10px; border: 1px solid #ddd; background-color: white; transition: box-shadow 0.2s, border-color 0.2s; -webkit-appearance: none; appearance: none; background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007AFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat; background-position: right 10px top 50%; background-size: 10px auto; }
+        select:focus { box-shadow: 0 0 0 3px rgba(41, 128, 185, 0.2); border-color: var(--primary-color); outline: none; }
+        .subject-averages { margin-top: 25px; padding-top: 15px; border-top: 1px solid #e0e6eb; }
+        .subject-averages h4 { margin-top: 0; color: var(--secondary-color); font-size: 1.1em; margin-bottom: 15px; }
+        #subject-averages-list { list-style: none; padding: 0; margin: 0; font-size: 0.9em; }
+        #subject-averages-list li { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dotted #e0e0e0; }
+        #subject-averages-list li:last-child { border-bottom: none; }
+        .btn { display: block; width: 100%; padding: 14px; border: none; border-radius: 10px; font-size: 1.05em; font-weight: 600; cursor: pointer; text-decoration: none; color: white; transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+        .btn-control { background-color: var(--primary-color); }
+        .btn-control:hover { background-color: #3498db; }
+        .btn-header-action { position: absolute; top: 50%; right: 25px; transform: translateY(-50%); display: inline-block; width: auto; padding: 12px 20px; font-size: 0.95em; font-weight: 600; background-color: var(--secondary-color); color: white; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: background-color 0.2s, transform 0.1s; }
+        .btn-header-action:hover { background-color: #34495e; transform: translateY(-50%) translateY(-1px); }
+        .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
+        .tab-btn { padding: 12px 20px; cursor: pointer; border: none; background: none; font-size: 1.05em; font-weight: 600; color: var(--light-grey); position: relative; transition: color 0.2s; }
+        .tab-btn:hover { color: var(--secondary-color); }
+        .tab-btn.active { color: var(--primary-color); }
+        .tab-btn.active::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 3px; background-color: var(--primary-color); border-radius: 2px 2px 0 0; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .subject-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 30px; background: var(--widget-background); box-shadow: var(--shadow-widget); border-radius: 12px; overflow: hidden; }
+        .subject-table th, .subject-table td { padding: 14px 18px; text-align: left; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+        .subject-table thead tr:first-child th { padding: 18px 18px; font-size: 1.1em; background-color: var(--secondary-color); color: white; }
+        .subject-table thead tr:nth-child(2) th { background-color: #34495e; color: white; font-size: 14px; }
+        .subject-table tbody tr:hover td { background-color: #f7f9fb; }
+        .subject-table td { font-size: 13px; }
+        .subject-table tr:last-child td { border-bottom: none; }
+        .competency-row td { background-color: #eaf2f8; color: var(--secondary-color); font-weight: bold; font-style: italic; border-bottom: 1px solid #d0e0ee; }
+        .competency-row:hover td { background-color: #eaf2f8; }
+        .no-data { color: var(--light-grey); font-style: italic; }
+        .grade-percentage { font-weight: 700; color: #1e8449; }
+        footer { text-align: center; padding: 20px; font-size: 0.9em; color: var(--footer-grey); border-top: 1px solid #eee; margin-top: 40px; }
+        footer a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
+        .back-arrow { position: absolute; top: 50%; left: 25px; transform: translateY(-50%); font-size: 2.2em; color: var(--secondary-color); text-decoration: none; transition: color 0.2s, transform 0.2s; }
+        .back-arrow:hover { color: var(--primary-color); }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-content { background-color: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); position: relative; max-width: 90%; width: 450px; transform: translateY(-20px); opacity: 0; transition: transform 0.3s, opacity 0.3s; }
+        .modal-overlay.active .modal-content { transform: translateY(0); opacity: 1; }
+        .modal-close { position: absolute; top: 10px; right: 15px; font-size: 2em; cursor: pointer; color: var(--light-grey); line-height: 1; transition: color 0.2s; }
+        .modal-close:hover { color: var(--danger-color); }
+        #unites-list { max-height: 300px; overflow-y: auto; margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; }
+        .unite-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-radius: 6px; }
+        .unite-item:nth-child(even) { background-color: #fcfdfe; }
+        .unite-item label { flex: 1; font-weight: 500; }
+        .unite-item input, .unite-item span { width: 70px; text-align: center; padding: 6px; border: 1px solid #ddd; border-radius: 6px; }
+        .unite-item span { background-color: var(--widget-darker-color); font-weight: bold; border: none; }
+        .unite-item input:focus { border-color: var(--primary-color); outline: none; }
+        .hidden { display: none !important; }
+        .pond-input-field, .grade-input-field { text-align: center; border-radius: 6px; border: 1px solid #ccc; padding: 6px; transition: border-color 0.2s, box-shadow 0.2s; }
+        .pond-input-field { width: 50px; }
+        .grade-input-field { width: 80px; box-sizing: border-box; }
+        .pond-input-field:focus, .grade-input-field:focus { border-color: var(--primary-color); outline: none; box-shadow: 0 0 0 3px rgba(41, 128, 185, 0.2); }
+        .modified-input { border-color: var(--primary-color) !important; background-color: #eaf2f8; }
+        .grade-display { cursor: pointer; min-height: 30px; display: inline-block; padding: 4px; border-radius: 4px; transition: background-color 0.2s; user-select: none; }
+        .grade-display:hover { background-color: #f0f4f7; }
+        .grade-container { min-height: 30px; }
+    </style>
 </head>
 <body>
-    <div class="dashboard-layout">
-        <main class="main-content">
-            <header class="main-header">
-                <a href="index.html" class="back-link">← Retour</a>
-                <h1 id="user-name-header">Tableau de Bord</h1>
-                <div class="header-actions">
-                    <a href="data.html" class="btn">Mettre à jour</a>
-                    <a href="improve.html" class="btn btn-primary">Analyser</a>
-                </div>
-            </header>
 
-            <nav class="tabs">
+    <div class="site-header-container">
+        <a href="index.html" class="back-arrow" title="Retour à l'accueil">←</a>
+        <header class="site-header">Outil MBS</header>
+        <a href="data.html" class="btn btn-header-action">Mettre à jour les données</a>
+    </div>
+
+    <main class="main-container">
+        <section class="data-section">
+            <div class="tabs">
                 <button class="tab-btn active" data-tab="etape1">Étape 1</button>
                 <button class="tab-btn" data-tab="etape2">Étape 2</button>
                 <button class="tab-btn" data-tab="etape3">Étape 3</button>
-            </nav>
-
+            </div>
             <div id="tab-contents">
-                <div id="etape1" class="tab-content active"></div>
+                <div id="etape1" class="tab-content active"><p class="no-data">Chargement...</p></div>
                 <div id="etape2" class="tab-content"></div>
                 <div id="etape3" class="tab-content"></div>
             </div>
-        </main>
+        </section>
 
         <aside class="side-panel">
-            <h2>Synthèse</h2>
-            <div class="stats-card">
-                <div class="stat-item">
-                    <span class="label">Moyenne Générale</span>
-                    <span id="moyenne-generale" class="value loading">--%</span>
-                </div>
-                <div class="stat-item">
-                    <span class="label">Moyenne de l'Étape</span>
-                    <span id="moyenne-etape" class="value loading">--%</span>
-                </div>
+            <div class="moyenne-widgets">
+                <div class="moyenne-widget"><h4>Moyenne générale</h4><div id="moyenne-generale" class="moyenne-value">--</div></div>
+                <div class="moyenne-widget"><h4>Moyenne de l'étape</h4><div id="moyenne-etape" class="moyenne-value">--</div></div>
             </div>
-
-            <div class="settings-card">
-                <h3>Paramètres</h3>
-                <div class="setting-item">
-                    <label for="niveau-secondaire">Niveau</label>
-                    <select id="niveau-secondaire">
-                        <option value="">Sélectionner...</option>
-                        <option value="sec4">Secondaire 4</option>
-                        <option value="sec5">Secondaire 5</option>
-                    </select>
-                </div>
+            <div class="control-group">
+                <label for="niveau-secondaire">Niveau Secondaire</label>
+                <select id="niveau-secondaire"><option value="">-- Sélectionner --</option><option value="sec4">Secondaire 4</option><option value="sec5">Secondaire 5</option></select>
             </div>
+            <div class="control-group"><button id="unites-btn" class="btn btn-control">Configurer les Unités</button></div>
             
-            <h3>Moyennes par Matière</h3>
-            <ul id="subject-averages-list" class="subject-list">
-                <!-- Dynamically populated -->
-            </ul>
+            <div class="subject-averages">
+                <h4>Moyennes par matière</h4>
+                <ul id="subject-averages-list"><li class="no-data">Aucune donnée</li></ul>
+            </div>
         </aside>
+    </main>
+
+    <div class="modal-overlay" id="unites-modal">
+        <div class="modal-content">
+            <span class="modal-close" id="close-unites-modal">&times;</span>
+            <h3>Configuration des Unités</h3>
+            <div class="control-group">
+                <label for="unites-mode">Mode de calcul</label>
+                <select id="unites-mode"><option value="defaut">Unités par défaut</option><option value="sans">Sans unités (moyenne simple)</option><option value="perso">Personnalisé</option></select>
+            </div>
+            <div id="unites-list"></div>
+        </div>
     </div>
 
-    <footer class="global-footer">
-        <span>Outil MBS v2.0</span>
-        <a href="ticket.html" class="footer-link">Signaler un problème</a>
-        <div class="theme-switcher">
-            <label for="theme-toggle">Mode Sombre</label>
-            <input type="checkbox" id="theme-toggle" class="toggle-switch">
-        </div>
+    <footer>
+        <a href="ticket.html">Signaler un problème</a>
     </footer>
-    
-    <script type="module" src="js/pages/main.js"></script>
+
+    <script>
+        // --- CONSTANTS AND GLOBAL VARIABLES ---
+        const gradeMap = { 'A+': {min: 100, max: 100}, 'A': {min: 95, max: 95}, 'A-': {min: 90, max: 90}, 'B+': {min: 85, max: 85}, 'B': {min: 80, max: 80}, 'B-': {min: 75, max: 75}, 'C+': {min: 70, max: 70}, 'C': {min: 65, max: 65}, 'C-': {min: 60, max: 60}, 'D+': {min: 55, max: 55}, 'D': {min: 50, max: 50}, 'E': {min: 45, max: 45} };
+        const defaultUnits = { sec4: { 'ART': 2, 'MUS': 2, 'DRM': 2, 'FRA': 6, 'ELA': 4, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 6, 'ST': 4, 'STE': 4, 'HQC': 4, 'CCQ': 2, 'EPS': 2, 'ENT': 2, 'INF': 2, 'PSY': 2, }, sec5: { 'ART': 2, 'MUS': 2, 'DRM': 2, 'CAT': 4, 'FRA': 6, 'ELA': 6, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 4, 'MED': 4, 'PSY': 4, 'ENT': 4, 'FIN': 4, 'CHI': 4, 'PHY': 4, 'MON': 2, 'HQC': 4, 'CCQ': 2, 'EPS': 2, 'FIN': 2 } };
+        const subjectList = { 'ART': "Arts Plastiques", 'MUS': "Musique", 'DRM': "Art Dramatique", 'CAT': "Conception et Application Technologique", 'FRA': "Français", 'ELA': "English Language Arts", 'EESL': "Enriched English", 'ESL': "English Second Language", 'SN': "Math SN", 'CST': "Math CST", 'ST': "Science et Technologie", 'STE': "Science et Tech. Env.", 'HQC': "Histoire", 'CCQ': "Culture et Citoyenneté", 'EPS': "Éducation Physique", 'CHI': "Chimie", 'PHY': "Physique", 'MON': "Monde Contemporain", 'MED': "Média", 'ENT': "Entrepreneuriat", 'INF': "Informatique", 'PSY': "Psychologie", 'FIN': "Éducation Financière", };
+        let mbsData, activeTab = 'etape1';
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            mbsData = JSON.parse(localStorage.getItem('mbsData')) || {};
+
+            if (!mbsData.valid || !mbsData.nom) {
+                document.getElementById('tab-contents').innerHTML = `<p class="no-data" style="text-align: center; padding: 40px; font-size: 1.2em;">Aucune donnée trouvée. Veuillez <a href="data.html">ajouter vos données</a> pour commencer.</p>`;
+                return;
+            }
+
+            loadSettings();
+            setupEventListeners();
+            renderAll();
+        });
+        
+        // --- EVENT LISTENERS ---
+        function setupEventListeners() {
+            // Tab navigation
+            document.querySelectorAll('.tab-btn').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelector('.tab-btn.active').classList.remove('active');
+                    tab.classList.add('active');
+                    document.querySelector('.tab-content.active').classList.remove('active');
+                    activeTab = tab.dataset.tab;
+                    document.getElementById(activeTab).classList.add('active');
+                    renderSidePanel();
+                });
+            });
+
+            // Secondary level change
+            document.getElementById('niveau-secondaire').addEventListener('change', (e) => {
+                mbsData.settings.niveau = e.target.value;
+                localStorage.setItem('mbsData', JSON.stringify(mbsData));
+                renderAll();
+            });
+
+            // Units Modal
+            const unitesModal = document.getElementById('unites-modal');
+            document.getElementById('unites-btn').addEventListener('click', () => { populateUnitesModal(); unitesModal.classList.add('active'); });
+            document.getElementById('close-unites-modal').addEventListener('click', () => { saveCustomUnits(); unitesModal.classList.remove('active'); renderAll(); });
+            unitesModal.addEventListener('click', (e) => { if (e.target === unitesModal) { saveCustomUnits(); unitesModal.classList.remove('active'); renderAll(); } });
+            document.getElementById('unites-mode').addEventListener('change', (e) => { mbsData.settings.unitesMode = e.target.value; localStorage.setItem('mbsData', JSON.stringify(mbsData)); populateUnitesModal(); });
+            
+            // Dynamic Input Logic for Grades and Ponderations
+            const tabContents = document.getElementById('tab-contents');
+            tabContents.addEventListener('input', (e) => {
+                const target = e.target;
+                if (target.classList.contains('pond-input-field')) {
+                    target.classList.toggle('modified-input', target.value !== target.defaultValue);
+                    renderSidePanel();
+                }
+                if (target.classList.contains('grade-input-field')) {
+                    target.classList.add('modified-input');
+                    renderSidePanel();
+                }
+            });
+            tabContents.addEventListener('click', (e) => {
+                const gradeDisplay = e.target.closest('.grade-display');
+                if (gradeDisplay) {
+                    const container = gradeDisplay.closest('.grade-container');
+                    const inputField = container.querySelector('.grade-input-field');
+                    const originalResult = container.dataset.originalResult;
+                    const numericGrade = getNumericGrade(originalResult);
+                    gradeDisplay.classList.add('hidden');
+                    inputField.classList.remove('hidden');
+                    inputField.value = numericGrade !== null ? numericGrade.toFixed(2) : '';
+                    inputField.focus();
+                    inputField.select();
+                }
+            });
+            tabContents.addEventListener('focusout', (e) => {
+                const inputField = e.target;
+                if (inputField.classList.contains('grade-input-field') && inputField.value.trim() === '') {
+                    const container = inputField.closest('.grade-container');
+                    const displaySpan = container.querySelector('.grade-display');
+                    inputField.classList.add('hidden');
+                    displaySpan.classList.remove('hidden');
+                    inputField.classList.remove('modified-input');
+                    renderSidePanel();
+                }
+            });
+            tabContents.addEventListener('keydown', (e) => {
+                if (e.target.classList.contains('grade-input-field') && (e.key === 'Enter' || e.key === 'Escape')) {
+                    e.preventDefault();
+                    if (e.key === 'Escape') { e.target.value = ''; }
+                    e.target.blur();
+                }
+            });
+        }
+
+        // --- DATA & SETTINGS HANDLING ---
+        function loadSettings() {
+            const settings = mbsData.settings || {};
+            document.getElementById('niveau-secondaire').value = settings.niveau || '';
+            document.getElementById('unites-mode').value = settings.unitesMode || 'defaut';
+        }
+
+        function saveCustomUnits() {
+            if (document.getElementById('unites-mode').value !== 'perso') return;
+            let customUnites = {};
+            document.querySelectorAll('.unite-item input').forEach(input => {
+                customUnites[input.dataset.code] = parseFloat(input.value) || 1;
+            });
+            mbsData.settings.customUnites = customUnites;
+            localStorage.setItem('mbsData', JSON.stringify(mbsData));
+        }
+
+        // --- CALCULATION LOGIC ---
+        function getNumericGrade(result) {
+            if (!result) return null;
+            const trimmedResult = result.trim();
+            if (gradeMap[trimmedResult]) { return (gradeMap[trimmedResult].min + gradeMap[trimmedResult].max) / 2; }
+            const percentageMatch = trimmedResult.match(/(\d+[,.]?\d*)\s*%/);
+            if (percentageMatch) { return parseFloat(percentageMatch[1].replace(',', '.')); }
+            const scoreMatch = trimmedResult.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/);
+            if (scoreMatch) {
+                const score = parseFloat(scoreMatch[1].replace(',', '.'));
+                const maxScore = parseFloat(scoreMatch[2].replace(',', '.'));
+                if (!isNaN(score) && !isNaN(maxScore) && maxScore > 0) { return (score / maxScore) * 100; }
+            }
+            return null;
+        }
+
+        function getUnits() {
+            const settings = mbsData.settings || {};
+            const niveau = settings.niveau;
+            const mode = settings.unitesMode || 'defaut';
+            if (mode === 'sans') return new Proxy({}, { get: () => 1 }); // Always return 1 for any subject
+            if (mode === 'perso') return settings.customUnites || {};
+            if (mode === 'defaut' && niveau && defaultUnits[niveau]) return defaultUnits[niveau];
+            return {};
+        }
+
+        function calculateSubjectAverage(subject) {
+            let totalWeightedGrade = 0;
+            let totalCompetencyWeight = 0;
+            subject.competencies.forEach((comp, compIndex) => {
+                const compWeightMatch = comp.name.match(/\((\d+)%\)/);
+                if (!compWeightMatch) return;
+                const compWeight = parseFloat(compWeightMatch[1]);
+                let totalAssignmentGrade = 0;
+                let totalAssignmentWeight = 0;
+                comp.assignments.forEach((assign, assignIndex) => {
+                    const uniqueId = `${subject.code}-${compIndex}-${assignIndex}`;
+                    const pondInput = document.querySelector(`.pond-input-field[data-row-id="${uniqueId}"]`);
+                    const gradeInput = document.querySelector(`.grade-input-field[data-row-id="${uniqueId}"]`);
+                    let grade = gradeInput && !gradeInput.classList.contains('hidden') && gradeInput.value.trim() !== '' ? parseFloat(gradeInput.value) : getNumericGrade(assign.result);
+                    let weight = pondInput && pondInput.value.trim() !== '' ? parseFloat(pondInput.value) : parseFloat(assign.pond);
+                    if (grade !== null && !isNaN(grade) && !isNaN(weight) && weight > 0) {
+                        totalAssignmentGrade += grade * weight;
+                        totalAssignmentWeight += weight;
+                    }
+                });
+                if (totalAssignmentWeight > 0) {
+                    const competencyAverage = totalAssignmentGrade / totalAssignmentWeight;
+                    totalWeightedGrade += competencyAverage * compWeight;
+                    totalCompetencyWeight += compWeight;
+                }
+            });
+            return totalCompetencyWeight > 0 ? totalWeightedGrade / totalCompetencyWeight : null;
+        }
+
+        function calculateAverages() {
+            const units = getUnits();
+            const settings = mbsData.settings || {};
+            const niveau = settings.niveau;
+            
+            let termAverages = {};
+            let subjectAverages = {};
+            
+            ['etape1', 'etape2', 'etape3'].forEach(etape => {
+                if (!mbsData[etape]) return;
+                let termWeightedSum = 0;
+                let termUnitSum = 0;
+                subjectAverages[etape] = {};
+                
+                mbsData[etape].forEach(subject => {
+                    const average = calculateSubjectAverage(subject);
+                    const codePrefix = subject.code.substring(0, 3);
+                    subjectAverages[etape][codePrefix] = { name: subjectList[codePrefix] || subject.name, average: average };
+                    
+                    if (average !== null && niveau) {
+                        const unit = units[codePrefix] ?? 2; // Default to 2 units if not found
+                        termWeightedSum += average * unit;
+                        termUnitSum += unit;
+                    }
+                });
+                termAverages[etape] = termUnitSum > 0 ? termWeightedSum / termUnitSum : null;
+            });
+            
+            const globalAverage = calculateGlobalAverage(termAverages);
+
+            return { subjectAverages, termAverages, globalAverage };
+        }
+
+        function calculateGlobalAverage(termAverages) {
+            const weights = { etape1: 0.2, etape2: 0.2, etape3: 0.6 };
+            let totalWeightedSum = 0;
+            let totalWeightUsed = 0;
+
+            for (const etape in termAverages) {
+                if (termAverages[etape] !== null) {
+                    totalWeightedSum += termAverages[etape] * weights[etape];
+                    totalWeightUsed += weights[etape];
+                }
+            }
+
+            if (totalWeightUsed === 0) return null;
+            // Normalize the average based on the weights of available terms
+            return totalWeightedSum / totalWeightUsed;
+        }
+
+        // --- RENDERING LOGIC ---
+        function renderAll() {
+            renderTermTables();
+            renderSidePanel();
+        }
+
+        function renderTermTables() {
+            renderTermData(mbsData.etape1, document.getElementById('etape1'));
+            renderTermData(mbsData.etape2, document.getElementById('etape2'));
+            renderTermData(mbsData.etape3, document.getElementById('etape3'));
+        }
+
+        function renderSidePanel() {
+            const averages = calculateAverages();
+            const niveau = (mbsData.settings || {}).niveau;
+            
+            const globalAvgEl = document.getElementById('moyenne-generale');
+            const termAvgEl = document.getElementById('moyenne-etape');
+            
+            globalAvgEl.classList.toggle('invalid', !niveau);
+            termAvgEl.classList.toggle('invalid', !niveau);
+            
+            const formatAvg = (avg) => avg !== null ? `<span class="grade-percentage">${avg.toFixed(2)}%</span>` : '--';
+            
+            globalAvgEl.innerHTML = !niveau ? 'N/A' : formatAvg(averages.globalAverage);
+            termAvgEl.innerHTML = !niveau ? 'N/A' : formatAvg(averages.termAverages[activeTab]);
+
+            const subjectListEl = document.getElementById('subject-averages-list');
+            subjectListEl.innerHTML = '';
+            const activeTermSubjects = averages.subjectAverages[activeTab];
+            if (activeTermSubjects && Object.keys(activeTermSubjects).length > 0) {
+                Object.entries(activeTermSubjects).forEach(([code, subj]) => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<span>${subj.name}</span><strong>${formatAvg(subj.average)}</strong>`;
+                    subjectListEl.appendChild(li);
+                });
+            } else {
+                subjectListEl.innerHTML = '<li class="no-data">Aucune matière pour cette étape</li>';
+            }
+        }
+
+        function populateUnitesModal() {
+            const listContainer = document.getElementById('unites-list');
+            const mode = document.getElementById('unites-mode').value;
+            const settings = mbsData.settings || {};
+            listContainer.innerHTML = '';
+
+            const allSubjects = new Map();
+            ['etape1', 'etape2', 'etape3'].forEach(etape => {
+                if (mbsData[etape]) {
+                    mbsData[etape].forEach(subject => {
+                        const codePrefix = subject.code.substring(0,3);
+                        if (!allSubjects.has(codePrefix)) {
+                            allSubjects.set(codePrefix, subjectList[codePrefix] || subject.name);
+                        }
+                    });
+                }
+            });
+
+            if (allSubjects.size === 0) {
+                listContainer.innerHTML = '<div class="no-data">Aucune matière trouvée.</div>';
+                return;
+            }
+
+            const units = getUnits();
+            allSubjects.forEach((name, code) => {
+                const item = document.createElement('div');
+                item.className = 'unite-item';
+                let valueDisplay = '';
+                if (mode === 'perso') {
+                    const currentValue = (settings.customUnites || {})[code] || 2;
+                    valueDisplay = `<input type="number" data-code="${code}" value="${currentValue}" min="0" step="1">`;
+                } else {
+                    let unitValue = (mode === 'sans') ? 1 : (units[code] ?? 2);
+                    valueDisplay = `<span>${unitValue}</span>`;
+                }
+                item.innerHTML = `<label>${name} (${code})</label>${valueDisplay}`;
+                listContainer.appendChild(item);
+            });
+        }
+
+        function renderTermData(termData, container) {
+            container.innerHTML = '';
+            if (!termData || termData.length === 0) {
+                container.innerHTML = '<p class="no-data" style="padding: 20px;">Aucune donnée pour cette étape.</p>';
+                return;
+            }
+            termData.forEach(subject => container.appendChild(renderSubjectTable(subject)));
+        }
+
+        function renderSubjectTable(subject) {
+            const table = document.createElement('table');
+            table.className = 'subject-table';
+            table.innerHTML = `<thead><tr><th colspan="7">${subject.code} - ${subject.name}</th></tr><tr><th>Catégorie</th><th>Travail</th><th>Pond.</th><th>Date assignée</th><th>Date due</th><th>Résultat</th></tr></thead><tbody></tbody>`;
+            const tbody = table.querySelector('tbody');
+
+            subject.competencies.forEach((comp, compIndex) => {
+                const compRow = document.createElement('tr');
+                compRow.className = 'competency-row';
+                compRow.innerHTML = `<td colspan="7">${comp.name}</td>`;
+                tbody.appendChild(compRow);
+
+                comp.assignments.forEach((assign, assignIndex) => {
+                    const assignRow = document.createElement('tr');
+                    const uniqueId = `${subject.code}-${compIndex}-${assignIndex}`;
+                    const numGrade = getNumericGrade(assign.result);
+                    let formattedResult = '<span class="no-data">-</span>';
+
+                    if (assign.result) {
+                        const trimmedResult = assign.result.trim();
+                        const isLetterGrade = !!gradeMap[trimmedResult];
+                        const scoreMatch = trimmedResult.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/);
+                        if (isLetterGrade && numGrade !== null) {
+                            formattedResult = `${trimmedResult} <i>(~<span class="grade-percentage">${numGrade.toFixed(1)}%</span>)</i>`;
+                        } else if (scoreMatch && numGrade !== null) {
+                            formattedResult = `<span style="color: grey; font-size: 0.9em;">(${scoreMatch[0]})</span> <span class="grade-percentage">${numGrade.toFixed(1)}%</span>`;
+                        } else if (trimmedResult.includes('%')) {
+                            formattedResult = `<span class="grade-percentage">${trimmedResult}</span>`;
+                        } else {
+                            formattedResult = trimmedResult;
+                        }
+                    }
+                    
+                    const pondValue = assign.pond ? `value="${assign.pond}"` : '';
+                    assignRow.innerHTML = `
+                        <td>${assign.category || '<span class="no-data">-</span>'}</td>
+                        <td>${assign.work || '<span class="no-data">-</span>'}</td>
+                        <td><input type="number" class="pond-input-field" ${pondValue} data-row-id="${uniqueId}" min="0" max="100" placeholder="--" value="${assign.pond || ''}"></td>
+                        <td>${assign.assignedDate || '<span class="no-data">-</span>'}</td>
+                        <td>${(assign.dueDate || '').replace('à','')}</td>
+                        <td>
+                            <div class="grade-container" data-row-id="${uniqueId}" data-original-result="${assign.result || ''}">
+                                <span class="grade-display">${formattedResult}</span>
+                                <input type="number" class="grade-input-field hidden" data-row-id="${uniqueId}" min="0" max="100" step="0.01">
+                            </div>
+                        </td>`;
+                    tbody.appendChild(assignRow);
+                });
+            });
+            return table;
+        }
+
+    </script>
 </body>
 </html>
