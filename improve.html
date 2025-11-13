@@ -6,17 +6,18 @@
     <title>Analyse de Performance - Outil MBS</title>
     <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js library for graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --primary-color: #2980b9; --secondary-color: #2c3e50; --background-color: #f7f9fb;
             --widget-background: #ffffff; --text-color: #34495e; --light-grey: #bdc3c7;
             --footer-grey: #7f8c8d; --success-color: #27ae60; --danger-color: #e74c3c;
-            --shadow-header: 0 2px 4px rgba(0, 0, 0, 0.05);
-            --shadow-widget: 0 8px 15px rgba(0, 0, 0, 0.08);
+            --shadow-header: 0 2px 4px rgba(0, 0, 0, 0.05); --shadow-widget: 0 8px 15px rgba(0, 0, 0, 0.08);
         }
         body {
             margin: 0;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Inter', sans-serif;
             background-color: var(--background-color);
             color: var(--text-color);
         }
@@ -25,125 +26,124 @@
             border-bottom: 1px solid #e0e6eb; padding: 15px 25px; display: flex;
             align-items: center; justify-content: space-between; position: relative;
         }
+        .header-left { display: flex; align-items: center; }
         .header-center { position: absolute; left: 50%; transform: translateX(-50%); }
-        .site-header {
-            padding: 0; margin: 0; color: var(--secondary-color);
-            font-size: 2.2em; font-weight: 700; font-family: 'Playfair Display', serif;
-        }
-        .nav-arrow { font-size: 2em; color: var(--secondary-color); text-decoration: none; transition: color 0.2s; }
-        .nav-arrow:hover { color: var(--primary-color); }
+        .header-right { display: flex; gap: 15px; }
+        .site-header { padding: 0; margin: 0; color: var(--secondary-color); font-size: 2.2em; font-weight: 700; font-family: 'Playfair Display', serif; }
+        .nav-arrow { font-size: 2em; color: var(--secondary-color); text-decoration: none; transition: color 0.2s, transform 0.2s; }
+        .nav-arrow:hover { color: var(--primary-color); transform: scale(1.05); }
         .btn {
-            display: inline-block; padding: 12px 20px; border: none; border-radius: 8px;
-            font-size: 0.95em; font-weight: 600; cursor: pointer; text-decoration: none;
-            color: white; transition: background-color 0.2s, transform 0.1s; text-align: center;
+            display: inline-block; padding: 12px 20px; border: none; border-radius: 8px; font-size: 0.95em;
+            font-weight: 600; cursor: pointer; text-decoration: none; color: white;
+            transition: all 0.2s; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
         .btn-primary { background-color: var(--primary-color); }
         .btn-secondary { background-color: var(--secondary-color); }
-        .main-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .main-container { max-width: 1400px; margin: 0 auto; padding: 20px; }
         .filter-bar {
-            position: sticky; top: 0; background-color: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(10px); z-index: 10; padding: 15px; margin: -20px -20px 20px -20px;
-            display: flex; justify-content: center; gap: 10px; border-bottom: 1px solid #e0e6eb;
+            position: sticky; top: 0; z-index: 100; background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            padding: 15px; margin: -20px -20px 20px -20px; display: flex; justify-content: center;
+            gap: 15px; border-bottom: 1px solid #e0e6eb;
         }
         .filter-btn {
-            padding: 10px 20px; font-size: 1em; font-weight: 600; border-radius: 8px;
-            border: 1px solid transparent; background-color: #eaf2f8; color: var(--secondary-color);
-            cursor: pointer; transition: all 0.2s;
+            padding: 10px 20px; font-size: 1em; font-weight: 600; border: 2px solid transparent;
+            background-color: #eaf2f8; color: var(--secondary-color); border-radius: 20px; cursor: pointer;
+            transition: all 0.2s;
         }
         .filter-btn:hover { background-color: #d1e3f3; }
-        .filter-btn.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
+        .filter-btn.active { background-color: var(--primary-color); color: white; border-color: #226ba0; }
         #performance-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
         }
         .subject-card {
-            background: var(--widget-background); border-radius: 12px;
+            background-color: var(--widget-background); border-radius: 12px;
             box-shadow: var(--shadow-widget); padding: 20px;
-            cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer; transition: all 0.3s ease-in-out;
         }
-        .subject-card:hover { transform: translateY(-3px); box-shadow: 0 12px 20px rgba(0,0,0,0.1); }
-        .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
-        .card-title { font-size: 1.2em; font-weight: 600; margin: 0; }
-        .card-average { font-size: 2em; font-weight: 700; color: var(--primary-color); }
-        .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; font-size: 0.9em; }
-        .trend-indicator { display: flex; align-items: center; font-weight: 600; }
-        .trend-indicator.trend-up { color: var(--success-color); }
-        .trend-indicator.trend-down { color: var(--danger-color); }
-        .trend-indicator.trend-none { color: var(--light-grey); }
-        .competency-details { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-in-out; margin-top: 0; }
-        .subject-card.expanded .competency-details { max-height: 500px; margin-top: 20px; }
-        .competency-row { display: flex; justify-content: space-between; padding: 8px 0; border-top: 1px solid #f0f0f0; }
+        .subject-card:hover { transform: translateY(-5px); box-shadow: 0 12px 20px rgba(0,0,0,0.1); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; }
+        .card-title { font-size: 1.2em; font-weight: 600; color: var(--secondary-color); margin: 0; }
+        .card-main-avg { font-size: 2.5em; font-weight: 700; color: var(--primary-color); }
+        .trend-indicator { display: flex; align-items: center; gap: 8px; text-align: right; }
+        .trend-arrow { font-size: 1.8em; }
+        .trend-arrow.up { color: var(--success-color); }
+        .trend-arrow.down { color: var(--danger-color); }
+        .trend-change { font-size: 0.9em; font-weight: 600; }
+        .expanded-content {
+            max-height: 0; overflow: hidden;
+            transition: max-height 0.5s ease-in-out, margin-top 0.5s ease-in-out;
+        }
+        .subject-card.expanded {
+            grid-column: 1 / -1; /* Make card span full width */
+            cursor: default;
+        }
+        .subject-card.expanded .expanded-content {
+            max-height: 1000px; /* Large value to allow content to expand */
+            margin-top: 25px;
+        }
+        .competency-grid { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; }
+        .competency-card {
+            flex-grow: 1; padding: 15px; border-radius: 8px; background-color: #f7f9fb;
+            border: 1px solid #e0e6eb; text-align: center; transition: all 0.2s;
+        }
+        .competency-card:hover { border-color: var(--primary-color); background-color: #eaf2f8; }
+        .competency-card h5 { margin: 0 0 5px; font-size: 0.9em; color: var(--secondary-color); }
+        .competency-card .avg-value { font-size: 1.5em; font-weight: 600; color: var(--primary-color); }
+        .graph-container { height: 280px; padding: 10px; border: 1px solid #e0e6eb; border-radius: 8px; }
         footer { text-align: center; padding: 25px; font-size: 0.9em; color: var(--footer-grey); border-top: 1px solid #eee; margin-top: 40px; }
-        footer a { color: var(--primary-color); text-decoration: none; }
-        /* Modal Styles */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s; }
+        footer a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
+        .planner-section { text-align: center; margin: 40px 0; padding: 30px; background: white; border-radius: 12px; box-shadow: var(--shadow-widget); }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s; }
         .modal-overlay.active { opacity: 1; visibility: visible; }
-        .modal-content { background-color: white; padding: 30px; border-radius: 12px; width: 100%; max-width: 550px; }
+        .modal-content { background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
         .modal-close { position: absolute; top: 10px; right: 15px; font-size: 2em; cursor: pointer; color: var(--light-grey); }
-        #goal-planner-modal .control-group { margin-bottom: 15px; }
-        #goal-planner-modal select, #goal-planner-modal input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
-        #future-assignments-list { max-height: 150px; overflow-y: auto; }
-        .future-assignment-row { display: flex; gap: 10px; margin-bottom: 10px; }
-        .future-assignment-row input:first-child { flex: 3; }
-        .future-assignment-row input:last-child { flex: 1; }
-        .projection-result { background-color: #eaf2f8; padding: 20px; margin-top: 20px; border-radius: 8px; text-align: center; }
-        .projection-result p { margin: 0; }
-        .projection-result .final-grade { font-size: 2.5em; font-weight: 700; color: var(--primary-color); }
+        #projection-result { font-size: 1.8em; font-weight: 700; color: var(--primary-color); background: #f0f4f7; padding: 15px; border-radius: 8px; margin-top: 20px; }
     </style>
 </head>
 <body>
 
     <header class="site-header-container">
-        <a href="index.html" class="nav-arrow" title="Retour à l'accueil">←</a>
-        <div class="header-center"><h1 class="site-header">Analyse de Performance</h1></div>
-        <div>
-            <a href="main.html" class="btn btn-secondary">Tableau de bord</a>
-            <a href="data.html" class="btn btn-primary">Mettre à jour les données</a>
+        <div class="header-left">
+            <a href="index.html" class="nav-arrow" title="Retour à l'accueil">←</a>
+        </div>
+        <div class="header-center">
+            <h1 class="site-header">Analyse de Performance</h1>
+        </div>
+        <div class="header-right">
+            <a href="data.html" class="btn btn-secondary">Mettre à jour les données</a>
+            <a href="main.html" class="btn btn-primary">Voir le tableau de bord</a>
         </div>
     </header>
 
     <main class="main-container">
         <div class="filter-bar">
-            <button class="filter-btn active" data-view="generale">Générale</button>
-            <button class="filter-btn" data-view="etape1">Étape 1</button>
-            <button class="filter-btn" data-view="etape2">Étape 2</button>
-            <button class="filter-btn" data-view="etape3">Étape 3</button>
+            <button class="filter-btn active" data-filter="generale">Générale</button>
+            <button class="filter-btn" data-filter="etape1">Étape 1</button>
+            <button class="filter-btn" data-filter="etape2">Étape 2</button>
+            <button class="filter-btn" data-filter="etape3">Étape 3</button>
         </div>
 
         <div id="performance-grid">
-            <!-- Subject cards will be dynamically inserted here -->
+            <!-- Subject cards will be injected here by JavaScript -->
         </div>
+
+        <section class="planner-section">
+            <h2 style="font-family: 'Playfair Display', serif;">Besoin d'un plan ?</h2>
+            <p>Calculez la note que vous devez obtenir pour atteindre votre objectif de moyenne.</p>
+            <button id="open-planner-btn" class="btn btn-primary" style="margin-top: 15px;">Ouvrir le Planificateur d'Objectifs</button>
+        </section>
     </main>
-    
-    <div class="modal-overlay" id="goal-planner-modal">
+
+    <div class="modal-overlay" id="planner-modal">
         <div class="modal-content">
-            <span class="modal-close">&times;</span>
-            <h3 style="font-family: 'Playfair Display', serif; font-size: 1.8em;">Planificateur d'Objectifs</h3>
-            <div class="control-group">
-                <label for="goal-subject-select">Choisir une matière :</label>
-                <select id="goal-subject-select"></select>
-            </div>
-            
-            <div id="planner-details" class="hidden">
-                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-                <p>Moyenne actuelle : <strong id="current-subject-avg">--%</strong></p>
-                
-                <div class="control-group">
-                    <label>Ajouter des travaux futurs :</label>
-                    <div id="future-assignments-list"></div>
-                    <button id="add-assignment-btn" class="btn btn-secondary" style="width: auto; padding: 8px 15px; margin-top: 10px;">+ Ajouter un travail</button>
-                </div>
-
-                <div class="control-group">
-                    <label for="target-grade-input">Note moyenne visée pour ces travaux (%) :</label>
-                    <input type="number" id="target-grade-input" min="0" max="100" value="85">
-                </div>
-
-                <div class="projection-result">
-                    <p>Moyenne finale projetée</p>
-                    <p class="final-grade" id="projected-final-grade">--%</p>
-                </div>
+            <span class="modal-close" id="close-planner-btn">&times;</span>
+            <h2 style="font-family: 'Playfair Display', serif;">Planificateur d'Objectifs</h2>
+            <div id="planner-content">
+                <!-- Planner content will be injected here -->
             </div>
         </div>
     </div>
@@ -154,5 +154,6 @@
     </footer>
 
     <script src="js/improve-functions.js"></script>
+
 </body>
 </html>
