@@ -28,6 +28,7 @@
             background-color: var(--background-color);
             color: var(--text-color);
         }
+        /* Fixed Header to match main.html */
         .site-header-container {
             background-color: var(--widget-background);
             box-shadow: var(--shadow-header);
@@ -50,6 +51,7 @@
             transition: color 0.2s, transform 0.2s;
         }
         .nav-arrow:hover { color: var(--primary-color); transform: translateY(-50%) scale(1.05); }
+
         .sticky-tabs {
             position: sticky; top: 0; background-color: var(--background-color);
             z-index: 100; padding: 15px 0; border-bottom: 1px solid #e0e6eb;
@@ -62,6 +64,7 @@
         }
         .tab-btn:hover { background-color: #eaf2f8; }
         .tab-btn.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
+
         .widget-grid {
             max-width: 1400px; margin: 30px auto; padding: 0 20px;
             display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px;
@@ -70,19 +73,22 @@
             background-color: var(--widget-background); border-radius: 12px;
             box-shadow: var(--shadow-widget); padding: 20px;
             cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
-            position: relative; /* Anchor for trend arrow */
+            position: relative; min-height: 120px;
         }
         .subject-widget:hover { transform: translateY(-5px); box-shadow: 0 12px 20px rgba(0,0,0,0.1); }
         .widget-title { font-size: 1.2em; font-weight: 700; color: var(--secondary-color); margin: 0; }
-        .widget-average { font-size: 2.5em; font-weight: 700; color: var(--primary-color); margin: 10px 0 30px 0; }
+        .widget-average { font-size: 2.5em; font-weight: 700; color: var(--primary-color); margin: 10px 0 0 0; }
+        
+        /* Positioned Trend Arrow at Bottom Right */
         .widget-trend {
-            display: flex; align-items: center; gap: 5px; font-weight: 600;
-            position: absolute; /* Position at bottom right */
+            position: absolute;
             bottom: 20px;
             right: 20px;
+            display: flex; align-items: center; gap: 5px; font-weight: 600; font-size: 1.1em;
         }
         .widget-trend.up { color: var(--success-color); }
         .widget-trend.down { color: var(--danger-color); }
+
         .modal-overlay {
             position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(5px); z-index: 1000; display: flex;
@@ -99,6 +105,7 @@
         .modal-header { padding: 20px 25px; background-color: var(--secondary-color); color: white; border-radius: 16px 16px 0 0; }
         .modal-title { font-family: 'Playfair Display', serif; font-size: 1.8em; margin: 0; }
         .modal-body { padding: 25px; }
+
         .competency-widgets { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
         .comp-widget {
             flex: 1; min-width: 150px; background-color: var(--widget-background);
@@ -108,6 +115,7 @@
         .comp-widget.active { border-color: var(--primary-color); box-shadow: 0 0 0 2px var(--primary-color); }
         .comp-widget h4 { margin: 0 0 5px 0; font-size: 0.9em; font-weight: 600; }
         .comp-widget .avg { font-size: 1.5em; font-weight: 700; color: var(--primary-color); }
+
         .calculator-container { background-color: var(--widget-background); border-radius: 8px; padding: 20px; border: 1px solid #e0e6eb; }
         .calculator-container h3 { margin-top: 0; color: var(--secondary-color); }
         .goal-input { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
@@ -116,6 +124,7 @@
         .goal-result.success { background-color: #eafaf1; color: var(--success-color); }
         .goal-result.warning { background-color: #fff9f0; color: var(--warning-color); }
         .goal-result.danger { background-color: #fdf3f2; color: var(--danger-color); }
+
         footer { text-align: center; padding: 25px; font-size: 0.9em; color: var(--footer-grey); border-top: 1px solid #eee; margin-top: 40px; }
     </style>
 </head>
@@ -200,9 +209,11 @@
             let totalWeight = 0;
             subject.competencies.forEach(comp => {
                 const result = calculateAverage(comp.assignments);
-                if (result) {
-                    totalPoints += result.average * result.weight;
-                    totalWeight += result.weight;
+                const compWeightMatch = comp.name.match(/\((\d+)%\)/);
+                if (result && compWeightMatch) {
+                    const compWeight = parseFloat(compWeightMatch[1]);
+                    totalPoints += result.average * compWeight;
+                    totalWeight += compWeight;
                 }
             });
             return totalWeight > 0 ? totalPoints / totalWeight : null;
@@ -232,14 +243,23 @@
             }
             subjectsToRender.forEach(subject => {
                 if (subject.average === null) return;
+                
+                // Trend logic
                 let trend = { direction: '▲', change: 'Nouveau', class: 'up' };
                 if (etapeKey !== 'generale' && mbsData.historique?.[etapeKey]?.moyennes?.length > 1) {
                     const moyennes = mbsData.historique[etapeKey].moyennes;
                     const change = moyennes[moyennes.length - 1] - moyennes[moyennes.length - 2];
-                    trend.change = `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`;
-                    trend.direction = change < 0 ? '▼' : '▲';
-                    trend.class = change < 0 ? 'down' : 'up';
+                    // If change is 0 (stable), keep green and up, or change text to "="
+                    if (Math.abs(change) < 0.01) {
+                        trend.change = "=";
+                        trend.direction = "";
+                    } else {
+                        trend.change = `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`;
+                        trend.direction = change < 0 ? '▼' : '▲';
+                        trend.class = change < 0 ? 'down' : 'up';
+                    }
                 }
+                
                 const widget = document.createElement('div');
                 widget.className = 'subject-widget';
                 widget.innerHTML = `
@@ -282,9 +302,9 @@
                 compWidget.innerHTML = `<h4>${comp.name}</h4><div class="avg">${compResult.average.toFixed(1)}%</div>`;
                 competencyContainer.appendChild(compWidget);
             });
-            if (competencyContainer.children.length > 0) {
+            if (compsForChart.length > 0) {
                 createOrUpdateChart(compsForChart[0]);
-                competencyContainer.children[0].classList.add('active');
+                competencyContainer.children[0]?.classList.add('active');
             }
             competencyContainer.querySelectorAll('.comp-widget').forEach(widget => {
                 widget.addEventListener('click', () => {
@@ -319,45 +339,88 @@
             });
         }
         
+        // --- CORRECTED GOAL CALCULATOR ---
         function setupGoalCalculator(subject, container) {
-            let pointsEarned = 0;
-            let completedPonderation = 0;
-            let futurePonderation = 0;
-            let totalPonderation = 0;
+            let pointsLockedIn = 0;  // Points already secured towards final 100%
+            let weightLockedIn = 0;  // Percentage of final grade already decided
+            let weightAvailable = 0; // Percentage of final grade still up for grabs (future)
+
+            // 1. Iterate through each competency to build the totals
             subject.competencies.forEach(comp => {
+                const compWeightMatch = comp.name.match(/\((\d+)%\)/);
+                if (!compWeightMatch) return;
+                const compWeight = parseFloat(compWeightMatch[1]); // e.g., 40 for 40%
+
+                let totalPondInComp = 0;
+                let gradedPondInComp = 0;
+                let weightedGradeSum = 0;
+
+                // Calculate sum of pond for this specific competency
                 comp.assignments.forEach(assign => {
-                    const ponderation = parseFloat(assign.pond);
-                    if (isNaN(ponderation) || ponderation <= 0) return;
-                    totalPonderation += ponderation;
-                    const grade = getNumericGrade(assign.result);
-                    if (grade !== null) {
-                        pointsEarned += (grade / 100) * ponderation;
-                        completedPonderation += ponderation;
-                    } else {
-                        futurePonderation += ponderation;
-                    }
+                    const w = parseFloat(assign.pond);
+                    if(!isNaN(w) && w > 0) totalPondInComp += w;
                 });
+
+                if (totalPondInComp === 0) {
+                    // No assignments at all in this comp yet -> It's all future weight
+                    weightAvailable += compWeight;
+                } else {
+                    // We have assignments. Calculate how much is graded vs future
+                    let futurePondInComp = 0;
+
+                    comp.assignments.forEach(assign => {
+                        const w = parseFloat(assign.pond);
+                        if(isNaN(w) || w <= 0) return;
+                        
+                        const grade = getNumericGrade(assign.result);
+                        if (grade !== null) {
+                            // Graded assignment
+                            // Contribution = (Grade% * (AssPond / TotalPond)) * CompWeight
+                            const assignContribution = (grade / 100) * (w / totalPondInComp) * compWeight;
+                            pointsLockedIn += assignContribution;
+                            
+                            const assignWeightInFinal = (w / totalPondInComp) * compWeight;
+                            weightLockedIn += assignWeightInFinal;
+                        } else {
+                            // Future assignment
+                            const assignWeightInFinal = (w / totalPondInComp) * compWeight;
+                            weightAvailable += assignWeightInFinal;
+                        }
+                    });
+                }
             });
-            if (totalPonderation <= 0) {
-                container.innerHTML = '<h3>Planificateur d\'Objectifs</h3><p>Aucun travail avec une pondération valide n\'a été trouvé.</p>';
+
+            // Edge case: No weights found
+            if (weightLockedIn === 0 && weightAvailable === 0) {
+                container.innerHTML = '<h3>Planificateur d\'Objectifs</h3><p>Impossible de calculer : aucune pondération trouvée.</p>';
                 return;
             }
-            const currentAverage = completedPonderation > 0 ? (pointsEarned / completedPonderation) * 100 : 0;
-            if (futurePonderation < 0.01) {
-                container.innerHTML = '<h3>Planificateur d\'Objectifs</h3><p>Tous les travaux pour cette matière semblent notés.</p>';
+
+            // Calculate Current Average (Performance on work done so far)
+            const currentAverage = weightLockedIn > 0 ? (pointsLockedIn / weightLockedIn) * 100 : 0;
+
+            // Check if there is any future work
+            if (weightAvailable < 0.01) {
+                container.innerHTML = `
+                    <h3>Planificateur d'Objectifs</h3>
+                    <p>Moyenne actuelle : <strong>${currentAverage.toFixed(2)}%</strong>.</p>
+                    <p>Tous les travaux pour cette matière semblent avoir été notés.</p>`;
                 return;
             }
-            const completedPercentage = (completedPonderation / totalPonderation) * 100;
+
             container.innerHTML = `
                 <h3>Planificateur d'Objectifs</h3>
-                <p>Moyenne actuelle : <strong>${currentAverage.toFixed(2)}%</strong> (sur <strong>${completedPercentage.toFixed(1)}%</strong> de la matière complétée).</p>
+                <p>Moyenne actuelle : <strong>${currentAverage.toFixed(2)}%</strong> (sur <strong>${weightLockedIn.toFixed(1)}%</strong> de la note finale).</p>
+                <p style="font-size:0.9em; color:#7f8c8d;">Il reste <strong>${weightAvailable.toFixed(1)}%</strong> de la note à déterminer.</p>
                 <div class="goal-input">
                     <label for="goal">Objectif final :</label>
                     <input type="number" id="goal-input" min="0" max="100" value="85">%
                 </div>
                 <div id="goal-result" class="goal-result"></div>`;
+            
             const goalInput = container.querySelector('#goal-input');
             const goalResult = container.querySelector('#goal-result');
+            
             function calculate() {
                 const targetAvg = parseFloat(goalInput.value);
                 if (isNaN(targetAvg) || targetAvg < 0 || targetAvg > 100) {
@@ -365,18 +428,26 @@
                     goalResult.className = 'goal-result danger';
                     return;
                 }
-                const totalPointsNeeded = (targetAvg / 100) * totalPonderation;
-                const pointsNeededFromFuture = totalPointsNeeded - pointsEarned;
-                const requiredAvgOnFuture = (pointsNeededFromFuture / futurePonderation) * 100;
+
+                // Math:
+                // TargetPoints = 85 (if goal is 85%)
+                // We have PointsLockedIn.
+                // PointsNeeded = TargetPoints - PointsLockedIn.
+                // We must get PointsNeeded using the WeightAvailable.
+                // RequiredGrade% = (PointsNeeded / WeightAvailable) * 100.
+
+                const pointsNeeded = targetAvg - pointsLockedIn;
+                const requiredAvgOnFuture = (pointsNeeded / weightAvailable) * 100;
+                
                 let message, resultClass;
                 if (requiredAvgOnFuture > 100) {
-                    message = `Pour atteindre <strong>${targetAvg}%</strong>, il faudrait <strong>${requiredAvgOnFuture.toFixed(1)}%</strong> sur les travaux restants. Cet objectif est impossible.`;
+                    message = `Impossible. Même avec 100% partout, vous finiriez à ${(pointsLockedIn + weightAvailable).toFixed(1)}%. (Besoin de ${requiredAvgOnFuture.toFixed(1)}%)`;
                     resultClass = 'danger';
                 } else if (requiredAvgOnFuture < 0) {
-                    message = `Félicitations ! Vous avez déjà atteint l'objectif de <strong>${targetAvg}%</strong>.`;
+                    message = `Objectif déjà sécurisé ! Même avec 0% à la suite, vous aurez ${(pointsLockedIn).toFixed(1)}%.`;
                     resultClass = 'success';
                 } else {
-                    message = `Pour atteindre <strong>${targetAvg}%</strong>, il vous faut une moyenne de <strong>${requiredAvgOnFuture.toFixed(1)}%</strong> sur les travaux restants.`;
+                    message = `Pour finir à <strong>${targetAvg}%</strong>, il vous faut une moyenne de <strong>${requiredAvgOnFuture.toFixed(1)}%</strong> sur les travaux restants.`;
                     resultClass = 'warning';
                 }
                 goalResult.innerHTML = message;
