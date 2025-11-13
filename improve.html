@@ -6,135 +6,145 @@
     <title>Analyse de Performance - Outil MBS</title>
     <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js library for graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --primary-color: #2980b9; --secondary-color: #2c3e50; --background-color: #f4f7f9;
+            --primary-color: #2980b9; --secondary-color: #2c3e50; --background-color: #f7f9fb;
             --widget-background: #ffffff; --text-color: #34495e; --light-grey: #bdc3c7;
             --footer-grey: #7f8c8d; --success-color: #27ae60; --danger-color: #e74c3c;
-            --shadow-soft: 0 4px 6px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.08);
-            --shadow-lifted: 0 10px 15px rgba(0,0,0,0.06), 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-header: 0 2px 4px rgba(0, 0, 0, 0.05); --shadow-widget: 0 8px 15px rgba(0, 0, 0, 0.08);
         }
-        *, *::before, *::after { box-sizing: border-box; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        body { margin: 0; font-family: 'Inter', sans-serif; background-color: var(--background-color); color: var(--text-color); }
+        body {
+            margin: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background-color); color: var(--text-color);
+        }
         .site-header-container {
-            background-color: var(--widget-background); box-shadow: var(--shadow-soft);
-            padding: 15px 25px; display: flex; align-items: center; position: relative;
+            background-color: var(--widget-background); box-shadow: var(--shadow-header);
+            border-bottom: 1px solid #e0e6eb; padding: 15px 25px; display: flex;
+            align-items: center; position: relative;
         }
-        .header-left { flex: 1; }
-        .header-center { flex: 2; text-align: center; }
-        .header-right { flex: 1; display: flex; justify-content: flex-end; }
-        .site-header { margin: 0; color: var(--secondary-color); font-size: 2.2em; font-family: 'Playfair Display', serif; }
-        .nav-arrow { font-size: 2em; color: var(--secondary-color); text-decoration: none; transition: all 0.2s; cursor: pointer; }
-        .nav-arrow:hover { color: var(--primary-color); transform: scale(1.05); }
-        .main-container { max-width: 1200px; margin: 0 auto; padding: 20px; animation: fadeIn 0.5s ease-out; }
-        .page-header { margin-bottom: 30px; }
-        .breadcrumb-nav { font-size: 1.1em; font-weight: 500; color: var(--light-grey); margin-bottom: 10px; }
-        .breadcrumb-nav a { color: var(--primary-color); text-decoration: none; }
-        .page-title { font-family: 'Playfair Display', serif; font-size: 2.5em; margin: 0; }
-        .controls-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 40px; }
-        select { padding: 10px 15px; border-radius: 8px; border: 1px solid #ddd; font-size: 1em; background-color: white; }
-        /* View transition styles */
-        .view { transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out; }
-        .view.hidden { opacity: 0; pointer-events: none; transform: scale(0.98); position: absolute; }
-        .widgets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
-        .subject-widget {
-            background: linear-gradient(145deg, #ffffff, #f5f7f9); border-radius: 12px;
-            padding: 20px; box-shadow: var(--shadow-soft); cursor: pointer;
+        .site-header {
+            margin: 0 auto; color: var(--secondary-color); font-size: 2.2em;
+            font-weight: 700; font-family: 'Playfair Display', serif;
+        }
+        .nav-arrow {
+            position: absolute; left: 25px; top: 50%; transform: translateY(-50%);
+            font-size: 2em; color: var(--secondary-color); text-decoration: none;
+            transition: color 0.2s, transform 0.2s;
+        }
+        .nav-arrow:hover { color: var(--primary-color); transform: translateY(-50%) scale(1.05); }
+        .filter-bar {
+            position: sticky; top: 0; background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px); z-index: 100; padding: 15px 20px;
+            display: flex; justify-content: center; gap: 10px;
+            border-bottom: 1px solid #e0e6eb; margin-bottom: 30px;
+        }
+        .filter-btn {
+            padding: 10px 20px; border: 1px solid var(--light-grey); border-radius: 20px;
+            background: none; font-size: 1em; font-weight: 600; color: var(--text-color);
+            cursor: pointer; transition: all 0.2s;
+        }
+        .filter-btn:hover { background-color: #eaf2f8; border-color: var(--primary-color); }
+        .filter-btn.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
+        .main-container { max-width: 1400px; margin: 0 auto; padding: 0 20px; }
+        .performance-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+        }
+        .performance-card {
+            background-color: var(--widget-background); border-radius: 12px;
+            box-shadow: var(--shadow-widget); padding: 20px; cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
         }
-        .subject-widget:hover { transform: translateY(-5px); box-shadow: var(--shadow-lifted); }
-        .widget-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-        .widget-title { font-size: 1.2em; font-weight: 600; margin: 0; }
-        .widget-average { font-size: 2.5em; font-weight: 700; color: var(--primary-color); }
-        .widget-trend { display: flex; align-items: center; gap: 5px; font-weight: 600; }
+        .performance-card:hover { transform: translateY(-3px); box-shadow: 0 12px 20px rgba(0,0,0,0.1); }
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .card-header h3 { margin: 0; font-size: 1.2em; }
+        .card-average { font-size: 2.5em; font-weight: 700; color: var(--primary-color); text-align: right; }
+        .trend-indicator { display: flex; align-items: center; gap: 5px; font-weight: 600; font-size: 0.9em; }
         .trend-up { color: var(--success-color); }
         .trend-down { color: var(--danger-color); }
-        /* Expanded View */
-        .category-widgets-container { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 30px; }
-        .category-widget {
-            background-color: #fff; border: 2px solid transparent; border-radius: 30px;
-            padding: 12px 20px; text-align: center; cursor: pointer; transition: all 0.2s;
-            box-shadow: var(--shadow-soft);
+        .arrow { font-size: 1.2em; }
+        .card-expanded-content {
+            max-height: 0; overflow: hidden;
+            transition: max-height 0.5s ease-in-out, margin-top 0.5s ease-in-out;
         }
-        .category-widget.active, .category-widget:hover { background-color: var(--primary-color); color: white; border-color: var(--primary-color); transform: translateY(-2px); }
-        .category-widget h4 { margin: 0; font-weight: 500; font-size: 0.9em; }
-        .graph-container { background-color: var(--widget-background); padding: 20px; border-radius: 12px; box-shadow: var(--shadow-soft); }
-        /* Goal Planner */
-        .planner-section { margin-top: 60px; padding-top: 40px; border-top: 2px solid #e0e6eb; }
-        .planner-card { background-color: var(--widget-background); padding: 30px; border-radius: 12px; box-shadow: var(--shadow-soft); }
-        .planner-controls { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: flex-end; }
-        .planner-controls label { font-weight: 600; display: block; margin-bottom: 5px; }
-        .planner-controls input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 1em; }
-        #goal-result { margin-top: 20px; font-size: 1.2em; font-weight: 600; padding: 15px; border-radius: 8px; text-align: center; }
-        .result-success { background-color: #eafaf1; color: var(--success-color); }
-        .result-warning { background-color: #fff9f0; color: #f39c12; }
-        .result-error { background-color: #fdf3f2; color: var(--danger-color); }
+        .performance-card.expanded .card-expanded-content {
+            max-height: 1000px; /* Large enough to fit content */
+            margin-top: 20px;
+        }
+        .competency-grid {
+            display: flex; flex-wrap: wrap; gap: 10px;
+            border-top: 1px solid #eee; padding-top: 20px;
+        }
+        .competency-widget {
+            flex-grow: 1; background-color: #f7f9fb; padding: 10px 15px;
+            border-radius: 8px; border: 1px solid #e0e6eb;
+            transition: all 0.2s;
+        }
+        .competency-widget:hover { border-color: var(--primary-color); background-color: #eaf2f8; }
+        .competency-widget.active { border-color: var(--primary-color); background-color: #eaf2f8; box-shadow: 0 0 0 2px var(--primary-color); }
+        .competency-widget h4 { margin: 0 0 5px 0; font-size: 0.9em; }
+        .competency-widget .avg { font-size: 1.2em; font-weight: 700; color: var(--primary-color); }
+        .graph-container { margin-top: 20px; }
+        .goal-setter-btn {
+            position: fixed; bottom: 30px; right: 30px; background-color: var(--secondary-color);
+            color: white; border-radius: 50%; width: 60px; height: 60px;
+            border: none; cursor: pointer; box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            font-size: 1.8em; display: flex; justify-content: center; align-items: center;
+            transition: transform 0.2s;
+        }
+        .goal-setter-btn:hover { transform: scale(1.05); }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s; }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-content { background-color: white; padding: 30px; border-radius: 12px; width: 450px; }
+        .modal-close { position: absolute; top: 10px; right: 15px; font-size: 2em; cursor: pointer; color: var(--light-grey); }
+        .control-group { margin-bottom: 20px; }
+        .control-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .control-group select, .control-group input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
+        #goal-result { margin-top: 20px; padding: 15px; border-radius: 8px; font-weight: 600; text-align: center; }
         footer { text-align: center; padding: 25px; font-size: 0.9em; color: var(--footer-grey); border-top: 1px solid #eee; margin-top: 40px; }
         footer a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
-        .btn {
-            display: inline-block; padding: 12px 20px; border-radius: 8px;
-            font-size: 1em; font-weight: 600; cursor: pointer; text-decoration: none;
-            color: white; background-color: var(--primary-color); border: none;
-        }
     </style>
 </head>
 <body>
-
     <header class="site-header-container">
-        <div class="header-left"><a class="nav-arrow" title="Retour">←</a></div>
-        <div class="header-center"><h1 class="site-header">Outil MBS</h1></div>
-        <div class="header-right"></div>
+        <a href="main.html" class="nav-arrow" title="Retour au tableau de bord">←</a>
+        <h1 class="site-header">Analyse de Performance</h1>
     </header>
 
+    <div class="filter-bar">
+        <button class="filter-btn active" data-filter="generale">Générale</button>
+        <button class="filter-btn" data-filter="etape1">Étape 1</button>
+        <button class="filter-btn" data-filter="etape2">Étape 2</button>
+        <button class="filter-btn" data-filter="etape3">Étape 3</button>
+    </div>
+
     <main class="main-container">
-        <div class="page-header">
-            <nav id="breadcrumb-nav"></nav>
-            <h2 id="page-title" class="page-title">Analyse de la Performance</h2>
+        <div id="performance-grid" class="performance-grid">
+            <!-- Subject cards will be injected here by JavaScript -->
         </div>
-        
-        <div id="grid-view-controls" class="controls-bar">
-            <label for="etape-selector" style="font-weight: 600;">Afficher les données pour :</label>
-            <select id="etape-selector">
-                <option value="etape1">Étape 1</option>
-                <option value="etape2">Étape 2</option>
-                <option value="etape3">Étape 3</option>
-            </select>
-        </div>
-
-        <!-- Main widgets grid -->
-        <div id="widgets-grid" class="widgets-grid view">
-            <!-- Subject widgets will be injected here -->
-        </div>
-
-        <!-- Expanded view for a single subject -->
-        <div id="expanded-view" class="view hidden">
-            <div id="category-widgets-container" class="category-widgets-container"></div>
-            <div class="graph-container">
-                <canvas id="grades-chart"></canvas>
-            </div>
-        </div>
-
-        <!-- Goal Planner Section -->
-        <section class="planner-section">
-            <div class="planner-card">
-                <h2 class="page-title" style="font-size: 2em; margin-top: 0; text-align: left;">Planificateur d'Objectifs</h2>
-                <div class="planner-controls">
-                    <div>
-                        <label for="goal-subject-selector">Pour la matière :</label>
-                        <select id="goal-subject-selector"></select>
-                    </div>
-                    <div>
-                        <label for="goal-grade-input">Je vise une moyenne de :</label>
-                        <input type="number" id="goal-grade-input" placeholder="ex: 85" min="0" max="100">
-                    </div>
-                </div>
-                <div id="goal-result" style="display: none;"></div>
-            </div>
-        </section>
     </main>
-    
+
+    <button id="goal-setter-btn" class="goal-setter-btn" title="Planifier un objectif">🎯</button>
+
+    <div class="modal-overlay" id="goal-modal">
+        <div class="modal-content">
+            <span class="modal-close" id="close-goal-modal">&times;</span>
+            <h3 style="font-family: 'Playfair Display', serif;">Planificateur d'Objectif</h3>
+            <div class="control-group">
+                <label for="goal-subject-select">Choisir une matière :</label>
+                <select id="goal-subject-select"></select>
+            </div>
+            <div class="control-group">
+                <label for="goal-target-input">Moyenne finale désirée (%) :</label>
+                <input type="number" id="goal-target-input" min="0" max="100" placeholder="Ex: 85">
+            </div>
+            <div id="goal-result"></div>
+        </div>
+    </div>
+
     <footer>
         <p>Outil MBS - Moyenne, Bilan, Stratégie</p>
         <p><a href="ticket.html">Signaler un problème</a></p>
