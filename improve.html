@@ -3,17 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Performance - Outil MBS</title>
+    <title>Analyse de Performance - Outil MBS</title>
     <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Chart.js library for graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --primary-color: #2980b9; --secondary-color: #2c3e50; --background-color: #f7f9fb;
-            --widget-background: #ffffff; --text-color: #34495e; --light-grey: #bdc3c7;
-            --footer-grey: #7f8c8d; --success-color: #27ae60; --danger-color: #e74c3c;
-            --shadow-header: 0 2px 4px rgba(0, 0, 0, 0.05); --shadow-widget: 0 8px 15px rgba(0, 0, 0, 0.08);
+            --primary-color: #2980b9;
+            --secondary-color: #2c3e50;
+            --background-color: #f7f9fb;
+            --widget-background: #ffffff;
+            --text-color: #34495e;
+            --light-grey: #bdc3c7;
+            --footer-grey: #7f8c8d;
+            --success-color: #27ae60;
+            --danger-color: #e74c3c;
+            --shadow-header: 0 2px 4px rgba(0, 0, 0, 0.05);
+            --shadow-widget: 0 8px 15px rgba(0, 0, 0, 0.08);
         }
         body {
             margin: 0;
@@ -22,129 +29,174 @@
             color: var(--text-color);
         }
         .site-header-container {
-            background-color: var(--widget-background); box-shadow: var(--shadow-header);
-            border-bottom: 1px solid #e0e6eb; padding: 15px 25px;
-            display: flex; align-items: center; position: relative;
+            background-color: var(--widget-background);
+            box-shadow: var(--shadow-header);
+            border-bottom: 1px solid #e0e6eb;
+            padding: 15px 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
         }
-        .header-center { position: absolute; left: 50%; transform: translateX(-50%); }
         .site-header {
             padding: 0; margin: 0; color: var(--secondary-color);
             font-size: 2.2em; font-weight: 700; font-family: 'Playfair Display', serif;
         }
         .nav-arrow {
+            position: absolute; left: 25px; top: 50%; transform: translateY(-50%);
             font-size: 2em; color: var(--secondary-color); text-decoration: none;
             transition: color 0.2s, transform 0.2s;
         }
-        .nav-arrow:hover { color: var(--primary-color); transform: scale(1.05); }
+        .nav-arrow:hover { color: var(--primary-color); transform: translateY(-50%) scale(1.05); }
         .filter-bar {
             position: sticky; top: 0; background-color: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(10px); z-index: 100;
-            padding: 15px 20px; box-shadow: var(--shadow-header);
-            display: flex; justify-content: center; gap: 10px; margin-bottom: 30px;
+            backdrop-filter: blur(10px); z-index: 10;
+            padding: 15px 20px; box-shadow: var(--shadow-header); margin-bottom: 30px;
+            display: flex; justify-content: center; gap: 10px;
         }
         .filter-btn {
             padding: 10px 20px; border: 1px solid #ddd; border-radius: 20px;
-            background: none; cursor: pointer; font-weight: 600; font-size: 0.95em;
-            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+            background: none; font-size: 1em; font-weight: 600;
+            cursor: pointer; color: var(--text-color); transition: all 0.2s;
         }
-        .filter-btn:hover { background-color: #f0f4f7; }
+        .filter-btn:hover { background-color: #f0f4f7; border-color: #ccc; }
         .filter-btn.active {
-            background-color: var(--primary-color); color: white;
-            border-color: var(--primary-color);
+            background-color: var(--primary-color); color: white; border-color: var(--primary-color);
         }
-        .main-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
-        .widgets-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        .widget-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 25px;
+            padding: 0 25px;
+            max-width: 1600px;
+            margin: 0 auto;
         }
         .subject-widget {
-            background-color: var(--widget-background); border-radius: 12px;
-            box-shadow: var(--shadow-widget); padding: 20px;
-            cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+            background-color: var(--widget-background);
+            border-radius: 12px;
+            box-shadow: var(--shadow-widget);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            overflow: hidden;
         }
-        .subject-widget:hover { transform: translateY(-3px); box-shadow: 0 12px 20px rgba(0,0,0,0.1); }
-        .widget-header { display: flex; justify-content: space-between; align-items: flex-start; }
-        .widget-title { font-size: 1.2em; font-weight: 600; margin: 0; }
-        .widget-average { font-size: 2.5em; font-weight: 700; margin: 10px 0; color: var(--primary-color); }
-        .trend-indicator {
-            display: flex; align-items: center; gap: 5px; font-weight: 600;
-            font-size: 0.9em; padding: 5px 8px; border-radius: 15px;
+        .subject-widget.active {
+            grid-column: 1 / -1; /* Make the active widget span the full width */
+            cursor: default;
         }
-        .trend-indicator.up { color: var(--success-color); background-color: #eafaf1; }
-        .trend-indicator.down { color: var(--danger-color); background-color: #fdeded; }
-        .widget-details {
-            max-height: 0; overflow: hidden;
-            transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        .widget-main {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
-        .subject-widget.expanded .widget-details { max-height: 1000px; }
-        .competency-widgets { border-top: 1px solid #eee; margin-top: 20px; padding-top: 20px; display: flex; flex-wrap: wrap; gap: 10px; }
+        .widget-info h3 {
+            margin: 0; font-family: 'Playfair Display', serif;
+            font-size: 1.5em; color: var(--secondary-color);
+        }
+        .widget-info p { margin: 5px 0 0; color: #7f8c8d; }
+        .widget-performance { text-align: right; }
+        .widget-average { font-size: 2.2em; font-weight: 700; color: var(--primary-color); }
+        .widget-trend {
+            display: flex; align-items: center; justify-content: flex-end; gap: 5px;
+            font-weight: 600; font-size: 0.9em;
+        }
+        .trend-up { color: var(--success-color); }
+        .trend-down { color: var(--danger-color); }
+        .trend-arrow { width: 16px; height: 16px; }
+
+        /* Expanded View Styles */
+        .expanded-view {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out, opacity 0.5s ease-in-out, padding 0.5s;
+            padding: 0 20px;
+        }
+        .subject-widget.active .expanded-view {
+            max-height: 1000px; /* Large value to allow content to expand */
+            opacity: 1;
+            padding: 10px 20px 20px 20px;
+        }
+        .competencies-grid {
+            display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;
+        }
         .competency-widget {
             flex-grow: 1; background-color: #f0f4f7; border-radius: 8px;
-            padding: 10px; text-align: center; border: 2px solid transparent;
-            transition: border-color 0.2s, background-color 0.2s;
+            padding: 15px; cursor: pointer; border: 2px solid transparent;
+            transition: border-color 0.2s;
         }
-        .competency-widget.active, .competency-widget:hover { border-color: var(--primary-color); background-color: #eaf2f8; }
-        .competency-name { font-size: 0.8em; font-weight: 500; }
-        .competency-average { font-size: 1.2em; font-weight: 700; color: var(--secondary-color); }
-        .chart-container { margin-top: 20px; }
-        .goal-planner {
-            margin-top: 50px; padding: 30px; background-color: var(--widget-background);
-            border-radius: 12px; box-shadow: var(--shadow-widget);
+        .competency-widget.active { border-color: var(--primary-color); }
+        .competency-widget h4 { margin: 0 0 5px; font-size: 0.9em; color: var(--secondary-color); }
+        .competency-widget .average { font-size: 1.5em; font-weight: 600; color: var(--primary-color); }
+        .graph-container { margin-bottom: 20px; }
+        .goal-section {
+            background-color: #eaf2f8; padding: 20px; border-radius: 8px; text-align: center;
         }
-        .goal-planner h2 { font-family: 'Playfair Display', serif; margin-top: 0; }
-        .planner-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: center; }
-        .planner-input select, .planner-input input {
-            width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box;
+        .btn {
+            display: inline-block; padding: 10px 20px; border: none; border-radius: 8px;
+            font-size: 0.95em; font-weight: 600; cursor: pointer; text-decoration: none;
+            color: white; background-color: var(--primary-color); transition: background-color 0.2s;
         }
+        
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.7); display: flex;
+            justify-content: center; align-items: center; z-index: 1000;
+            opacity: 0; visibility: hidden; transition: opacity 0.3s;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-content {
+            background-color: white; padding: 30px; border-radius: 12px;
+            width: 100%; max-width: 500px; position: relative;
+        }
+        .modal-close { position: absolute; top: 10px; right: 15px; font-size: 2em; cursor: pointer; color: var(--light-grey); }
         #goal-result {
             margin-top: 20px; padding: 15px; border-radius: 8px; text-align: center;
-            font-size: 1.1em; font-weight: 600; background-color: #eaf2f8; color: var(--primary-color);
+            font-size: 1.1em; font-weight: 600;
         }
-        footer { text-align: center; padding: 25px; font-size: 0.9em; color: var(--footer-grey); margin-top: 40px; }
+        #goal-result.success { background-color: #eafaf1; color: #239254; }
+        #goal-result.warning { background-color: #fff9f0; color: #d68910; }
+        #goal-result.error { background-color: #fdeded; color: #c43d39; }
+
+        footer { text-align: center; padding: 25px; font-size: 0.9em; color: var(--footer-grey); border-top: 1px solid #eee; margin-top: 40px; }
+        footer a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
     </style>
 </head>
 <body>
+
     <header class="site-header-container">
         <a href="main.html" class="nav-arrow" title="Retour au tableau de bord">←</a>
-        <div class="header-center">
-            <h1 class="site-header">Analyse de Performance</h1>
-        </div>
+        <h1 class="site-header">Analyse de Performance</h1>
     </header>
 
     <div class="filter-bar">
-        <button class="filter-btn active" data-etape="generale">Générale</button>
-        <button class="filter-btn" data-etape="etape1">Étape 1</button>
-        <button class="filter-btn" data-etape="etape2">Étape 2</button>
-        <button class="filter-btn" data-etape="etape3">Étape 3</button>
+        <button class="filter-btn active" data-filter="generale">Générale</button>
+        <button class="filter-btn" data-filter="etape1">Étape 1</button>
+        <button class="filter-btn" data-filter="etape2">Étape 2</button>
+        <button class="filter-btn" data-filter="etape3">Étape 3</button>
     </div>
 
-    <main class="main-container">
-        <section id="widgets-container">
-            <div id="widgets-grid" class="widgets-grid">
-                <!-- Subject widgets will be injected here by JavaScript -->
-            </div>
-        </section>
-
-        <section id="goal-planner" class="goal-planner">
-            <h2>Planificateur d'Objectifs</h2>
-            <div class="planner-grid">
-                <div class="planner-input">
-                    <label for="goal-subject">Choisir une matière :</label>
-                    <select id="goal-subject"></select>
-                </div>
-                <div class="planner-input">
-                    <label for="goal-target-grade">Moyenne finale désirée (%) :</label>
-                    <input type="number" id="goal-target-grade" min="0" max="100" placeholder="Ex: 85">
-                </div>
-            </div>
-            <div id="goal-result">
-                Sélectionnez une matière et entrez un objectif pour voir le calcul.
-            </div>
-        </section>
+    <main class="widget-grid" id="widget-grid">
+        <!-- Subject widgets will be dynamically inserted here -->
     </main>
+    
+    <div class="modal-overlay" id="goal-modal">
+        <div class="modal-content">
+            <span class="modal-close" id="close-goal-modal">&times;</span>
+            <h2 id="goal-subject-title" style="font-family: 'Playfair Display', serif; color: var(--secondary-color); margin-top:0;">Définir un objectif</h2>
+            <p>Votre moyenne actuelle est de <strong id="goal-current-avg">--%</strong>.</p>
+            <div style="margin: 20px 0;">
+                <label for="goal-target-input" style="display:block; margin-bottom: 5px; font-weight: 600;">Moyenne finale désirée (%)</label>
+                <input type="number" id="goal-target-input" min="0" max="100" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc;">
+            </div>
+            <div id="goal-result" style="display: none;"></div>
+        </div>
+    </div>
 
     <footer>
         <p>Outil MBS - Moyenne, Bilan, Stratégie</p>
+        <p><a href="ticket.html">Signaler un problème</a></p>
     </footer>
 
     <script>
@@ -152,182 +204,128 @@
             // --- STATE & CONSTANTS ---
             let mbsData = {};
             let activeFilter = 'generale';
-            let activeCharts = {}; // Store active Chart.js instances
+            let chartInstance = null;
+            const gradeMap = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 85, 'B': 80, 'B-': 75, 'C+': 70, 'C': 65, 'C-': 60, 'D+': 55, 'D': 50, 'E': 45 };
+
+            // --- DOM ELEMENTS ---
+            const widgetGrid = document.getElementById('widget-grid');
+            const goalModal = document.getElementById('goal-modal');
+            const goalTargetInput = document.getElementById('goal-target-input');
+            const goalResultEl = document.getElementById('goal-result');
 
             // --- INITIALIZATION ---
             function init() {
                 mbsData = JSON.parse(localStorage.getItem('mbsData')) || {};
-
-                if (!mbsData.valid) {
-                    document.querySelector('.main-container').innerHTML = `<p style="text-align:center;">Aucune donnée à analyser. Veuillez d'abord <a href="data.html">ajouter vos données</a>.</p>`;
+                if (!mbsData.valid || !mbsData.nom) {
+                    widgetGrid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Aucune donnée de performance à analyser. Veuillez <a href="data.html">ajouter vos données</a>.</p>`;
+                    document.querySelector('.filter-bar').style.display = 'none';
                     return;
                 }
-                
+                renderPage();
                 setupEventListeners();
-                renderPage(activeFilter);
             }
 
-            // --- EVENT LISTENERS ---
-            function setupEventListeners() {
-                // Filter bar
-                document.querySelector('.filter-bar').addEventListener('click', (e) => {
-                    if (e.target.matches('.filter-btn')) {
-                        document.querySelector('.filter-btn.active').classList.remove('active');
-                        e.target.classList.add('active');
-                        activeFilter = e.target.dataset.etape;
-                        renderPage(activeFilter);
-                    }
-                });
-
-                // Goal planner
-                document.getElementById('goal-subject').addEventListener('change', calculateGoal);
-                document.getElementById('goal-target-grade').addEventListener('input', calculateGoal);
-
-                // Widget Clicks (Event Delegation)
-                document.getElementById('widgets-grid').addEventListener('click', handleWidgetClick);
-            }
-
-            // --- CORE RENDERING ---
-            function renderPage(etapeKey) {
-                const widgetsGrid = document.getElementById('widgets-grid');
-                widgetsGrid.innerHTML = ''; // Clear previous widgets
-                destroyAllCharts();
-
-                const subjectsToRender = getSubjectsForFilter(etapeKey);
-
+            // --- RENDERING LOGIC ---
+            function renderPage() {
+                widgetGrid.innerHTML = '';
+                const subjectsToRender = getFilteredSubjects();
                 if (subjectsToRender.length === 0) {
-                    widgetsGrid.innerHTML = `<p>Aucune matière à afficher pour cette sélection.</p>`;
-                } else {
-                    subjectsToRender.forEach(subjectData => {
-                        widgetsGrid.appendChild(createSubjectWidget(subjectData));
-                    });
+                     widgetGrid.innerHTML = `<p style="text-align:center; grid-column: 1 / -1;">Aucune donnée pour cette étape.</p>`;
+                     return;
                 }
-                updateGoalPlannerSubjects(etapeKey);
-                calculateGoal(); // Recalculate goal with new subject list
+                subjectsToRender.forEach(({ subject, etapeKey }) => {
+                    const widget = createSubjectWidget(subject, etapeKey);
+                    widgetGrid.appendChild(widget);
+                });
             }
 
-            // --- WIDGET CREATION & INTERACTION ---
-            function createSubjectWidget(subjectData) {
-                const { subject, etapeKey } = subjectData;
+            function createSubjectWidget(subject, etapeKey) {
                 const widget = document.createElement('div');
                 widget.className = 'subject-widget';
-                widget.dataset.etape = etapeKey;
-                widget.dataset.code = subject.code;
+                widget.dataset.subjectCode = subject.code;
+                widget.dataset.etapeKey = etapeKey;
 
                 const average = calculateSubjectAverage(subject);
-                const trend = getTrend(etapeKey, subject.code, average);
-                
+                const trend = getTrend(subject.code, etapeKey);
+
                 widget.innerHTML = `
-                    <div class="widget-header">
-                        <div>
-                            <h3 class="widget-title">${subject.name}</h3>
-                            <p class="widget-average">${average !== null ? average.toFixed(2) + '%' : 'N/A'}</p>
+                    <div class="widget-main">
+                        <div class="widget-info">
+                            <h3>${subject.name}</h3>
+                            <p>${etapeKey.replace('etape', 'Étape ')}</p>
                         </div>
-                        <div class="trend-indicator ${trend.direction}">
-                            <span>${trend.arrow}</span>
-                            <span>${trend.change}</span>
+                        <div class="widget-performance">
+                            <div class="widget-average">${average !== null ? average.toFixed(2) + '%' : '--'}</div>
+                            <div class="widget-trend ${trend.class}">
+                                ${trend.arrow}
+                                <span>${trend.change}</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="widget-details">
-                        <!-- Competency widgets and chart will be injected here -->
-                    </div>
+                    <div class="expanded-view"></div>
                 `;
                 return widget;
             }
-
-            function handleWidgetClick(e) {
-                const widget = e.target.closest('.subject-widget');
-                if (!widget) return;
-
-                // Handle sub-widget clicks for chart update
-                const competencyWidget = e.target.closest('.competency-widget');
-                if (competencyWidget) {
-                    if (widget.querySelector('.competency-widget.active')) {
-                        widget.querySelector('.competency-widget.active').classList.remove('active');
-                    }
-                    competencyWidget.classList.add('active');
-                    const compIndex = parseInt(competencyWidget.dataset.index);
-                    const subject = findSubject(widget.dataset.etape, widget.dataset.code);
-                    createOrUpdateChart(widget, subject.competencies[compIndex]);
-                    return;
-                }
-
-                // Handle main widget expansion/collapse
-                const isExpanded = widget.classList.toggle('expanded');
-                if (isExpanded) {
-                    expandWidget(widget);
-                } else {
-                    collapseWidget(widget);
-                }
-            }
-
-            function expandWidget(widget) {
-                const detailsContainer = widget.querySelector('.widget-details');
-                const subject = findSubject(widget.dataset.etape, widget.dataset.code);
-                if (!subject) return;
-
-                // Create competency widgets
-                const competencyContainer = document.createElement('div');
-                competencyContainer.className = 'competency-widgets';
-                subject.competencies.forEach((comp, index) => {
-                    const compAvg = calculateCompetencyAverage(comp);
-                    const compWidget = document.createElement('div');
-                    compWidget.className = 'competency-widget';
-                    compWidget.dataset.index = index;
-                    compWidget.innerHTML = `
-                        <div class="competency-name">${comp.name.replace('Compétence - ', '')}</div>
-                        <div class="competency-average">${compAvg !== null ? compAvg.toFixed(1) + '%' : 'N/A'}</div>
-                    `;
-                    competencyContainer.appendChild(compWidget);
-                });
-                detailsContainer.appendChild(competencyContainer);
-
-                // Create chart container and canvas
-                const chartContainer = document.createElement('div');
-                chartContainer.className = 'chart-container';
-                const canvas = document.createElement('canvas');
-                chartContainer.appendChild(canvas);
-                detailsContainer.appendChild(chartContainer);
-
-                // Highlight first competency and create initial chart
-                if (competencyContainer.firstChild) {
-                    competencyContainer.firstChild.classList.add('active');
-                    createOrUpdateChart(widget, subject.competencies[0]);
-                }
-            }
             
-            function collapseWidget(widget) {
-                const detailsContainer = widget.querySelector('.widget-details');
-                destroyChart(widget);
-                detailsContainer.innerHTML = '';
+            function renderExpandedView(widget, subject, etapeKey) {
+                const expandedContainer = widget.querySelector('.expanded-view');
+                if (expandedContainer.innerHTML !== '') return; // Already rendered
+
+                const competencies = subject.competencies;
+                let competenciesHTML = '<div class="competencies-grid">';
+                competencies.forEach((comp, index) => {
+                    const compAvg = calculateCompetencyAverage(comp);
+                    competenciesHTML += `
+                        <div class="competency-widget" data-comp-index="${index}">
+                            <h4>${comp.name.replace('Compétence - ', '')}</h4>
+                            <div class="average">${compAvg !== null ? compAvg.toFixed(1) + '%' : '--'}</div>
+                        </div>
+                    `;
+                });
+                competenciesHTML += '</div>';
+
+                expandedContainer.innerHTML = `
+                    ${competenciesHTML}
+                    <div class="graph-container"><canvas></canvas></div>
+                    <div class="goal-section">
+                        <h4>Besoin d'améliorer cette matière ?</h4>
+                        <p>Calculez la note moyenne nécessaire pour atteindre votre objectif.</p>
+                        <button class="btn btn-goal">Définir un objectif</button>
+                    </div>
+                `;
+                
+                // Set first competency as active and render chart
+                const firstCompetencyWidget = expandedContainer.querySelector('.competency-widget');
+                if (firstCompetencyWidget) {
+                    firstCompetencyWidget.classList.add('active');
+                    const canvas = expandedContainer.querySelector('canvas');
+                    createOrUpdateChart(canvas, competencies[0]);
+                }
             }
 
             // --- CHART LOGIC ---
-            function createOrUpdateChart(widget, competencyData) {
-                const canvas = widget.querySelector('canvas');
-                if (!canvas) return;
-                
-                const gradedAssignments = competencyData.assignments.filter(a => getNumericGrade(a.result) !== null);
+            function createOrUpdateChart(canvas, competency) {
+                if (chartInstance) {
+                    chartInstance.destroy();
+                }
 
-                const chartData = {
-                    labels: gradedAssignments.map(a => a.work.replace('<br>', ' ')),
-                    datasets: [{
-                        label: 'Note (%)',
-                        data: gradedAssignments.map(a => getNumericGrade(a.result)),
-                        backgroundColor: 'rgba(41, 128, 185, 0.6)',
-                        borderColor: 'rgba(41, 128, 185, 1)',
-                        borderWidth: 1,
-                        borderRadius: 4,
-                    }]
-                };
+                const gradedAssignments = competency.assignments.filter(a => getNumericGrade(a.result) !== null);
+                const labels = gradedAssignments.map(a => a.work.replace('<br>', ' ') || 'Travail');
+                const data = gradedAssignments.map(a => getNumericGrade(a.result));
 
-                // Destroy existing chart for this widget if it exists
-                destroyChart(widget);
-
-                // Create new chart
-                activeCharts[widget.dataset.code] = new Chart(canvas, {
+                chartInstance = new Chart(canvas, {
                     type: 'bar',
-                    data: chartData,
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Note (%)',
+                            data: data,
+                            backgroundColor: 'rgba(41, 128, 185, 0.6)',
+                            borderColor: 'rgba(41, 128, 185, 1)',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
                     options: {
                         scales: { y: { beginAtZero: true, max: 100 } },
                         plugins: { legend: { display: false } },
@@ -337,48 +335,32 @@
                 });
             }
 
-            function destroyChart(widget) {
-                const chartInstance = activeCharts[widget.dataset.code];
-                if (chartInstance) {
-                    chartInstance.destroy();
-                    delete activeCharts[widget.dataset.code];
-                }
-            }
-            
-            function destroyAllCharts() {
-                Object.values(activeCharts).forEach(chart => chart.destroy());
-                activeCharts = {};
-            }
-
-            // --- GOAL PLANNER LOGIC ---
-            function updateGoalPlannerSubjects(etapeKey) {
-                const select = document.getElementById('goal-subject');
-                select.innerHTML = '<option value="">-- Choisir une matière --</option>';
-                const subjects = getSubjectsForFilter(etapeKey);
-
-                subjects.forEach(({ subject, etapeKey }) => {
-                    const option = document.createElement('option');
-                    option.value = `${etapeKey}|${subject.code}`;
-                    option.textContent = `${subject.name} (${etapeKey.replace('etape', 'Étape ')}`;
-                    select.appendChild(option);
-                });
+            // --- GOAL CALCULATOR LOGIC ---
+            function openGoalModal(subject) {
+                const currentAvg = calculateSubjectAverage(subject);
+                document.getElementById('goal-subject-title').textContent = `Objectif pour ${subject.name}`;
+                document.getElementById('goal-current-avg').textContent = `${currentAvg.toFixed(2)}%`;
+                
+                goalTargetInput.value = '';
+                goalResultEl.style.display = 'none';
+                goalModal.dataset.subjectCode = subject.code; // Store for calculation
+                goalModal.classList.add('active');
             }
 
             function calculateGoal() {
-                const select = document.getElementById('goal-subject');
-                const targetGradeInput = document.getElementById('goal-target-grade');
-                const resultDiv = document.getElementById('goal-result');
+                const subjectCode = goalModal.dataset.subjectCode;
+                const subject = findSubjectByCode(subjectCode);
+                if (!subject) return;
 
-                if (!select.value || !targetGradeInput.value) {
-                    resultDiv.textContent = 'Sélectionnez une matière et entrez un objectif pour voir le calcul.';
+                const targetAvg = parseFloat(goalTargetInput.value);
+                if (isNaN(targetAvg) || targetAvg < 0 || targetAvg > 100) {
+                    goalResultEl.textContent = "Veuillez entrer un objectif valide (0-100).";
+                    goalResultEl.className = 'error';
+                    goalResultEl.style.display = 'block';
                     return;
                 }
 
-                const [etapeKey, subjectCode] = select.value.split('|');
-                const subject = findSubject(etapeKey, subjectCode);
-                const targetAvg = parseFloat(targetGradeInput.value);
-
-                let currentTotalWeight = 0;
+                let totalGradedWeight = 0;
                 let weightedSum = 0;
 
                 subject.competencies.forEach(comp => {
@@ -386,43 +368,37 @@
                         const grade = getNumericGrade(assign.result);
                         const weight = parseFloat(assign.pond);
                         if (grade !== null && !isNaN(weight) && weight > 0) {
+                            totalGradedWeight += weight;
                             weightedSum += grade * weight;
-                            currentTotalWeight += weight;
                         }
                     });
                 });
                 
-                const currentAvg = (currentTotalWeight > 0) ? weightedSum / currentTotalWeight : 0;
-                
-                // Assuming max weight is 100 for a subject's term grade
-                const remainingWeight = 100 - currentTotalWeight;
+                const totalWeight = subject.competencies.reduce((sum, comp) => sum + parseFloat(comp.name.match(/\((\d+)%\)/)?.[1] || 0), 0);
+                const remainingWeight = totalWeight - totalGradedWeight;
 
                 if (remainingWeight <= 0) {
-                    resultDiv.textContent = `Félicitations, tous les travaux pour cette matière sont complétés ! Votre moyenne est de ${currentAvg.toFixed(2)}%.`;
-                    return;
-                }
-                
-                const neededGrade = ( (targetAvg * 100) - (currentAvg * currentTotalWeight) ) / remainingWeight;
-
-                if (neededGrade > 100) {
-                    resultDiv.style.backgroundColor = '#fdeded';
-                    resultDiv.style.color = 'var(--danger-color)';
-                    resultDiv.textContent = `Pour atteindre ${targetAvg}%, il vous faudrait une moyenne de ${neededGrade.toFixed(2)}% sur les travaux restants, ce qui est impossible.`;
-                } else if (neededGrade < 0) {
-                     resultDiv.style.backgroundColor = '#eafaf1';
-                    resultDiv.style.color = 'var(--success-color)';
-                    resultDiv.textContent = `Excellent ! Vous avez déjà dépassé votre objectif de ${targetAvg}%. Continuez comme ça !`;
+                    goalResultEl.textContent = "Tous les travaux pour cette matière ont déjà été notés.";
+                    goalResultEl.className = 'warning';
                 } else {
-                    resultDiv.style.backgroundColor = '#eaf2f8';
-                    resultDiv.style.color = 'var(--primary-color)';
-                    resultDiv.textContent = `Pour atteindre ${targetAvg}%, vous devez obtenir une moyenne de ${neededGrade.toFixed(2)}% sur les travaux restants.`;
+                    const neededGrade = ((targetAvg * totalWeight) - weightedSum) / remainingWeight;
+                    if (neededGrade > 100) {
+                        goalResultEl.innerHTML = `Pour atteindre <strong>${targetAvg}%</strong>, il vous faudrait une moyenne de <strong style="color:var(--danger-color);">${neededGrade.toFixed(1)}%</strong> sur les travaux restants.`;
+                        goalResultEl.className = 'error';
+                    } else if (neededGrade < 0) {
+                        goalResultEl.innerHTML = `Félicitations ! Vous avez déjà atteint votre objectif de <strong>${targetAvg}%</strong>.`;
+                         goalResultEl.className = 'success';
+                    } else {
+                        goalResultEl.innerHTML = `Pour atteindre <strong>${targetAvg}%</strong>, il vous faut une moyenne de <strong style="color:var(--success-color);">${neededGrade.toFixed(1)}%</strong> sur les travaux restants.`;
+                        goalResultEl.className = 'success';
+                    }
                 }
+                goalResultEl.style.display = 'block';
             }
 
             // --- DATA HELPERS & CALCULATIONS ---
-            const getNumericGrade = (result) => {
+            function getNumericGrade(result) {
                 if (!result) return null;
-                const gradeMap = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 85, 'B': 80, 'B-': 75, 'C+': 70, 'C': 65, 'C-': 60, 'D+': 55, 'D': 50, 'E': 45 };
                 const trimmed = result.trim();
                 if (gradeMap[trimmed]) return gradeMap[trimmed];
                 const scoreMatch = trimmed.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/);
@@ -432,11 +408,47 @@
                     return max > 0 ? (score / max) * 100 : null;
                 }
                 return null;
-            };
+            }
 
-            const calculateCompetencyAverage = (comp) => {
-                let totalGrade = 0, totalWeight = 0;
-                comp.assignments.forEach(assign => {
+            function getFilteredSubjects() {
+                let subjects = [];
+                const etapes = activeFilter === 'generale' ? ['etape1', 'etape2', 'etape3'] : [activeFilter];
+                etapes.forEach(etapeKey => {
+                    if (mbsData[etapeKey]) {
+                        mbsData[etapeKey].forEach(subject => subjects.push({ subject, etapeKey }));
+                    }
+                });
+                return subjects;
+            }
+            
+            function findSubjectByCode(code) {
+                 for (const etapeKey of ['etape1', 'etape2', 'etape3']) {
+                    if (mbsData[etapeKey]) {
+                        const found = mbsData[etapeKey].find(s => s.code === code);
+                        if (found) return found;
+                    }
+                }
+                return null;
+            }
+
+            function calculateSubjectAverage(subject) {
+                let totalWeightedGrade = 0;
+                let totalCompetencyWeight = 0;
+                subject.competencies.forEach(comp => {
+                    const compAvg = calculateCompetencyAverage(comp);
+                    const compWeight = parseFloat(comp.name.match(/\((\d+)%\)/)?.[1] || 0);
+                    if (compAvg !== null && compWeight > 0) {
+                        totalWeightedGrade += compAvg * compWeight;
+                        totalCompetencyWeight += compWeight;
+                    }
+                });
+                return totalCompetencyWeight > 0 ? totalWeightedGrade / totalCompetencyWeight : null;
+            }
+
+            function calculateCompetencyAverage(competency) {
+                let totalGrade = 0;
+                let totalWeight = 0;
+                competency.assignments.forEach(assign => {
                     const grade = getNumericGrade(assign.result);
                     const weight = parseFloat(assign.pond);
                     if (grade !== null && !isNaN(weight) && weight > 0) {
@@ -445,59 +457,76 @@
                     }
                 });
                 return totalWeight > 0 ? totalGrade / totalWeight : null;
-            };
+            }
 
-            const calculateSubjectAverage = (subject) => {
-                let totalGrade = 0, totalWeight = 0;
-                subject.competencies.forEach(comp => {
-                    const compWeightMatch = comp.name.match(/\((\d+)%\)/);
-                    if (compWeightMatch) {
-                        const compWeight = parseFloat(compWeightMatch[1]);
-                        const compAvg = calculateCompetencyAverage(comp);
-                        if (compAvg !== null) {
-                            totalGrade += compAvg * compWeight;
-                            totalWeight += compWeight;
-                        }
+            function getTrend(subjectCode, etapeKey) {
+                const history = mbsData.historique?.[etapeKey];
+                if (!history || history.moyennes.length < 2) {
+                    return { class: 'trend-up', arrow: '▲', change: 'Nouveau' };
+                }
+                const averages = history.moyennes.filter(m => m !== null);
+                const last = averages[averages.length - 1];
+                const previous = averages[averages.length - 2];
+                const change = last - previous;
+
+                if (change < 0) {
+                    return { class: 'trend-down', arrow: '▼', change: `${change.toFixed(1)}%` };
+                } else {
+                    return { class: 'trend-up', arrow: '▲', change: `+${change.toFixed(1)}%` };
+                }
+            }
+            
+            // --- EVENT LISTENERS ---
+            function setupEventListeners() {
+                // Filter bar
+                document.querySelector('.filter-bar').addEventListener('click', (e) => {
+                    if (e.target.classList.contains('filter-btn')) {
+                        document.querySelector('.filter-btn.active').classList.remove('active');
+                        e.target.classList.add('active');
+                        activeFilter = e.target.dataset.filter;
+                        renderPage();
                     }
                 });
-                return totalWeight > 0 ? totalGrade / totalWeight : null;
-            };
 
-            const getSubjectsForFilter = (etapeKey) => {
-                let subjects = [];
-                if (etapeKey === 'generale') {
-                    ['etape1', 'etape2', 'etape3'].forEach(key => {
-                        if (mbsData[key]) subjects.push(...mbsData[key].map(s => ({ subject: s, etapeKey: key })));
-                    });
-                } else if (mbsData[etapeKey]) {
-                    subjects = mbsData[etapeKey].map(s => ({ subject: s, etapeKey }));
-                }
-                return subjects;
-            };
+                // Event delegation for widget clicks
+                widgetGrid.addEventListener('click', (e) => {
+                    const widget = e.target.closest('.subject-widget');
+                    if (!widget) return;
 
-            const findSubject = (etapeKey, subjectCode) => {
-                return mbsData[etapeKey]?.find(s => s.code === subjectCode);
-            };
+                    // Goal button click
+                    if (e.target.classList.contains('btn-goal')) {
+                        const subject = findSubjectByCode(widget.dataset.subjectCode);
+                        openGoalModal(subject);
+                        return;
+                    }
+                    
+                    // Competency widget click
+                    const compWidget = e.target.closest('.competency-widget');
+                    if (compWidget) {
+                        widget.querySelectorAll('.competency-widget').forEach(cw => cw.classList.remove('active'));
+                        compWidget.classList.add('active');
+                        const subject = findSubjectByCode(widget.dataset.subjectCode);
+                        const competency = subject.competencies[compWidget.dataset.compIndex];
+                        createOrUpdateChart(widget.querySelector('canvas'), competency);
+                        return;
+                    }
 
-            const getTrend = (etapeKey, subjectCode, currentAverage) => {
-                const history = mbsData.historique?.[etapeKey]?.moyennes;
-                if (!history || history.length < 2 || currentAverage === null) {
-                    return { direction: 'up', arrow: '▲', change: 'Nouveau' };
-                }
+                    // Main widget click (toggle expand)
+                    if (widget.classList.contains('active')) {
+                        widget.classList.remove('active');
+                    } else {
+                        document.querySelectorAll('.subject-widget.active').forEach(w => w.classList.remove('active'));
+                        widget.classList.add('active');
+                        const subject = findSubjectByCode(widget.dataset.subjectCode);
+                        renderExpandedView(widget, subject, widget.dataset.etapeKey);
+                    }
+                });
                 
-                // Find subject-specific average history (more accurate if we store it this way)
-                // For now, we use the global etape history as a proxy
-                const previousAverage = history[history.length - 2];
-                const difference = currentAverage - previousAverage;
-                
-                if (difference < -0.01) { // A small tolerance for floating point issues
-                    return { direction: 'down', arrow: '▼', change: `${difference.toFixed(1)}%` };
-                } else {
-                    const changeStr = difference > 0.01 ? `+${difference.toFixed(1)}%` : 'Stable';
-                    return { direction: 'up', arrow: '▲', change: changeStr };
-                }
-            };
-            
+                // Goal Modal Listeners
+                document.getElementById('close-goal-modal').addEventListener('click', () => goalModal.classList.remove('active'));
+                goalTargetInput.addEventListener('input', calculateGoal);
+            }
+
             // --- START THE APP ---
             init();
         });
