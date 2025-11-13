@@ -1,58 +1,60 @@
-
-import { getData, initializeUserData, updateEtapeData, recordHistorique } from '../core/storage.js';
+import { getData, saveData } from '../core/storage.js';
 import { parsePortalData } from '../core/parser.js';
-import { calculateAllAverages } from '../core/calculations.js';
+import { calculateAveragesFromSource } from '../core/calculations.js';
 
-const rawTextArea = document.getElementById('raw-text');
-const statusArea = document.getElementById('status-area');
+document.addEventListener('DOMContentLoaded', () => {
+    const dataForm = document.getElementById('data-form');
+    const rawTextArea = document.getElementById('raw-text');
+    const submitBtn = document.getElementById('submit-btn');
 
-// Allow pasting by temporarily removing readonly attribute on focus
-rawTextArea.addEventListener('focus', () => {
-    rawTextArea.removeAttribute('readonly');
-});
-rawTextArea.addEventListener('blur', () => {
-    rawTextArea.setAttribute('readonly', 'readonly');
-});
+    const updateSubmitButtonState = () => {
+        submitBtn.disabled = rawTextArea.value.trim().length === 0;
+    };
 
-// Main paste event listener
-rawTextArea.addEventListener('paste', (event) => {
-    // Let the paste operation complete before processing
-    setTimeout(async () => {
-        const pastedText = rawTextArea.value;
-        if (!pastedText.trim()) return;
+    rawTextArea.addEventListener('paste', () => {
+        // Use a short timeout to allow the paste operation to complete
+        setTimeout(updateSubmitButtonState, 0);
+    });
 
-        statusArea.innerHTML = `<div class="loader-small"></div><p>Analyse en cours...</p>`;
+    dataForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Analyse en cours...';
 
-        const parsedResult = parsePortalData(pastedText);
-
-        if (!parsedResult) {
-            statusArea.innerHTML = `<p class="error">❌ Erreur: Les données semblent invalides. Veuillez réessayer.</p>`;
+        const rawText = rawTextArea.value;
+        if (!rawText.trim()) {
+            alert("Veuillez coller des données avant de sauvegarder.");
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Analyser et Sauvegarder';
             return;
         }
 
-        const { nom, etapeKey, etapeData } = parsedResult;
-        const currentUserData = getData();
+        const parsedResult = parsePortalData(rawText);
+        if (!parsedResult) {
+            alert("Erreur: Les données collées sont invalides ou incomplètes. Vérifiez le texte et réessayez.");
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Analyser et Sauvegarder';
+            return;
+        }
+        
+        // Overwrite strategy
+        const mbsData = getData();
+        mbsData.nom = parsedResult.nom;
+        mbsData[parsedResult.etapeKey] = parsedResult.etapeData;
+        mbsData.valid = true;
 
-        if (!currentUserData.valid) {
-            // First time user
-            initializeUserData(nom, etapeKey, etapeData);
-        } else {
-            // Existing user, overwrite data
-            updateEtapeData(etapeKey, etapeData);
+        // Record history
+        const averages = calculateAveragesFromSource(mbsData);
+        const termAverage = averages.termAverages[parsedResult.etapeKey];
+        if (termAverage !== null) {
+            const history = mbsData.historique[parsedResult.etapeKey];
+            history.timestamps.push(Date.now());
+            history.moyennes.push(termAverage);
         }
 
-        // After saving, record the new average for trend analysis
-        const updatedData = getData();
-        const allAverages = calculateAllAverages(updatedData);
-        const newEtapeAverage = allAverages.termAverages[etapeKey];
-        recordHistorique(etapeKey, newEtapeAverage);
-
-        statusArea.innerHTML = `<p class="success">Données analysées avec succès ! Redirection...</p>`;
+        saveData(mbsData);
         
-        // Redirect to the main dashboard
-        setTimeout(() => {
-            window.location.href = 'main.html';
-        }, 1500);
-
-    }, 0);
+        // Redirect to main page after successful save
+        window.location.href = 'main.html';
+    });
 });
