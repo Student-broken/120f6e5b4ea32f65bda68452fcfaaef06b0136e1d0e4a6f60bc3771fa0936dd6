@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Importer les Données - Outil MBS</title>
+    <link rel="stylesheet" href="css/global.css">
+    <script src="js/ui/theme.js"></script>
+</head>
+<body>
+    <main class="container">
+        <a href="index.html" class="back-link">← Retour</a>
+        <h1 class="page-title">Importer vos Données</h1>
+        <p class="instructions">
+            1. Allez sur le portail étudiant. <br>
+            2. Sélectionnez tout (Ctrl+A ou Cmd+A). <br>
+            3. Copiez (Ctrl+C ou Cmd+C). <br>
+            4. Collez dans la zone ci-dessous.
+        </p>
+
+        <div id="paste-area">
+            <textarea id="raw-text" readonly placeholder="Collez vos données ici..."></textarea>
+        </div>
+        
+        <div id="status-area">
+            <!-- Status messages will be shown here -->
+        </div>
+    </main>
+    <script type="module" src="js/pages/data.js"></script>
+</body>
+</html>
