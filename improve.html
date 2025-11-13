@@ -98,8 +98,6 @@
             padding: 20px;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
-            position: relative;
-            overflow: hidden;
         }
         .subject-widget:hover {
             transform: translateY(-5px);
@@ -119,51 +117,28 @@
 
         /* Modal / Expanded View */
         .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background-color: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(5px);
-            z-index: 1000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s, visibility 0.3s;
+            position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px); z-index: 1000; display: flex;
+            justify-content: center; align-items: center; opacity: 0;
+            visibility: hidden; transition: opacity 0.3s, visibility 0.3s;
         }
         .modal-overlay.active { opacity: 1; visibility: visible; }
         .modal-content {
-            background-color: var(--background-color);
-            border-radius: 16px;
-            width: 90%;
-            max-width: 800px;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            transform: scale(0.95);
+            background-color: var(--background-color); border-radius: 16px;
+            width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); transform: scale(0.95);
             transition: transform 0.3s;
         }
         .modal-overlay.active .modal-content { transform: scale(1); }
-        .modal-header {
-            padding: 20px 25px;
-            background-color: var(--secondary-color);
-            color: white;
-            border-radius: 16px 16px 0 0;
-        }
+        .modal-header { padding: 20px 25px; background-color: var(--secondary-color); color: white; border-radius: 16px 16px 0 0; }
         .modal-title { font-family: 'Playfair Display', serif; font-size: 1.8em; margin: 0; }
         .modal-body { padding: 25px; }
         
         .competency-widgets { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
         .comp-widget {
-            flex: 1;
-            min-width: 150px;
-            background-color: var(--widget-background);
-            border-radius: 8px;
-            padding: 15px;
-            text-align: center;
-            border: 1px solid #e0e6eb;
-            cursor: pointer;
-            transition: all 0.2s;
+            flex: 1; min-width: 150px; background-color: var(--widget-background);
+            border-radius: 8px; padding: 15px; text-align: center;
+            border: 1px solid #e0e6eb; cursor: pointer; transition: all 0.2s;
         }
         .comp-widget:hover { border-color: var(--primary-color); transform: translateY(-2px); }
         .comp-widget.active { border-color: var(--primary-color); box-shadow: 0 0 0 2px var(--primary-color); }
@@ -171,14 +146,9 @@
         .comp-widget .avg { font-size: 1.5em; font-weight: 700; color: var(--primary-color); }
         
         .graph-container { margin-bottom: 30px; }
-        .calculator-container {
-            background-color: var(--widget-background);
-            border-radius: 8px;
-            padding: 20px;
-            border: 1px solid #e0e6eb;
-        }
+        .calculator-container { background-color: var(--widget-background); border-radius: 8px; padding: 20px; border: 1px solid #e0e6eb; }
         .calculator-container h3 { margin-top: 0; color: var(--secondary-color); }
-        .goal-input { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .goal-input { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
         .goal-input label { font-weight: 600; }
         .goal-input input {
             width: 80px; padding: 8px; border-radius: 6px; border: 1px solid var(--light-grey);
@@ -189,10 +159,7 @@
         .goal-result.warning { background-color: #fff9f0; color: var(--warning-color); }
         .goal-result.danger { background-color: #fdf3f2; color: var(--danger-color); }
 
-        footer {
-            text-align: center; padding: 25px; font-size: 0.9em;
-            color: var(--footer-grey); border-top: 1px solid #eee; margin-top: 40px;
-        }
+        footer { text-align: center; padding: 25px; font-size: 0.9em; color: var(--footer-grey); border-top: 1px solid #eee; margin-top: 40px; }
         footer a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
     </style>
 </head>
@@ -209,14 +176,10 @@
         <button class="tab-btn" data-etape="etape3">Étape 3</button>
     </div>
 
-    <main id="widget-grid" class="widget-grid">
-        <!-- Subject widgets will be injected here by JavaScript -->
-    </main>
+    <main id="widget-grid" class="widget-grid"></main>
     
     <div id="details-modal" class="modal-overlay">
-        <div id="modal-content" class="modal-content">
-            <!-- Modal content will be injected here by JavaScript -->
-        </div>
+        <div id="modal-content" class="modal-content"></div>
     </div>
 
     <footer>
@@ -226,17 +189,14 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // --- GLOBAL STATE & CONSTANTS ---
         const gradeMap = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 85, 'B': 80, 'B-': 75, 'C+': 70, 'C': 65, 'C-': 60, 'D+': 55, 'D': 50, 'E': 45 };
         let mbsData = {};
         let activeChart = null;
 
-        // --- DOM ELEMENTS ---
         const widgetGrid = document.getElementById('widget-grid');
         const detailsModal = document.getElementById('details-modal');
         const modalContent = document.getElementById('modal-content');
 
-        // --- INITIALIZATION ---
         function init() {
             mbsData = JSON.parse(localStorage.getItem('mbsData')) || {};
             if (!mbsData.valid) {
@@ -247,9 +207,7 @@
             renderWidgets('generale');
         }
 
-        // --- EVENT LISTENERS ---
         function setupEventListeners() {
-            // Tab switching
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     document.querySelector('.tab-btn.active').classList.remove('active');
@@ -257,16 +215,11 @@
                     renderWidgets(btn.dataset.etape);
                 });
             });
-
-            // Close modal by clicking overlay
             detailsModal.addEventListener('click', (e) => {
-                if (e.target === detailsModal) {
-                    closeDetailsModal();
-                }
+                if (e.target === detailsModal) closeDetailsModal();
             });
         }
 
-        // --- DATA PROCESSING & RENDERING ---
         function getNumericGrade(result) {
             if (!result) return null;
             const trimmed = result.trim();
@@ -280,7 +233,7 @@
             return null;
         }
 
-        function calculateAverage(assignments) {
+        function calculateCompetencyAverage(assignments) {
             let totalWeightedGrade = 0;
             let totalWeight = 0;
             assignments.forEach(assign => {
@@ -301,7 +254,7 @@
                 const compWeightMatch = comp.name.match(/\((\d+)%\)/);
                 if (compWeightMatch) {
                     const compWeight = parseFloat(compWeightMatch[1]);
-                    const compAverage = calculateAverage(comp.assignments);
+                    const compAverage = calculateCompetencyAverage(comp.assignments);
                     if (compAverage !== null) {
                         totalWeightedCompGrade += compAverage * compWeight;
                         totalCompWeight += compWeight;
@@ -313,76 +266,56 @@
         
         function renderWidgets(etapeKey) {
             widgetGrid.innerHTML = '';
-            let subjectsToRender = [];
+            const allSubjectsData = {};
+            const etapesToProcess = etapeKey === 'generale' ? ['etape1', 'etape2', 'etape3'] : [etapeKey];
 
-            if (etapeKey === 'generale') {
-                const allSubjects = {};
-                ['etape1', 'etape2', 'etape3'].forEach(etape => {
-                    (mbsData[etape] || []).forEach(subject => {
-                        if (!allSubjects[subject.code]) {
-                            allSubjects[subject.code] = { name: subject.name, averages: [], allCompetencies: [] };
-                        }
-                        const avg = calculateSubjectAverage(subject);
-                        if(avg !== null) allSubjects[subject.code].averages.push(avg);
-                        allSubjects[subject.code].allCompetencies.push(...subject.competencies); // for details
-                    });
-                });
-                subjectsToRender = Object.entries(allSubjects).map(([code, data]) => {
-                    const avgSum = data.averages.reduce((a, b) => a + b, 0);
-                    const finalAvg = data.averages.length > 0 ? avgSum / data.averages.length : null;
-                    return { code, name: data.name, average: finalAvg, competencies: data.allCompetencies };
-                });
-            } else {
-                subjectsToRender = (mbsData[etapeKey] || []).map(subject => ({
-                    ...subject,
-                    average: calculateSubjectAverage(subject)
-                }));
-            }
-
-            subjectsToRender.forEach(subject => {
-                if (subject.average === null) return;
-                
-                // Trend Calculation
-                const history = mbsData.historique?.[etapeKey]?.[subject.code.substring(0,3)]; // General does not have history yet
-                let trend = { direction: 'up', change: 0, color: 'var(--success-color)' };
-                // This part needs more logic if you want history on general tab
-                // For now, let's assume it only works on etape tabs.
-                if (etapeKey !== 'generale' && mbsData.historique && mbsData.historique[etapeKey]) {
-                    const moyennes = mbsData.historique[etapeKey].moyennes;
-                    if (moyennes && moyennes.length > 1) {
-                        const last = moyennes[moyennes.length - 1];
-                        const prev = moyennes[moyennes.length - 2];
-                        trend.change = last - prev;
-                        if (trend.change < 0) {
-                            trend.direction = 'down';
-                            trend.color = 'var(--danger-color)';
-                        }
+            etapesToProcess.forEach(etape => {
+                (mbsData[etape] || []).forEach(subject => {
+                    const subjectCode = subject.code;
+                    if (!allSubjectsData[subjectCode]) {
+                        allSubjectsData[subjectCode] = { code: subject.code, name: subject.name, competencies: [], etapes: [] };
                     }
+                    allSubjectsData[subjectCode].competencies.push(...subject.competencies);
+                    allSubjectsData[subjectCode].etapes.push(etape);
+                });
+            });
+
+            Object.values(allSubjectsData).forEach(subjectData => {
+                const average = calculateSubjectAverage(subjectData);
+                if (average === null) return;
+
+                // Trend Calculation
+                let trend = { direction: 'up', change: 0.0 };
+                if (etapeKey !== 'generale' && mbsData.historique?.[etapeKey]?.moyennes?.length > 1) {
+                    const averages = mbsData.historique[etapeKey].moyennes;
+                    const change = averages[averages.length - 1] - averages[averages.length - 2];
+                    if (change < 0) trend.direction = 'down';
+                    trend.change = Math.abs(change);
                 }
-                
+
                 const widget = document.createElement('div');
                 widget.className = 'subject-widget';
                 widget.innerHTML = `
                     <div class="widget-header">
-                        <h3 class="widget-title">${subject.name}</h3>
-                        <div class="widget-trend" style="color: ${trend.color};">
-                            <span class="trend-arrow ${trend.direction}">${trend.direction === 'up' ? '▲' : '▼'}</span>
+                        <h3 class="widget-title">${subjectData.name}</h3>
+                        <div class="widget-trend ${trend.direction}">
+                            <span class="trend-arrow">${trend.direction === 'up' ? '▲' : '▼'}</span>
                             <span>${trend.change.toFixed(1)}%</span>
                         </div>
                     </div>
-                    <p class="widget-average">${subject.average.toFixed(2)}%</p>
+                    <p class="widget-average">${average.toFixed(2)}%</p>
                 `;
-                widget.addEventListener('click', () => openDetailsModal(subject));
+                widget.addEventListener('click', () => openDetailsModal(subjectData));
                 widgetGrid.appendChild(widget);
             });
+             if (widgetGrid.innerHTML === '') {
+                widgetGrid.innerHTML = `<p style="text-align:center; width:100%;">Aucune donnée complétée pour cette période.</p>`;
+            }
         }
         
-        // --- MODAL & DETAILS LOGIC ---
         function openDetailsModal(subject) {
             modalContent.innerHTML = `
-                <div class="modal-header">
-                    <h2 class="modal-title">${subject.name} (${subject.code})</h2>
-                </div>
+                <div class="modal-header"><h2 class="modal-title">${subject.name}</h2></div>
                 <div class="modal-body">
                     <div class="competency-widgets"></div>
                     <div class="graph-container"><canvas id="assignmentsChart"></canvas></div>
@@ -391,9 +324,8 @@
             
             const competencyContainer = modalContent.querySelector('.competency-widgets');
             subject.competencies.forEach((comp, index) => {
-                const compAvg = calculateAverage(comp.assignments);
+                const compAvg = calculateCompetencyAverage(comp.assignments);
                 if (compAvg === null) return;
-
                 const compWidget = document.createElement('div');
                 compWidget.className = 'comp-widget';
                 compWidget.dataset.index = index;
@@ -401,13 +333,11 @@
                 competencyContainer.appendChild(compWidget);
             });
 
-            // Setup chart with first competency
             if (subject.competencies.length > 0) {
                 createOrUpdateChart(subject.competencies[0]);
                 competencyContainer.children[0]?.classList.add('active');
             }
             
-            // Setup competency click listeners
             competencyContainer.querySelectorAll('.comp-widget').forEach(widget => {
                 widget.addEventListener('click', () => {
                     competencyContainer.querySelector('.active')?.classList.remove('active');
@@ -416,9 +346,7 @@
                 });
             });
 
-            // Setup Goal Calculator
             setupGoalCalculator(subject, modalContent.querySelector('.calculator-container'));
-
             detailsModal.classList.add('active');
         }
 
@@ -427,67 +355,75 @@
         }
 
         function createOrUpdateChart(competency) {
-            if(activeChart) {
-                activeChart.destroy();
-            }
+            if(activeChart) activeChart.destroy();
             const ctx = document.getElementById('assignmentsChart').getContext('2d');
             const gradedAssignments = competency.assignments.filter(a => getNumericGrade(a.result) !== null);
 
             activeChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: gradedAssignments.map(a => a.work.replace('<br>', ' ')),
+                    labels: gradedAssignments.map(a => a.work.replace(/<br>/g, ' ')),
                     datasets: [{
                         label: 'Note Obtenue (%)',
                         data: gradedAssignments.map(a => getNumericGrade(a.result)),
                         backgroundColor: 'rgba(41, 128, 185, 0.6)',
                         borderColor: 'rgba(41, 128, 185, 1)',
-                        borderWidth: 1
+                        borderWidth: 1,
+                        borderRadius: 4,
                     }]
                 },
-                options: {
-                    scales: { y: { beginAtZero: true, max: 100 } },
-                    plugins: { legend: { display: false } }
-                }
+                options: { scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } }
             });
         }
         
         function setupGoalCalculator(subject, container) {
-            let currentTotalWeight = 0;
-            let currentWeightedSum = 0;
-            let futureTotalWeight = 0;
+            let subjectContribution = 0;
+            let completedWeight = 0;
+            let futureWeight = 0;
 
             subject.competencies.forEach(comp => {
-                 const compWeightMatch = comp.name.match(/\((\d+)%\)/);
+                const compWeightMatch = comp.name.match(/\((\d+)%\)/);
                 if (!compWeightMatch) return;
-                const compWeight = parseFloat(compWeightMatch[1]);
+                const compPercent = parseFloat(compWeightMatch[1]);
                 
+                let compGradedWeight = 0, compWeightedSum = 0, compHasFutureWork = false;
                 comp.assignments.forEach(assign => {
                     const weight = parseFloat(assign.pond);
                     if (isNaN(weight) || weight <= 0) return;
-                    
                     const grade = getNumericGrade(assign.result);
                     if (grade !== null) {
-                        currentWeightedSum += (grade / 100) * weight; // Grade is already %, so divide by 100
-                        currentTotalWeight += weight;
+                        compWeightedSum += grade * weight;
+                        compGradedWeight += weight;
                     } else {
-                        futureTotalWeight += weight;
+                        compHasFutureWork = true;
                     }
                 });
-            });
 
-            const currentAverage = currentTotalWeight > 0 ? (currentWeightedSum / currentTotalWeight) * 100 : 0;
+                if (compGradedWeight > 0) {
+                    const compAverage = compWeightedSum / compGradedWeight;
+                    subjectContribution += compAverage * (compPercent / 100);
+                    completedWeight += compPercent;
+                }
+                if (compHasFutureWork) {
+                    futureWeight += compPercent;
+                }
+            });
             
-            if (futureTotalWeight <= 0) {
-                container.innerHTML = '<h3>Planificateur d\'Objectifs</h3><p>Tous les travaux pour cette matière ont été notés.</p>';
+            // Adjust future weight if part of a competency is graded
+            futureWeight = 100 - completedWeight;
+
+            if (futureWeight <= 0) {
+                container.innerHTML = '<h3>Planificateur d\'Objectifs</h3><p>Tous les travaux pour cette matière semblent avoir été notés.</p>';
                 return;
             }
 
+            const currentAverage = completedWeight > 0 ? (subjectContribution / (completedWeight / 100)) : 0;
+            
             container.innerHTML = `
                 <h3>Planificateur d'Objectifs</h3>
-                <p>Moyenne actuelle: <strong>${currentAverage.toFixed(2)}%</strong> sur <strong>${currentTotalWeight}%</strong> de la matière.</p>
+                <p>Moyenne actuelle: <strong>${currentAverage.toFixed(2)}%</strong> sur <strong>${completedWeight.toFixed(0)}%</strong> de la matière déjà évaluée.</p>
                 <div class="goal-input">
-                    <label for="goal">Objectif de moyenne finale:</label>
+                    <label for="goal-input">Objectif de moyenne finale:</label>
                     <input type="number" id="goal-input" min="0" max="100" value="85">%
                 </div>
                 <div id="goal-result" class="goal-result"></div>
@@ -498,22 +434,23 @@
             
             function calculate() {
                 const targetAvg = parseFloat(goalInput.value);
-                if (isNaN(targetAvg)) return;
+                if (isNaN(targetAvg) || targetAvg < 0 || targetAvg > 100) return;
                 
-                // Formula: RequiredAvg = (TargetAvg - CurrentContribution) / FutureWeightContribution
-                const requiredAvg = (targetAvg - (currentAverage * (currentTotalWeight / 100))) / (futureTotalWeight / 100);
+                const currentContribution = currentAverage * (completedWeight / 100);
+                const futureContributionNeeded = targetAvg - currentContribution;
+                const requiredAvg = (futureContributionNeeded / (futureWeight / 100));
                 
                 let message = '';
                 let resultClass = '';
 
                 if (requiredAvg > 100) {
-                    message = `Pour atteindre <strong>${targetAvg}%</strong>, il vous faudrait <strong>${requiredAvg.toFixed(1)}%</strong> sur les travaux restants. Cet objectif est impossible.`;
+                    message = `Pour atteindre <strong>${targetAvg}%</strong>, il faudrait une moyenne de <strong>${requiredAvg.toFixed(1)}%</strong> sur les travaux restants. Cet objectif est mathématiquement impossible.`;
                     resultClass = 'danger';
                 } else if (requiredAvg < 0) {
-                    message = `Félicitations ! Vous avez déjà atteint l'objectif de <strong>${targetAvg}%</strong>, peu importe vos prochaines notes.`;
+                    message = `Félicitations ! Vous avez déjà atteint <strong>${targetAvg}%</strong>. Maintenez le bon travail !`;
                     resultClass = 'success';
                 } else {
-                    message = `Pour atteindre <strong>${targetAvg}%</strong>, vous devez obtenir une moyenne de <strong>${requiredAvg.toFixed(1)}%</strong> sur les <strong>${futureTotalWeight}%</strong> de travaux restants.`;
+                    message = `Pour atteindre <strong>${targetAvg}%</strong>, vous devez obtenir une moyenne de <strong>${requiredAvg.toFixed(1)}%</strong> sur les <strong>${futureWeight.toFixed(0)}%</strong> restants de la matière.`;
                     resultClass = 'warning';
                 }
                 goalResult.innerHTML = message;
@@ -524,7 +461,6 @@
             calculate(); // Initial calculation
         }
         
-        // --- START THE APP ---
         init();
     });
     </script>
