@@ -3,29 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Importer les Données - Outil MBS</title>
+    <title>Mettre à Jour - Outil MBS</title>
+    <link rel="icon" href="assets/images/favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- CSS -->
     <link rel="stylesheet" href="css/global.css">
-    <script src="js/ui/theme.js"></script>
+    <link rel="stylesheet" href="css/components.css">
 </head>
 <body>
-    <main class="container">
-        <a href="index.html" class="back-link">← Retour</a>
-        <h1 class="page-title">Importer vos Données</h1>
-        <p class="instructions">
-            1. Allez sur le portail étudiant. <br>
-            2. Sélectionnez tout (Ctrl+A ou Cmd+A). <br>
-            3. Copiez (Ctrl+C ou Cmd+C). <br>
-            4. Collez dans la zone ci-dessous.
-        </p>
 
-        <div id="paste-area">
-            <textarea id="raw-text" readonly placeholder="Collez vos données ici..."></textarea>
-        </div>
-        
-        <div id="status-area">
-            <!-- Status messages will be shown here -->
+    <div class="site-header-container">
+        <a href="index.html" class="back-arrow" title="Retour à l'accueil">←</a>
+        <header class="site-header">Mise à jour des données</header>
+    </div>
+
+    <main class="main-container centered">
+        <div class="data-widget">
+            <form id="data-form">
+                <label for="raw-text" class="data-label">Collez les données du portail ici</label>
+                <p class="data-instructions">
+                    1. Allez sur le portail &rightarrow; 2. Copiez tout (Ctrl+A) &rightarrow; 3. Collez ici (Ctrl+V)
+                </p>
+                <textarea id="raw-text" placeholder="Vos données apparaîtront ici après le collage..."></textarea>
+                <button type="submit" id="submit-btn" class="btn" disabled>Analyser et Sauvegarder</button>
+            </form>
         </div>
     </main>
+    
+    <footer>
+        <p>Outil MBS (Moyenne, Bilan, Stratégie)</p>
+        <a href="ticket.html">Signaler un problème</a>
+    </footer>
+
     <script type="module" src="js/pages/data.js"></script>
 </body>
 </html>
