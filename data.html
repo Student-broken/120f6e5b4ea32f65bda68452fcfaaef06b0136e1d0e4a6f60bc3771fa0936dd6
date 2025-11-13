@@ -3,157 +3,314 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mettre à Jour les Données - Outil MBS</title>
+    <title>Ajouter des Données - Outil MBS</title>
     <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #2980b9; --secondary-color: #2c3e50; --background-color: #f7f9fb;
-            --widget-background: #ffffff; --text-color: #34495e; --light-grey: #bdc3c7;
-            --danger-color: #e74c3c; --success-color: #27ae60; --shadow: 0 8px 15px rgba(0, 0, 0, 0.08);
+            --primary-color: #2980b9;
+            --secondary-color: #2c3e50;
+            --background-color: #f7f9fb;
+            --widget-background: #ffffff;
+            --text-color: #34495e;
+            --light-grey: #bdc3c7;
+            --footer-grey: #7f8c8d;
+            --danger-color: #e74c3c;
+            --shadow: 0 8px 15px rgba(0, 0, 0, 0.08);
         }
-        body { margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--background-color); color: var(--text-color); display: flex; flex-direction: column; min-height: 100vh; }
-        .site-header-container { background-color: var(--widget-background); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); border-bottom: 1px solid #e0e6eb; padding: 15px 0; position: relative; }
-        .site-header { text-align: center; margin: 0; color: var(--secondary-color); font-size: 2.2em; font-weight: 700; font-family: 'Playfair Display', serif; }
-        .content { flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; padding: 40px 20px; }
-        .back-arrow { position: absolute; top: 50%; left: 25px; transform: translateY(-50%); font-size: 2.2em; color: var(--secondary-color); text-decoration: none; line-height: 1; transition: color 0.2s, transform 0.2s; font-family: 'Inter', sans-serif; }
-        .back-arrow:hover { color: var(--primary-color); transform: translateY(-50%) scale(1.05); }
-        .data-widget { background-color: var(--widget-background); padding: 40px; border-radius: 16px; box-shadow: var(--shadow); width: 100%; max-width: 650px; text-align: center; }
-        .data-widget h2 { margin-top: 0; font-family: 'Playfair Display', serif; }
-        textarea { width: 100%; height: 350px; padding: 15px; border: 2px dashed var(--light-grey); border-radius: 10px; font-family: monospace; font-size: 14px; margin-top: 20px; margin-bottom: 20px; box-sizing: border-box; resize: vertical; transition: all 0.2s; }
-        textarea:disabled { background-color: #f5f5f5; cursor: not-allowed; }
-        textarea:focus { border-color: var(--primary-color); border-style: solid; box-shadow: 0 0 0 3px rgba(41, 128, 185, 0.2); outline: none; }
-        .checkbox-container { display: flex; align-items: center; justify-content: center; margin-bottom: 25px; font-size: 0.9em; line-height: 1.5; }
-        .checkbox-container input { margin-right: 10px; transform: scale(1.15); cursor: pointer; }
-        .checkbox-container a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
-        .checkbox-container a:hover { text-decoration: underline; }
-        #status-message { min-height: 24px; font-weight: 600; margin-top: 15px; transition: color 0.3s; }
-        .status-analyzing { color: var(--primary-color); }
-        .status-error { color: var(--danger-color); }
-        footer { text-align: center; padding: 25px; font-size: 0.9em; color: var(--light-grey); border-top: 1px solid #eee; margin-top: auto; }
+        body {
+            margin: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .site-header-container {
+            background-color: var(--widget-background);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            padding: 15px 0;
+            position: relative;
+        }
+        .site-header {
+            text-align: center;
+            padding: 0;
+            margin: 0;
+            color: var(--secondary-color);
+            font-size: 2.2em;
+            font-weight: 700;
+            font-family: 'Playfair Display', serif;
+        }
+        .content {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 20px;
+        }
+        .back-arrow {
+            position: absolute;
+            top: 50%;
+            left: 25px;
+            transform: translateY(-50%);
+            font-size: 2em;
+            color: var(--secondary-color);
+            text-decoration: none;
+            transition: color 0.2s, transform 0.2s;
+        }
+        .back-arrow:hover {
+            color: var(--primary-color);
+            transform: translateY(-50%) scale(1.05);
+        }
+        .data-widget {
+            background-color: var(--widget-background);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 650px;
+            text-align: center;
+        }
+        textarea {
+            width: 100%;
+            height: 350px;
+            padding: 15px;
+            border: 2px dashed var(--light-grey);
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 14px;
+            box-sizing: border-box;
+            resize: vertical;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background-color: #fdfdfd;
+        }
+        textarea:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(41, 128, 185, 0.2);
+            outline: none;
+        }
+        .info-btn {
+            position: absolute;
+            top: 50%;
+            right: 25px;
+            transform: translateY(-50%);
+            width: 45px;
+            height: 45px;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.2s, transform 0.2s;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        .info-btn:hover {
+            background-color: var(--primary-color);
+            transform: translateY(-50%) scale(1.05);
+        }
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.7); display: flex;
+            justify-content: center; align-items: center; z-index: 1000;
+            opacity: 0; visibility: hidden; transition: opacity 0.3s;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-content {
+            background-color: white; padding: 30px; border-radius: 12px;
+            max-width: 90%; width: 450px;
+        }
+        .modal-close { position: absolute; top: 10px; right: 15px; font-size: 2em; cursor: pointer; color: var(--light-grey); }
+        .modal-content h3 { color: var(--primary-color); margin-top: 0; }
+        .modal-content p { line-height: 1.5; margin-bottom: 10px; border-left: 3px solid var(--primary-color); padding-left: 10px; }
+        .important-message {
+            background-color: #fdf3f2; color: var(--danger-color); border: 1px solid #f9d6d5;
+            padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: 500; display: flex;
+            align-items: center; font-size: 0.95em;
+        }
+        .important-message .icon { font-size: 1.5em; margin-right: 10px; }
+        footer {
+            text-align: center; padding: 25px; font-size: 0.9em;
+            color: var(--footer-grey); border-top: 1px solid #eee; margin-top: auto;
+        }
         footer a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
         footer a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
 
-    <div class="site-header-container">
+    <header class="site-header-container">
         <a href="main.html" class="back-arrow" title="Retour au tableau de bord">←</a>
-        <header class="site-header">Outil MBS</header>
-    </div>
+        <h1 class="site-header">Outil MBS</h1>
+        <button class="info-btn" id="open-modal-btn" title="Comment ça marche ?">?</button>
+    </header>
 
     <main class="content">
         <div class="data-widget">
-            <h2>Mettre à Jour les Données</h2>
-            <p>Copiez vos notes du portail (Ctrl+A, Ctrl+C) et collez-les ici.</p>
-            
-            <div class="checkbox-container">
-                <input type="checkbox" id="terms-checkbox">
-                <label for="terms-checkbox">Je comprends que ces données sont stockées localement sur mon navigateur.</label>
-            </div>
-
-            <textarea id="raw-text" placeholder="Veuillez d'abord cocher la case ci-dessus" readonly disabled></textarea>
-            
-            <div id="status-message"></div>
+            <h2 style="font-family: 'Playfair Display', serif; font-weight: 700;">Mise à Jour des Données</h2>
+            <p style="margin-top: -10px; margin-bottom: 30px;">Collez simplement vos données du portail ci-dessous.</p>
+            <textarea id="raw-text" placeholder="1. Allez sur le portail et copiez tout (Ctrl+A, Ctrl+C)&#10;2. Revenez ici et collez (Ctrl+V)&#10;&#10;L'analyse et la sauvegarde sont automatiques !"></textarea>
         </div>
     </main>
 
+    <div class="modal-overlay" id="tutorial-modal">
+        <div class="modal-content">
+            <span class="modal-close" id="close-modal-btn">&times;</span>
+            <h3>Comment utiliser l'outil</h3>
+            <div class="important-message">
+                <span class="icon">💡</span>
+                <span>Pour garder vos moyennes à jour, répétez ces étapes régulièrement.</span>
+            </div>
+            <p>1. Allez dans la section "Travaux" du portail étudiant.</p>
+            <p>2. Appuyez sur <strong>CTRL + A</strong> pour tout sélectionner.</p>
+            <p>3. Appuyez sur <strong>CTRL + C</strong> pour tout copier.</p>
+            <p>4. Revenez sur cette page et collez avec <strong>CTRL + V</strong>.</p>
+            <p><strong>C'est tout !</strong> Vous serez redirigé automatiquement.</p>
+        </div>
+    </div>
+
     <footer>
-        <p>Pour tout problème ou question, vous pouvez <a href="ticket.html">soumettre un ticket</a>.</p>
+        <p>Outil MBS - Moyenne, Bilan, Stratégie</p>
+        <p><a href="ticket.html">Signaler un problème</a></p>
     </footer>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // --- Elements ---
+            const openModalBtn = document.getElementById('open-modal-btn');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            const tutorialModal = document.getElementById('tutorial-modal');
             const rawTextArea = document.getElementById('raw-text');
-            const termsCheckbox = document.getElementById('terms-checkbox');
-            const statusMessage = document.getElementById('status-message');
 
-            // 1. Enable/Disable textarea based on checkbox
-            termsCheckbox.addEventListener('change', () => {
-                if (termsCheckbox.checked) {
-                    rawTextArea.disabled = false;
-                    rawTextArea.readOnly = false; // Must be false to allow paste
-                    rawTextArea.placeholder = "Collez les données du portail ici... (Ctrl+V)";
-                    rawTextArea.focus();
-                } else {
-                    rawTextArea.disabled = true;
-                    rawTextArea.readOnly = true;
-                    rawTextArea.placeholder = "Veuillez d'abord cocher la case ci-dessus";
-                }
-            });
+            // --- Modal Logic ---
+            const openModal = () => tutorialModal.classList.add('active');
+            const closeModal = () => tutorialModal.classList.remove('active');
 
-            // 2. Add focus/blur listeners to handle manual typing attempts
-            rawTextArea.addEventListener('focus', () => {
-                if (!termsCheckbox.checked) return;
-                rawTextArea.readOnly = false;
-            });
+            openModalBtn.addEventListener('click', openModal);
+            closeModalBtn.addEventListener('click', closeModal);
+            tutorialModal.addEventListener('click', (e) => { if (e.target === tutorialModal) closeModal(); });
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
 
-            rawTextArea.addEventListener('blur', () => {
-                rawTextArea.readOnly = true;
-            });
-            
-            // 3. Main logic: listen for paste, then analyze and save
-            rawTextArea.addEventListener('paste', (event) => {
-                if (!termsCheckbox.checked) {
-                    event.preventDefault();
-                    alert("Veuillez d'abord accepter les conditions en cochant la case.");
-                    return;
-                }
-
-                // Use a timeout to let the paste operation complete
+            // --- Core Paste & Save Logic ---
+            rawTextArea.addEventListener('paste', (e) => {
+                // Allow the pasted text to populate the textarea before we read it
                 setTimeout(() => {
                     const rawText = rawTextArea.value;
                     if (!rawText.trim()) return;
 
-                    statusMessage.textContent = "Analyse en cours...";
-                    statusMessage.className = 'status-analyzing';
-
-                    try {
-                        const parsedResult = parsePortalData(rawText);
-
-                        if (!parsedResult.nom || !parsedResult.etapeData) {
-                            throw new Error("Les données collées sont invalides ou incomplètes. Le nom ou l'étape est introuvable.");
-                        }
-
-                        // Overwrite logic as requested
-                        const existingData = JSON.parse(localStorage.getItem('mbsData')) || {};
-                        const updatedData = {
-                            ...existingData,
-                            valid: true, // Mark data as valid
-                            nom: parsedResult.nom,
-                            [parsedResult.etapeKey]: parsedResult.etapeData,
-                        };
-                        
-                        // Add a unique ID if it doesn't exist
-                        if (!updatedData.user_random) {
-                            updatedData.user_random = 'user-' + Date.now().toString(36) + Math.random().toString(36).substring(2);
-                        }
-                        
-                        localStorage.setItem('mbsData', JSON.stringify(updatedData));
-                        
-                        // Redirect to the main page after success
-                        window.location.href = 'main.html';
-
-                    } catch (error) {
-                        statusMessage.textContent = "Erreur : " + error.message;
-                        statusMessage.className = 'status-error';
-                        rawTextArea.value = ''; // Clear the invalid data
-                    }
-                }, 10);
+                    handleDataProcessing(rawText);
+                }, 0);
             });
+
+            function handleDataProcessing(rawText) {
+                try {
+                    const parsedResult = parsePortalData(rawText);
+                    
+                    if (!parsedResult.nom || !parsedResult.etapeData) {
+                        alert("Erreur d'analyse : Le nom ou le numéro d'étape n'a pas été trouvé. Assurez-vous d'avoir bien copié toute la page du portail.");
+                        rawTextArea.value = ''; // Clear the textarea for another attempt
+                        return;
+                    }
+
+                    // Get existing data or create a new object
+                    let existingData = JSON.parse(localStorage.getItem('mbsData')) || {};
+
+                    // Create user ID if it doesn't exist
+                    if (!existingData.user_random) {
+                        existingData.user_random = 'user-' + Date.now().toString(36) + Math.random().toString(36).substring(2);
+                    }
+                    
+                    // Overwrite data for the specific etape
+                    const updatedData = {
+                        ...existingData,
+                        valid: true, // Mark data as valid
+                        nom: parsedResult.nom,
+                        [parsedResult.etapeKey]: parsedResult.etapeData,
+                    };
+
+                    // ---- START: HISTORY TRACKING LOGIC (for improve.html) ----
+                    const gradeMap = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 85, 'B': 80, 'B-': 75, 'C+': 70, 'C': 65, 'C-': 60, 'D+': 55, 'D': 50, 'E': 45 };
+                    
+                    function getNumericGrade(result) {
+                        if (!result) return null;
+                        const trimmed = result.trim();
+                        if (gradeMap[trimmed]) return gradeMap[trimmed];
+                        const scoreMatch = trimmed.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/);
+                        if (scoreMatch) {
+                            const score = parseFloat(scoreMatch[1].replace(',', '.'));
+                            const max = parseFloat(scoreMatch[2].replace(',', '.'));
+                            return (max > 0) ? (score / max) * 100 : null;
+                        }
+                        return null;
+                    }
+
+                    let currentTermAverage = 0;
+                    let totalWeight = 0;
+                    parsedResult.etapeData.forEach(subject => {
+                        subject.competencies.forEach(comp => {
+                            const compWeightMatch = comp.name.match(/\((\d+)%\)/);
+                            if (compWeightMatch) {
+                                const compWeight = parseFloat(compWeightMatch[1]);
+                                let competencyGrade = 0;
+                                let competencyTotalWeight = 0;
+                                comp.assignments.forEach(assign => {
+                                    const grade = getNumericGrade(assign.result);
+                                    const weight = parseFloat(assign.pond);
+                                    if (grade !== null && !isNaN(weight) && weight > 0) {
+                                        competencyGrade += grade * weight;
+                                        competencyTotalWeight += weight;
+                                    }
+                                });
+                                if (competencyTotalWeight > 0) {
+                                    currentTermAverage += (competencyGrade / competencyTotalWeight) * compWeight;
+                                    totalWeight += compWeight;
+                                }
+                            }
+                        });
+                    });
+                    
+                    const finalTermAvg = totalWeight > 0 ? currentTermAverage / totalWeight : null;
+
+                    if (finalTermAvg !== null) {
+                        if (!updatedData.historique) updatedData.historique = {};
+                        if (!updatedData.historique[parsedResult.etapeKey]) {
+                            updatedData.historique[parsedResult.etapeKey] = { timestamps: [], moyennes: [] };
+                        }
+                        updatedData.historique[parsedResult.etapeKey].timestamps.push(Date.now());
+                        updatedData.historique[parsedResult.etapeKey].moyennes.push(finalTermAvg);
+                    }
+                    // ---- END: HISTORY TRACKING LOGIC ----
+
+
+                    // Save the updated data
+                    localStorage.setItem('mbsData', JSON.stringify(updatedData));
+                    
+                    // Redirect to the main dashboard
+                    window.location.href = 'main.html';
+
+                } catch (error) {
+                    console.error("An error occurred during data processing:", error);
+                    alert("Une erreur inattendue est survenue. Veuillez réessayer.");
+                    rawTextArea.value = '';
+                }
+            }
         });
 
+        // --- Data Parsing Function (from your original code, slightly adapted) ---
         function parsePortalData(text) {
             const nameMatch = text.match(/Photo\s*\n(.+)/);
             const semesterMatch = text.match(/Classe\s*\n\s*(\d)/);
             const nom = nameMatch ? nameMatch[1].trim() : null;
             const etapeNumber = semesterMatch ? semesterMatch[1].trim() : null;
-            
             if (!nom || !etapeNumber) return {};
             const etapeKey = `etape${etapeNumber}`;
 
             const POND_REGEX = /^\d{1,3}$/;
-            const DATE_REGEX = /^\d{4}-\d{2}-\d{2}(?: à \d{2}:\d{2})?/;
+            const DATE_REGEX = /^\d{4}-\d{2}-\d{2}/;
             const RESULT_REGEX = /^(\d{1,3},\d\s\/\s\d{1,3}\s\(.+\)|[A-DF][+-]?)$/;
 
             const createNewAssignment = () => ({ textBuffer: [], category: '', work: '', pond: '', assignedDate: '', dueDate: '', result: '' });
@@ -164,16 +321,15 @@
                 let currentAssignment = createNewAssignment();
 
                 const finalizeAssignment = () => {
-                    if (currentAssignment.textBuffer.length === 0 && !currentAssignment.pond && !currentAssignment.result) return;
+                    if (currentAssignment.textBuffer.length === 0 && !currentAssignment.pond) return;
                     const buffer = currentAssignment.textBuffer;
-                    
                     if (buffer.length === 1) {
                         currentAssignment.work = buffer[0];
                     } else if (buffer.length > 1) {
                         currentAssignment.category = buffer[0];
                         currentAssignment.work = buffer.slice(1).join('<br>');
                     }
-                    delete currentAssignment.textBuffer; 
+                    delete currentAssignment.textBuffer;
                     assignments.push(currentAssignment);
                 };
 
@@ -190,9 +346,8 @@
                     } else if (DATE_REGEX.test(trimmedLine)) {
                         if (!currentAssignment.assignedDate) {
                             currentAssignment.assignedDate = trimmedLine.split('à')[0].trim();
-                        } else {
-                            currentAssignment.dueDate = trimmedLine;
                         }
+                        currentAssignment.dueDate = trimmedLine;
                     } else {
                         if (currentAssignment.pond || currentAssignment.assignedDate) {
                             finalizeAssignment();
@@ -204,23 +359,22 @@
                 finalizeAssignment();
                 return assignments;
             };
-
+            
             const subjects = [];
             const subjectRegex = /([A-Z]{3}\d{3}[A-Z]?) - (.+)/g;
             const subjectsText = text.split(subjectRegex).slice(1);
-
+            
             for (let i = 0; i < subjectsText.length; i += 3) {
-                const subjectData = { code: subjectsText[i].trim(), name: subjectsText[i + 1].trim(), competencies: [] };
-                let subjectContent = subjectsText[i + 2] || '';
+                const subjectData = { code: subjectsText[i].trim(), name: subjectsText[i+1].trim(), competencies: [] };
+                let subjectContent = subjectsText[i+2] || '';
                 const competencyBlocks = subjectContent.split('Compétence - ').slice(1);
-
-                for (const block of competencyBlocks) {
+                
+                for(const block of competencyBlocks) {
                     const blockLines = block.trim().split('\n');
                     const compName = blockLines.shift();
-                    const cleanLines = blockLines.filter(line => line.trim() && !line.includes('Catégorie\tTravail\tPond.'));
                     const competencyData = {
                         name: `Compétence - ${compName.trim()}`,
-                        assignments: parseAssignments(cleanLines)
+                        assignments: parseAssignments(blockLines)
                     };
                     if (competencyData.assignments.length > 0) {
                         subjectData.competencies.push(competencyData);
