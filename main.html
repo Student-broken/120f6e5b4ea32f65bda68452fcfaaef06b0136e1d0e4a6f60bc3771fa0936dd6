@@ -3,312 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ajouter des Données - Outil MBS</title>
+    <title>Tableau de Bord - Outil MBS</title>
     <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-color: #2980b9;
             --secondary-color: #2c3e50;
+            --side-panel-color: #ffffff;
+            --widget-darker-color: #f0f4f7;
             --background-color: #f7f9fb;
             --widget-background: #ffffff;
             --text-color: #34495e;
             --light-grey: #bdc3c7;
             --footer-grey: #7f8c8d;
+            --success-color: #27ae60;
             --danger-color: #e74c3c;
-            --shadow: 0 8px 15px rgba(0, 0, 0, 0.08);
-            --transition-speed: 0.3s; /* Nouvelle variable pour les transitions */
+            --warning-color: #f39c12;
+            --shadow-header: 0 2px 4px rgba(0, 0, 0, 0.05);
+            --shadow-widget: 0 8px 15px rgba(0, 0, 0, 0.08);
         }
-        /* Définition des variables pour le mode sombre */
-        [data-theme='dark'] {
-            --primary-color: #5d9cec;
-            --secondary-color: #ecf0f1;
-            --background-color: #1a1a2e;
-            --widget-background: #232946;
-            --text-color: #b8c1ec;
-            --light-grey: #4f5b93;
-            --footer-grey: #8a8d9b;
-            --danger-color: #ff6b6b;
-            --shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
-        }
-
-        /* Application de la transition à tous les éléments clés */
-        body, .site-header-container, .data-widget, textarea, .info-btn, .theme-toggle, .back-arrow, footer, .modal-content, .important-message {
-            transition: all var(--transition-speed) ease-in-out;
-        }
-
         body {
             margin: 0;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--background-color);
             color: var(--text-color);
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
         }
         .site-header-container {
             background-color: var(--widget-background);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            padding: 15px 0;
+            box-shadow: var(--shadow-header);
+            border-bottom: 1px solid #e0e6eb;
+            padding: 15px 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             position: relative;
+            margin-bottom: 20px;
         }
+        .header-left { display: flex; align-items: center; }
+        .header-center { position: absolute; left: 50%; transform: translateX(-50%); }
+        .header-right { display: flex; gap: 15px; }
         .site-header {
-            text-align: center;
-            padding: 0;
-            margin: 0;
-            color: var(--secondary-color);
-            font-size: 2.2em;
-            font-weight: 700;
-            font-family: 'Playfair Display', serif;
+            padding: 0; margin: 0; color: var(--secondary-color);
+            font-size: 2.2em; font-weight: 700; font-family: 'Playfair Display', serif;
         }
-        .content {
-            flex-grow: 1;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            padding: 40px 20px;
+        .nav-arrow {
+            font-size: 2em; color: var(--secondary-color); text-decoration: none;
+            transition: color 0.2s, transform 0.2s;
         }
-        .back-arrow {
-            position: absolute;
-            top: 50%;
-            left: 25px;
-            transform: translateY(-50%);
-            font-size: 2em;
-            color: var(--secondary-color);
-            text-decoration: none;
-            transition: color 0.2s, transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            border-radius: 50%; /* Just for aesthetics with shadow */
-            padding: 5px; /* Visual padding for effect */
+        .nav-arrow:hover { color: var(--primary-color); transform: scale(1.05); }
+        .main-container {
+            display: flex; max-width: 1600px; margin: 0 auto;
+            padding: 0 20px; align-items: flex-start; gap: 30px;
         }
-        .back-arrow:hover {
-            color: var(--primary-color);
-            transform: translateY(-50%) scale(1.1);
+        .data-section { flex: 3; }
+        .side-panel {
+            flex: 1; position: sticky; top: 20px; background-color: var(--side-panel-color);
+            border-radius: 12px; padding: 25px; box-shadow: var(--shadow-widget);
         }
-        .back-arrow:active {
-            transform: translateY(-50%) scale(0.95);
-            box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
+        .moyenne-widgets { display: flex; gap: 15px; margin-bottom: 25px; }
+        .moyenne-widget {
+            flex: 1; background-color: var(--widget-darker-color); border-radius: 10px;
+            padding: 15px; text-align: center; border: 1px solid #e0e6eb;
         }
-        .data-widget {
-            background-color: var(--widget-background);
-            padding: 40px;
-            border-radius: 16px;
-            box-shadow: var(--shadow);
-            width: 100%;
-            max-width: 650px;
-            text-align: center;
-            /* Animation d'entrée */
-            transform: translateY(20px); 
-            opacity: 0;
-            filter: blur(5px);
+        .moyenne-widget h4 { margin: 0 0 8px 0; font-size: 0.85em; color: var(--secondary-color); font-weight: 500; }
+        .moyenne-value { font-size: 2.2em; font-weight: bold; color: var(--primary-color); }
+        .moyenne-value.invalid { color: var(--danger-color); }
+        .control-group { margin-bottom: 20px; }
+        .control-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
+        select {
+            width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd;
+            background-color: white; -webkit-appearance: none; appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='5'%3E%3Cpath d='M0 0l5 5 5-5z' fill='%232c3e50'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 15px center; background-size: 10px;
         }
-        .data-widget.loaded {
-            transform: translateY(0);
-            opacity: 1;
-            filter: blur(0);
-            transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.6s, filter 0.6s, box-shadow var(--transition-speed);
+        .subject-averages { margin-top: 25px; padding-top: 15px; border-top: 1px solid #e0e6eb; }
+        .subject-averages h4 { margin-top: 0; color: var(--secondary-color); font-size: 1.1em; margin-bottom: 15px; }
+        #subject-averages-list { list-style: none; padding: 0; margin: 0; font-size: 0.9em; }
+        #subject-averages-list li { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dotted #e0e0e0; }
+        .btn {
+            display: inline-block; padding: 12px 20px; border: none; border-radius: 8px;
+            font-size: 0.95em; font-weight: 600; cursor: pointer; text-decoration: none;
+            color: white; transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+            text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
-        textarea {
-            width: 100%;
-            height: 350px;
-            padding: 15px;
-            border: 2px dashed var(--light-grey);
-            border-radius: 10px;
-            font-family: monospace;
-            font-size: 14px;
-            box-sizing: border-box;
-            resize: vertical;
-            transition: border-color 0.2s, box-shadow 0.2s, background-color var(--transition-speed), color var(--transition-speed);
-            background-color: var(--widget-background);
-            color: var(--text-color);
-        }
-        textarea:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(41, 128, 185, 0.2);
-            outline: none;
-        }
-        
-        /* Nouveau bouton de bascule du thème */
-        .theme-toggle {
-            position: absolute;
-            top: 50%;
-            right: 80px; /* Décalé pour laisser la place au bouton info */
-            transform: translateY(-50%);
-            width: 45px;
-            height: 45px;
-            background-color: var(--secondary-color);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: background-color 0.2s, transform 0.2s, color var(--transition-speed), box-shadow 0.2s;
-            font-size: 1.2em;
-            z-index: 10;
-            outline: none;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .theme-toggle:hover {
-            background-color: var(--primary-color);
-            transform: translateY(-50%) scale(1.05);
-        }
-        .theme-toggle:active {
-            transform: translateY(-50%) scale(0.95);
-            box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
-        }
-
-        .info-btn {
-            position: absolute;
-            top: 50%;
-            right: 25px;
-            transform: translateY(-50%);
-            width: 45px;
-            height: 45px;
-            background-color: var(--secondary-color);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
-            font-size: 1.5em;
-            font-weight: bold;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .info-btn:hover {
-            background-color: var(--primary-color);
-            transform: translateY(-50%) scale(1.05);
-        }
-        .info-btn:active {
-            transform: translateY(-50%) scale(0.95);
-            box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Pop-up (Modal) Animation */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.7); display: flex;
-            justify-content: center; align-items: center; z-index: 1000;
-            opacity: 0; visibility: hidden; transition: opacity 0.3s ease-out, visibility 0s 0.3s;
-        }
-        .modal-overlay.active { 
-            opacity: 1; 
-            visibility: visible; 
-            transition: opacity 0.3s ease-out; 
-        }
-        .modal-content {
-            background-color: var(--widget-background); 
-            padding: 30px; border-radius: 12px;
-            max-width: 90%; width: 450px;
-            position: relative;
-            box-shadow: var(--shadow);
-            /* Animation d'entrée */
-            transform: scale(0.9) translateY(20px);
-            opacity: 0;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease-out, background-color var(--transition-speed);
-        }
-        .modal-overlay.active .modal-content {
-            transform: scale(1) translateY(0);
-            opacity: 1;
-        }
-
-        .modal-close { position: absolute; top: 10px; right: 15px; font-size: 2em; cursor: pointer; color: var(--light-grey); transition: color 0.2s; }
-        .modal-close:hover { color: var(--danger-color); }
-        .modal-content h3 { color: var(--primary-color); margin-top: 0; }
-        .modal-content p { line-height: 1.5; margin-bottom: 10px; border-left: 3px solid var(--primary-color); padding-left: 10px; }
-        .important-message {
-            background-color: var(--widget-background); /* Utiliser widget-background pour le mode sombre */
-            border: 1px solid var(--primary-color); /* Utiliser primary-color pour la bordure */
-            color: var(--text-color); /* Utiliser text-color pour le mode sombre */
-            padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: 500; display: flex;
-            align-items: center; font-size: 0.95em;
-            transition: background-color var(--transition-speed), border-color var(--transition-speed), color var(--transition-speed);
-        }
-        .important-message .icon { font-size: 1.5em; margin-right: 10px; color: var(--primary-color); }
-
-        footer {
-            text-align: center; padding: 25px; font-size: 0.9em;
-            color: var(--footer-grey); border-top: 1px solid var(--light-grey); margin-top: auto;
-        }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+        .btn-primary { background-color: var(--primary-color); }
+        .btn-primary:hover { background-color: #3498db; }
+        .btn-secondary { background-color: var(--secondary-color); }
+        .btn-secondary:hover { background-color: #3a536b; }
+        .btn-full-width { width: 100%; display: block; }
+        .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
+        .tab-btn { padding: 12px 20px; cursor: pointer; border: none; background: none; font-size: 1.05em; font-weight: 600; color: var(--light-grey); position: relative; }
+        .tab-btn.active { color: var(--primary-color); }
+        .tab-btn.active::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 3px; background-color: var(--primary-color); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .subject-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 30px; background: var(--widget-background); box-shadow: var(--shadow-widget); border-radius: 12px; overflow: hidden; }
+        .subject-table th, .subject-table td { padding: 14px 18px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        .subject-table thead tr:first-child th { background-color: var(--secondary-color); color: white; font-size: 1.1em; }
+        .subject-table thead tr:last-child th { background-color: #f8f9fa; color: var(--text-color); font-size: 0.85em; text-transform: uppercase; }
+        .competency-row td { background-color: #eaf2f8; color: var(--secondary-color); font-weight: bold; font-style: italic; }
+        .no-data { color: var(--light-grey); font-style: italic; }
+        .grade-percentage { font-weight: 700; color: var(--success-color); }
+        footer { text-align: center; padding: 25px; font-size: 0.9em; color: var(--footer-grey); border-top: 1px solid #eee; margin-top: 40px; }
         footer a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
         footer a:hover { text-decoration: underline; }
-
-        /* Écran de chargement (Animation initiale) */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: var(--background-color);
-            z-index: 2000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            opacity: 1;
-            transition: opacity 0.5s ease-out;
-        }
-        .loading-overlay.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-        .loading-spinner {
-            border: 5px solid var(--light-grey);
-            border-top: 5px solid var(--primary-color);
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s; }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-content { background-color: white; padding: 30px; border-radius: 12px; width: 450px; position: relative; }
+        .modal-close { position: absolute; top: 10px; right: 15px; font-size: 2em; cursor: pointer; color: var(--light-grey); }
+        .unite-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; }
+        .unite-item:nth-child(even) { background-color: #fcfdfe; }
+        .unite-item input { width: 70px; text-align: center; padding: 6px; border: 1px solid #ddd; border-radius: 6px; }
+        .hidden { display: none !important; }
+        .pond-input-field, .grade-input-field { text-align: center; border-radius: 6px; border: 1px solid #ccc; padding: 6px; width: 60px; }
+        .grade-input-field { width: 80px; }
+        .pond-input-field.modified-input, .grade-input-field.modified-input { border-color: var(--warning-color); background-color: #fff9f0; }
+        .grade-display { cursor: pointer; min-height: 30px; display: inline-block; padding: 4px; border-radius: 4px; }
     </style>
 </head>
-<body id="page-body">
-
-    <!-- Écran de chargement -->
-    <div class="loading-overlay" id="loading-overlay">
-        <div class="loading-spinner"></div>
-    </div>
+<body>
 
     <header class="site-header-container">
-        <a href="main.html" class="back-arrow" title="Retour au tableau de bord">←</a>
-        <h1 class="site-header">Outil MBS</h1>
-        <!-- Bouton de bascule du mode sombre/clair -->
-        <button class="theme-toggle" id="theme-toggle" title="Mode Sombre/Clair">
-            <i class="fas fa-moon" id="theme-icon"></i>
-        </button>
-        <button class="info-btn" id="open-modal-btn" title="Comment ça marche ?">?</button>
+        <div class="header-left">
+            <a href="index.html" class="nav-arrow" title="Retour à l'accueil">←</a>
+        </div>
+        <div class="header-center">
+            <h1 class="site-header">Outil MBS</h1>
+        </div>
+        <div class="header-right">
+            <a href="data.html" class="btn btn-secondary">Mettre à jour les données</a>
+            <a href="improve.html" class="btn btn-primary">Analyser ma performance</a>
+        </div>
     </header>
 
-    <main class="content">
-        <div class="data-widget" id="data-widget">
-            <h2 style="font-family: 'Playfair Display', serif; font-weight: 700;">Mise à Jour des Données</h2>
-            <p style="margin-top: -10px; margin-bottom: 30px;">Collez simplement vos données du portail ci-dessous.</p>
-            <textarea id="raw-text" placeholder="1. Allez sur le portail et copiez tout (Ctrl+A, Ctrl+C)&#10;2. Revenez ici et collez (Ctrl+V)&#10;&#10;L'analyse et la sauvegarde sont automatiques !"></textarea>
-        </div>
+    <main class="main-container">
+        <section class="data-section">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="etape1">Étape 1</button>
+                <button class="tab-btn" data-tab="etape2">Étape 2</button>
+                <button class="tab-btn" data-tab="etape3">Étape 3</button>
+            </div>
+            <div id="tab-contents">
+                <div id="etape1" class="tab-content active"></div>
+                <div id="etape2" class="tab-content"></div>
+                <div id="etape3" class="tab-content"></div>
+            </div>
+        </section>
+
+        <aside class="side-panel">
+            <div class="moyenne-widgets">
+                <div class="moyenne-widget"><h4>Moyenne générale</h4><div id="moyenne-generale" class="moyenne-value">--</div></div>
+                <div class="moyenne-widget"><h4>Moyenne de l'étape</h4><div id="moyenne-etape" class="moyenne-value">--</div></div>
+            </div>
+            <div class="control-group">
+                <label for="niveau-secondaire">Niveau Secondaire</label>
+                <select id="niveau-secondaire">
+                    <option value="">-- Sélectionner --</option>
+                    <option value="sec4">Secondaire 4</option>
+                    <option value="sec5">Secondaire 5</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <button id="unites-btn" class="btn btn-secondary btn-full-width">Configurer les unités</button>
+            </div>
+            
+            <div id="ponderation-controls" class="hidden" style="background-color: #fff9f0; padding: 15px; border-radius: 8px; border: 1px solid var(--warning-color); margin-bottom: 20px;">
+                <p style="font-weight: bold; text-align: center; margin-top: 0;">Pondérations modifiées</p>
+                <div style="display: flex; gap: 10px;">
+                    <button id="save-ponds-btn" class="btn btn-primary" style="flex:1;">Sauvegarder</button>
+                    <button id="revert-ponds-btn" class="btn btn-secondary" style="background-color: #95a5a6; flex:1;">Annuler</button>
+                </div>
+            </div>
+
+            <div class="subject-averages">
+                <h4>Moyennes par matière</h4>
+                <ul id="subject-averages-list"><li class="no-data">Aucune donnée</li></ul>
+            </div>
+        </aside>
     </main>
 
-    <div class="modal-overlay" id="tutorial-modal">
+    <div class="modal-overlay" id="unites-modal">
         <div class="modal-content">
-            <span class="modal-close" id="close-modal-btn">&times;</span>
-            <h3>Comment utiliser l'outil</h3>
-            <div class="important-message">
-                <span class="icon"><i class="fas fa-lightbulb"></i></span>
-                <span>Pour garder vos moyennes à jour, répétez ces étapes régulièrement.</span>
+            <span class="modal-close" id="close-unites-modal">&times;</span>
+            <h3>Configuration des Unités</h3>
+            <div class="control-group">
+                <select id="unites-mode">
+                    <option value="defaut">Unités par défaut</option>
+                    <option value="sans">Sans unités (tout = 1)</option>
+                    <option value="perso">Personnalisée</option>
+                </select>
             </div>
-            <p>1. Allez dans la section "Travaux" du portail étudiant.</p>
-            <p>2. Appuyez sur <strong>CTRL + A</strong> pour tout sélectionner.</p>
-            <p>3. Appuyez sur <strong>CTRL + C</strong> pour tout copier.</p>
-            <p>4. Revenez sur cette page et collez avec <strong>CTRL + V</strong>.</p>
-            <p><strong>C'est tout !</strong> Vous serez redirigé automatiquement.</p>
+            <div id="unites-list"></div>
         </div>
     </div>
 
@@ -317,268 +204,6 @@
         <p><a href="ticket.html">Signaler un problème</a></p>
     </footer>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- Elements ---
-            const openModalBtn = document.getElementById('open-modal-btn');
-            const closeModalBtn = document.getElementById('close-modal-btn');
-            const tutorialModal = document.getElementById('tutorial-modal');
-            const rawTextArea = document.getElementById('raw-text');
-            
-            // Nouveaux éléments pour le thème et l'animation
-            const themeToggleBtn = document.getElementById('theme-toggle');
-            const themeIcon = document.getElementById('theme-icon');
-            const pageBody = document.getElementById('page-body');
-            const dataWidget = document.getElementById('data-widget');
-            const loadingOverlay = document.getElementById('loading-overlay');
-
-            // --- Initial Loading Animation ---
-            // Déclenchement de l'animation d'entrée du widget
-            dataWidget.classList.add('loaded');
-            
-            // Masquage de l'écran de chargement après un court délai
-            setTimeout(() => {
-                loadingOverlay.classList.add('hidden');
-                setTimeout(() => {
-                    if (loadingOverlay.parentNode) {
-                        loadingOverlay.parentNode.removeChild(loadingOverlay);
-                    }
-                }, 500); // 500ms correspond à la transition CSS
-            }, 100);
-
-            // --- Dark Mode Logic ---
-            const THEME_KEY = 'mbsTheme';
-            const savedTheme = localStorage.getItem(THEME_KEY) || 'light';
-            
-            const applyTheme = (theme) => {
-                pageBody.setAttribute('data-theme', theme);
-                const isDark = theme === 'dark';
-                // Mise à jour de l'icône
-                themeIcon.classList.toggle('fa-sun', isDark);
-                themeIcon.classList.toggle('fa-moon', !isDark);
-                themeToggleBtn.title = isDark ? 'Mode Clair' : 'Mode Sombre';
-            };
-
-            // Application du thème initial
-            applyTheme(savedTheme);
-
-            // Fonction de bascule
-            const toggleTheme = () => {
-                const currentTheme = pageBody.getAttribute('data-theme');
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                applyTheme(newTheme);
-                localStorage.setItem(THEME_KEY, newTheme);
-            };
-
-            // Écouteur d'événement pour le bouton de bascule
-            themeToggleBtn.addEventListener('click', toggleTheme);
-
-            // --- Modal Logic ---
-            const openModal = () => tutorialModal.classList.add('active');
-            const closeModal = () => tutorialModal.classList.remove('active');
-
-            openModalBtn.addEventListener('click', openModal);
-            closeModalBtn.addEventListener('click', closeModal);
-            tutorialModal.addEventListener('click', (e) => { if (e.target === tutorialModal) closeModal(); });
-            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
-
-            // --- Core Paste & Save Logic ---
-            rawTextArea.addEventListener('paste', (e) => {
-                // Animation temporaire sur la zone de texte
-                rawTextArea.style.boxShadow = '0 0 0 5px var(--primary-color)';
-                setTimeout(() => {
-                    rawTextArea.style.boxShadow = ''; // Laisser la transition CSS reprendre le contrôle
-                }, 300);
-
-                // Allow the pasted text to populate the textarea before we read it
-                setTimeout(() => {
-                    const rawText = rawTextArea.value;
-                    if (!rawText.trim()) return;
-
-                    handleDataProcessing(rawText);
-                }, 0);
-            });
-
-            function handleDataProcessing(rawText) {
-                try {
-                    const parsedResult = parsePortalData(rawText);
-                    
-                    if (!parsedResult.nom || !parsedResult.etapeData) {
-                        alert("Erreur d'analyse : Le nom ou le numéro d'étape n'a pas été trouvé. Assurez-vous d'avoir bien copié toute la page du portail.");
-                        rawTextArea.value = ''; // Clear the textarea for another attempt
-                        return;
-                    }
-
-                    // Get existing data or create a new object
-                    let existingData = JSON.parse(localStorage.getItem('mbsData')) || {};
-
-                    // Create user ID if it doesn't exist
-                    if (!existingData.user_random) {
-                        existingData.user_random = 'user-' + Date.now().toString(36) + Math.random().toString(36).substring(2);
-                    }
-                    
-                    // Overwrite data for the specific etape
-                    const updatedData = {
-                        ...existingData,
-                        valid: true, // Mark data as valid
-                        nom: parsedResult.nom,
-                        [parsedResult.etapeKey]: parsedResult.etapeData,
-                    };
-
-                    // ---- START: HISTORY TRACKING LOGIC (for improve.html) ----
-                    const gradeMap = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 85, 'B': 80, 'B-': 75, 'C+': 70, 'C': 65, 'C-': 60, 'D+': 55, 'D': 50, 'E': 45 };
-                    
-                    function getNumericGrade(result) {
-                        if (!result) return null;
-                        const trimmed = result.trim();
-                        if (gradeMap[trimmed]) return gradeMap[trimmed];
-                        const scoreMatch = trimmed.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/);
-                        if (scoreMatch) {
-                            const score = parseFloat(scoreMatch[1].replace(',', '.'));
-                            const max = parseFloat(scoreMatch[2].replace(',', '.'));
-                            return (max > 0) ? (score / max) * 100 : null;
-                        }
-                        return null;
-                    }
-
-                    let currentTermAverage = 0;
-                    let totalWeight = 0;
-                    parsedResult.etapeData.forEach(subject => {
-                        subject.competencies.forEach(comp => {
-                            const compWeightMatch = comp.name.match(/\((\d+)%\)/);
-                            if (compWeightMatch) {
-                                const compWeight = parseFloat(compWeightMatch[1]);
-                                let competencyGrade = 0;
-                                let competencyTotalWeight = 0;
-                                comp.assignments.forEach(assign => {
-                                    const grade = getNumericGrade(assign.result);
-                                    const weight = parseFloat(assign.pond);
-                                    if (grade !== null && !isNaN(weight) && weight > 0) {
-                                        competencyGrade += grade * weight;
-                                        competencyTotalWeight += weight;
-                                    }
-                                });
-                                if (competencyTotalWeight > 0) {
-                                    currentTermAverage += (competencyGrade / competencyTotalWeight) * compWeight;
-                                    totalWeight += compWeight;
-                                }
-                            }
-                        });
-                    });
-                    
-                    const finalTermAvg = totalWeight > 0 ? currentTermAverage / totalWeight : null;
-
-                    if (finalTermAvg !== null) {
-                        if (!updatedData.historique) updatedData.historique = {};
-                        if (!updatedData.historique[parsedResult.etapeKey]) {
-                            updatedData.historique[parsedResult.etapeKey] = { timestamps: [], moyennes: [] };
-                        }
-                        updatedData.historique[parsedResult.etapeKey].timestamps.push(Date.now());
-                        updatedData.historique[parsedResult.etapeKey].moyennes.push(finalTermAvg);
-                    }
-                    // ---- END: HISTORY TRACKING LOGIC ----
-
-
-                    // Save the updated data
-                    localStorage.setItem('mbsData', JSON.stringify(updatedData));
-                    
-                    // Redirect to the main dashboard
-                    window.location.href = 'main.html';
-
-                } catch (error) {
-                    console.error("An error occurred during data processing:", error);
-                    alert("Une erreur inattendue est survenue. Veuillez réessayer.");
-                    rawTextArea.value = '';
-                }
-            }
-        });
-
-        // --- Data Parsing Function (from your original code, slightly adapted) ---
-        function parsePortalData(text) {
-            const nameMatch = text.match(/Photo\s*\n(.+)/);
-            const semesterMatch = text.match(/Classe\s*\n\s*(\d)/);
-            const nom = nameMatch ? nameMatch[1].trim() : null;
-            const etapeNumber = semesterMatch ? semesterMatch[1].trim() : null;
-            if (!nom || !etapeNumber) return {};
-            const etapeKey = `etape${etapeNumber}`;
-
-            const POND_REGEX = /^\d{1,3}$/;
-            const DATE_REGEX = /^\d{4}-\d{2}-\d{2}/;
-            const RESULT_REGEX = /^(\d{1,3},\d\s\/\s\d{1,3}\s\(.+\)|[A-DF][+-]?)$/;
-
-            const createNewAssignment = () => ({ textBuffer: [], category: '', work: '', pond: '', assignedDate: '', dueDate: '', result: '' });
-
-            const parseAssignments = (lines) => {
-                let assignments = [];
-                if (lines.length === 0) return assignments;
-                let currentAssignment = createNewAssignment();
-
-                const finalizeAssignment = () => {
-                    if (currentAssignment.textBuffer.length === 0 && !currentAssignment.pond) return;
-                    const buffer = currentAssignment.textBuffer;
-                    if (buffer.length === 1) {
-                        currentAssignment.work = buffer[0];
-                    } else if (buffer.length > 1) {
-                        currentAssignment.category = buffer[0];
-                        currentAssignment.work = buffer.slice(1).join('<br>');
-                    }
-                    delete currentAssignment.textBuffer;
-                    assignments.push(currentAssignment);
-                };
-
-                for (const line of lines) {
-                    const trimmedLine = line.trim();
-                    if (!trimmedLine || trimmedLine.includes('Catégorie\tTravail\tPond.')) continue;
-
-                    if (RESULT_REGEX.test(trimmedLine)) {
-                        currentAssignment.result = trimmedLine;
-                        finalizeAssignment();
-                        currentAssignment = createNewAssignment();
-                    } else if (POND_REGEX.test(trimmedLine)) {
-                        currentAssignment.pond = trimmedLine;
-                    } else if (DATE_REGEX.test(trimmedLine)) {
-                        if (!currentAssignment.assignedDate) {
-                            currentAssignment.assignedDate = trimmedLine.split('à')[0].trim();
-                        }
-                        currentAssignment.dueDate = trimmedLine;
-                    } else {
-                        if (currentAssignment.pond || currentAssignment.assignedDate) {
-                            finalizeAssignment();
-                            currentAssignment = createNewAssignment();
-                        }
-                        currentAssignment.textBuffer.push(trimmedLine);
-                    }
-                }
-                finalizeAssignment();
-                return assignments;
-            };
-            
-            const subjects = [];
-            const subjectRegex = /([A-Z]{3}\d{3}[A-Z]?) - (.+)/g;
-            const subjectsText = text.split(subjectRegex).slice(1);
-            
-            for (let i = 0; i < subjectsText.length; i += 3) {
-                const subjectData = { code: subjectsText[i].trim(), name: subjectsText[i+1].trim(), competencies: [] };
-                let subjectContent = subjectsText[i+2] || '';
-                const competencyBlocks = subjectContent.split('Compétence - ').slice(1);
-                
-                for(const block of competencyBlocks) {
-                    const blockLines = block.trim().split('\n');
-                    const compName = blockLines.shift();
-                    const competencyData = {
-                        name: `Compétence - ${compName.trim()}`,
-                        assignments: parseAssignments(blockLines)
-                    };
-                    if (competencyData.assignments.length > 0) {
-                        subjectData.competencies.push(competencyData);
-                    }
-                }
-                if (subjectData.competencies.length > 0) {
-                    subjects.push(subjectData);
-                }
-            }
-            return { nom, etapeKey, etapeData: subjects };
-        }
-    </script>
+    <script src="js/main-functions.js"></script>
 </body>
 </html>
