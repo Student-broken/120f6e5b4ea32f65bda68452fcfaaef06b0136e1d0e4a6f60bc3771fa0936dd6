@@ -95,94 +95,123 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         return totalCompetencyWeight > 0 ? totalWeightedCompetencyScore / totalCompetencyWeight : null;
     }
+
+
+
+function updateHistory(historyArray, newValue, maxLength) {
+    if (!Array.isArray(historyArray)) {
+        historyArray = [];
+    }
+    // Do not add the new value if it's identical to the most recent one.
+    if (historyArray.length > 0 && historyArray[historyArray.length - 1].toFixed(2) === newValue.toFixed(2)) {
+        return historyArray;
+    }
+    historyArray.push(newValue);
+    // Ensure the history does not exceed the maximum length.
+    while (historyArray.length > maxLength) {
+        historyArray.shift(); // Remove the oldest entry
+    }
+    return historyArray;
+}
+
     
     function renderWidgets(etapeKey) {
-        widgetGrid.innerHTML = '';
-        Object.values(activeGauges).forEach(chart => chart.destroy());
-        activeGauges = {};
-        let subjectsToRender = [];
-        if (etapeKey === 'generale') {
-            const allSubjects = new Map();
-            ['etape1', 'etape2', 'etape3'].forEach(etape => {
-                (mbsData[etape] || []).forEach(subject => {
-                    if (!allSubjects.has(subject.code)) {
-                        allSubjects.set(subject.code, { name: subject.name, competencies: [] });
-                    }
-                    allSubjects.get(subject.code).competencies.push(...subject.competencies);
-                });
-            });
-            subjectsToRender = Array.from(allSubjects.entries()).map(([code, data]) => ({
-                code, name: data.name, competencies: data.competencies,
-                average: calculateSubjectAverage({ competencies: data.competencies })
-            }));
-        } else {
-            subjectsToRender = (mbsData[etapeKey] || []).map(subject => ({
-                ...subject, average: calculateSubjectAverage(subject)
-            }));
-        }
+    widgetGrid.innerHTML = '';
+    Object.values(activeGauges).forEach(chart => chart.destroy());
+    activeGauges = {};
 
-        let hasHistoryChanges = false;
-        subjectsToRender.forEach(subject => {
-            if (subject.average === null) return;
-
-            // --- FIXED: History and Trend Logic ---
-            // Update history for the current subject, with a max length of 6
-            const initialHistoryLength = mbsData.historique[subject.code]?.length || 0;
-            if (etapeKey !== 'generale') {
-                 mbsData.historique[subject.code] = updateHistory(mbsData.historique[subject.code], subject.average, 6);
-                 if(mbsData.historique[subject.code].length !== initialHistoryLength) {
-                     hasHistoryChanges = true;
-                 }
-            }
-
-            const subjectHistory = mbsData.historique[subject.code] || [];
-            let trend = { direction: '—', change: 'Stable', class: 'neutral' };
-
-            if (subjectHistory.length >= 2) {
-                const currentAvg = subjectHistory[subjectHistory.length - 1];
-                const previousAvg = subjectHistory[subjectHistory.length - 2];
-                const change = currentAvg - previousAvg;
-
-                if (Math.abs(change) >= 0.01) { // Check for a meaningful change
-                    trend.change = `${change > 0 ? '+' : ''}${change.toFixed(2)}%`;
-                    trend.direction = change > 0 ? '▲' : '▼';
-                    trend.class = change > 0 ? 'up' : 'down';
+    let subjectsToRender = [];
+    if (etapeKey === 'generale') {
+        const allSubjects = new Map();
+        ['etape1', 'etape2', 'etape3'].forEach(etape => {
+            (mbsData[etape] || []).forEach(subject => {
+                if (!allSubjects.has(subject.code)) {
+                    allSubjects.set(subject.code, { name: subject.name, competencies: [] });
                 }
-            } else if (subjectHistory.length === 1) {
-                trend = { direction: '•', change: 'Nouveau', class: 'neutral' };
-            }
-            // --- END FIX ---
-
-            const widget = document.createElement('div');
-            widget.className = 'subject-widget';
-            const canvasId = `gauge-${subject.code.replace(/\s+/g, '')}-${etapeKey}`;
-            widget.innerHTML = `
-                <div class="widget-top-section">
-                    <div class="widget-info">
-                        <h3 class="widget-title">${subject.name}</h3>
-                        <p class="widget-average">${subject.average.toFixed(2)}%</p>
-                        <div class="widget-trend ${trend.class}">
-                            <span>${trend.direction}</span>
-                            <span>${trend.change}</span>
-                        </div>
-                    </div>
-                    <div class="gauge-container"><canvas id="${canvasId}"></canvas></div>
-                </div>
-                <div class="histogram-container"><canvas id="hist-${canvasId}"></canvas></div>`;
-            widget.addEventListener('click', () => openDetailsModal(subject, etapeKey));
-            widgetGrid.appendChild(widget);
-            renderGauge(canvasId, subject.average, mbsData.settings.objectives[subject.code]);
-            renderHistogram(`hist-${canvasId}`, subject);
+                allSubjects.get(subject.code).competencies.push(...subject.competencies);
+            });
         });
-
-        if (hasHistoryChanges) {
-            localStorage.setItem('mbsData', JSON.stringify(mbsData));
-        }
-
-        if (!widgetGrid.children.length) {
-            widgetGrid.innerHTML = `<p style="grid-column: 1 / -1; text-align:center;">Aucune donnée pour cette période.</p>`;
-        }
+        subjectsToRender = Array.from(allSubjects.entries()).map(([code, data]) => ({
+            code, name: data.name, competencies: data.competencies,
+            average: calculateSubjectAverage({ competencies: data.competencies })
+        }));
+    } else {
+        subjectsToRender = (mbsData[etapeKey] || []).map(subject => ({
+            ...subject, average: calculateSubjectAverage(subject)
+        }));
     }
+
+    let hasHistoryChanges = false;
+    subjectsToRender.forEach(subject => {
+        if (subject.average === null) return;
+
+        // --- FIXED: History and Trend Logic ---
+        if (etapeKey !== 'generale') {
+            const initialHistory = mbsData.historique[subject.code] ? [...mbsData.historique[subject.code]] : [];
+            mbsData.historique[subject.code] = updateHistory(initialHistory, subject.average, 6);
+            if (initialHistory.length !== mbsData.historique[subject.code].length) {
+                hasHistoryChanges = true;
+            }
+        }
+
+        const subjectHistory = mbsData.historique[subject.code] || [];
+        let trend;
+
+        if (subjectHistory.length < 2) {
+            // If there's not enough history, show a positive "New" state.
+            trend = { direction: '▲', change: 'Nouveau', class: 'up' };
+        } else {
+            const currentAvg = subjectHistory[subjectHistory.length - 1];
+            const previousAvg = subjectHistory[subjectHistory.length - 2];
+            const change = currentAvg - previousAvg;
+
+            if (change < 0) {
+                trend = {
+                    direction: '▼',
+                    change: `${change.toFixed(2)}%`,
+                    class: 'down'
+                };
+            } else { // change is >= 0, default to up arrow
+                trend = {
+                    direction: '▲',
+                    change: `+${change.toFixed(2)}%`,
+                    class: 'up'
+                };
+            }
+        }
+        // --- END FIX ---
+
+        const widget = document.createElement('div');
+        widget.className = 'subject-widget';
+        const canvasId = `gauge-${subject.code.replace(/\s+/g, '')}-${etapeKey}`;
+        widget.innerHTML = `
+            <div class="widget-top-section">
+                <div class="widget-info">
+                    <h3 class="widget-title">${subject.name}</h3>
+                    <p class="widget-average">${subject.average.toFixed(2)}%</p>
+                    <div class="widget-trend ${trend.class}">
+                        <span>${trend.direction}</span>
+                        <span>${trend.change}</span>
+                    </div>
+                </div>
+                <div class="gauge-container"><canvas id="${canvasId}"></canvas></div>
+            </div>
+            <div class="histogram-container"><canvas id="hist-${canvasId}"></canvas></div>`;
+        widget.addEventListener('click', () => openDetailsModal(subject, etapeKey));
+        widgetGrid.appendChild(widget);
+        renderGauge(canvasId, subject.average, mbsData.settings.objectives[subject.code]);
+        renderHistogram(`hist-${canvasId}`, subject);
+    });
+
+    // Save data to localStorage only if the history was actually modified.
+    if (hasHistoryChanges) {
+        localStorage.setItem('mbsData', JSON.stringify(mbsData));
+    }
+
+    if (!widgetGrid.children.length) {
+        widgetGrid.innerHTML = `<p style="grid-column: 1 / -1; text-align:center;">Aucune donnée pour cette période.</p>`;
+    }
+}
 
     function renderGauge(canvasId, value, goal) {
         const ctx = document.getElementById(canvasId).getContext('2d');
