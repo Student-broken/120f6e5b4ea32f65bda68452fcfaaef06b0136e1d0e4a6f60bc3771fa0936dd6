@@ -209,6 +209,7 @@
             widgetGrid.innerHTML = '';
             Object.values(activeGauges).forEach(chart => chart.destroy());
             activeGauges = {};
+
             let subjectsToRender = [];
             if (etapeKey === 'generale') {
                 const allSubjects = new Map();
@@ -271,10 +272,15 @@
             gradient.addColorStop(0, '#e74c3c');
             gradient.addColorStop(0.6, '#f39c12');
             gradient.addColorStop(1, '#27ae60');
+
             const gaugeChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: { datasets: [{ data: [100], backgroundColor: [gradient], borderWidth: 0 }] },
-                options: { responsive: true, maintainAspectRatio: false, circumference: 180, rotation: -90, cutout: '60%', plugins: { tooltip: { enabled: false } } },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    circumference: 180, rotation: -90, cutout: '60%',
+                    plugins: { tooltip: { enabled: false } }
+                },
                 plugins: [{
                     id: 'gaugeNeedleAndLine',
                     afterDraw: chart => {
@@ -300,9 +306,8 @@
                             ctx.translate(cx, cy);
                             ctx.rotate(goalAngle);
                             ctx.beginPath();
-                            // --- CORRECTED: Draw along the new Y-axis after rotation ---
-                            ctx.moveTo(0, -(chartArea.height * 0.6));
-                            ctx.lineTo(0, -chartArea.height);
+                            ctx.moveTo(0, -(chartArea.height - 5));
+                            ctx.lineTo(0, -(chartArea.height - 20));
                             ctx.strokeStyle = 'var(--danger-color)';
                             ctx.lineWidth = 3;
                             ctx.stroke();
@@ -339,12 +344,22 @@
         
         function openDetailsModal(subject) {
             const modalContent = document.getElementById('modal-content');
+            const currentObjective = mbsData.settings.objectives[subject.code] || '';
             modalContent.innerHTML = `
                 <div class="modal-header"><h2 class="modal-title">${subject.name} (${subject.code})</h2></div>
                 <div class="modal-body">
                     <div class="competency-widgets"></div>
                     <div class="graph-container" style="display:none;"><canvas id="assignmentsChart"></canvas></div>
-                    <div class="calculator-container"></div>
+                    <div class="calculator-container">
+                        <h3>Planificateur d'Objectifs</h3>
+                        <p id="goal-description"></p>
+                        <div class="goal-input">
+                            <label for="objective-input">Objectif pour cette matière :</label>
+                            <input type="number" id="objective-input" min="0" max="100" value="${currentObjective}">%
+                            <button id="save-objective-btn" class="btn-save">Sauvegarder</button>
+                        </div>
+                        <div id="goal-result" class="goal-result"></div>
+                    </div>
                 </div>`;
             const competencyContainer = modalContent.querySelector('.competency-widgets');
             const graphContainer = modalContent.querySelector('.graph-container');
@@ -375,28 +390,23 @@
                     createOrUpdateChart(compsForChart[widget.dataset.index]);
                 });
             });
-            
-            // --- LOGIC RESTRUCTURED FOR RELIABILITY ---
-            setupGoalCalculator(subject, modalContent.querySelector('.calculator-container'));
 
             const objectiveInput = modalContent.querySelector('#objective-input');
             const saveObjectiveBtn = modalContent.querySelector('#save-objective-btn');
+            saveObjectiveBtn.addEventListener('click', () => {
+                const newObjective = parseFloat(objectiveInput.value);
+                if (!isNaN(newObjective) && newObjective >= 0 && newObjective <= 100) {
+                    mbsData.settings.objectives[subject.code] = newObjective;
+                } else {
+                    delete mbsData.settings.objectives[subject.code];
+                }
+                localStorage.setItem('mbsData', JSON.stringify(mbsData));
+                saveObjectiveBtn.textContent = 'Sauvé!';
+                setTimeout(() => { saveObjectiveBtn.textContent = 'Sauvegarder'; }, 1500);
+                renderWidgets(document.querySelector('.tab-btn.active').dataset.etape);
+            });
             
-            if (saveObjectiveBtn) { // Only add listener if the button exists
-                saveObjectiveBtn.addEventListener('click', () => {
-                    const newObjective = parseFloat(objectiveInput.value);
-                    if (!isNaN(newObjective) && newObjective >= 0 && newObjective <= 100) {
-                        mbsData.settings.objectives[subject.code] = newObjective;
-                    } else {
-                        delete mbsData.settings.objectives[subject.code];
-                    }
-                    localStorage.setItem('mbsData', JSON.stringify(mbsData));
-                    saveObjectiveBtn.textContent = 'Sauvé!';
-                    setTimeout(() => { saveObjectiveBtn.textContent = 'Sauvegarder'; }, 1500);
-                    renderWidgets(document.querySelector('.tab-btn.active').dataset.etape);
-                });
-            }
-
+            setupGoalCalculator(subject, modalContent.querySelector('.calculator-container'));
             detailsModal.classList.add('active');
         }
 
@@ -417,54 +427,56 @@
         }
         
         function setupGoalCalculator(subject, container) {
-            let sumOfWeightedGrades = 0;
-            let sumOfCompletedWeights = 0;
-            let sumOfFutureWeights = 0;
-            let sumOfTotalWeights = 0;
-            subject.competencies.forEach(comp => {
-                comp.assignments.forEach(assign => {
-                    const weight = parseFloat(assign.pond);
-                    if (isNaN(weight) || weight <= 0) return;
-                    sumOfTotalWeights += weight;
-                    const grade = getNumericGrade(assign.result);
-                    if (grade !== null) {
-                        sumOfWeightedGrades += grade * weight;
-                        sumOfCompletedWeights += weight;
-                    } else {
-                        sumOfFutureWeights += weight;
-                    }
-                });
-            });
-            if (sumOfTotalWeights <= 0) {
-                container.innerHTML = '<h3>Planificateur d\'Objectifs</h3><p>Aucun travail avec une pondération valide n\'a été trouvé.</p>';
-                return;
-            }
-            if (sumOfFutureWeights < 0.01) {
-                container.innerHTML = '<h3>Planificateur d\'Objectifs</h3><p>Tous les travaux pour cette matière semblent notés.</p>';
-                return;
-            }
-            const currentAverage = sumOfCompletedWeights > 0 ? (sumOfWeightedGrades / sumOfCompletedWeights) : 0;
-            const completedPercentage = (sumOfTotalWeights > 0) ? (sumOfCompletedWeights / sumOfTotalWeights) * 100 : 0;
-            const currentObjective = mbsData.settings.objectives[subject.code] || '';
-            container.innerHTML = `
-                <h3>Planificateur d'Objectifs</h3>
-                <p>Moyenne actuelle : <strong>${currentAverage.toFixed(2)}%</strong> (sur <strong>${completedPercentage.toFixed(1)}%</strong> de la matière complétée).</p>
-                <div class="goal-input">
-                    <label for="objective-input">Objectif final :</label>
-                    <input type="number" id="objective-input" min="0" max="100" value="${currentObjective}">%
-                    <button id="save-objective-btn" class="btn-save">Sauvegarder</button>
-                </div>
-                <div id="goal-result" class="goal-result"></div>`;
-            
+            const goalInputDiv = container.querySelector('.goal-input');
+            const goalResultDiv = container.querySelector('#goal-result');
+            const goalDescriptionP = container.querySelector('#goal-description');
             const goalInput = container.querySelector('#objective-input');
-            const goalResult = container.querySelector('#goal-result');
-            
+
             function calculate() {
+                let sumOfWeightedGrades = 0;
+                let sumOfCompletedWeights = 0;
+                let sumOfFutureWeights = 0;
+                let sumOfTotalWeights = 0;
+                subject.competencies.forEach(comp => {
+                    comp.assignments.forEach(assign => {
+                        const weight = parseFloat(assign.pond);
+                        if (isNaN(weight) || weight <= 0) return;
+                        sumOfTotalWeights += weight;
+                        const grade = getNumericGrade(assign.result);
+                        if (grade !== null) {
+                            sumOfWeightedGrades += grade * weight;
+                            sumOfCompletedWeights += weight;
+                        } else {
+                            sumOfFutureWeights += weight;
+                        }
+                    });
+                });
+
+                if (sumOfTotalWeights <= 0) {
+                    goalDescriptionP.style.display = 'none';
+                    goalInputDiv.style.display = 'none';
+                    goalResultDiv.textContent = 'Aucun travail avec une pondération valide n\'a été trouvé.';
+                    return;
+                }
+                if (sumOfFutureWeights < 0.01) {
+                    goalDescriptionP.style.display = 'none';
+                    goalInputDiv.style.display = 'none';
+                    goalResultDiv.textContent = 'Tous les travaux pour cette matière semblent notés.';
+                    return;
+                }
+
+                // Show fields if calculation is possible
+                goalDescriptionP.style.display = 'block';
+                goalInputDiv.style.display = 'flex';
+
+                const currentAverage = sumOfCompletedWeights > 0 ? (sumOfWeightedGrades / sumOfCompletedWeights) : 0;
+                const completedPercentage = (sumOfCompletedWeights / sumOfTotalWeights) * 100;
+                goalDescriptionP.innerHTML = `Moyenne actuelle : <strong>${currentAverage.toFixed(2)}%</strong> (sur <strong>${completedPercentage.toFixed(1)}%</strong> de la matière complétée).`;
+
                 const targetAvg = parseFloat(goalInput.value);
                 if (isNaN(targetAvg) || targetAvg < 0 || targetAvg > 100) {
-                    goalResult.innerHTML = 'Veuillez entrer un objectif entre 0 et 100.';
-                    goalResult.className = 'goal-result danger';
-                    return;
+                    goalResultDiv.innerHTML = 'Veuillez entrer un objectif entre 0 et 100.';
+                    goalResultDiv.className = 'goal-result danger'; return;
                 }
                 const totalPointsNeeded = targetAvg * sumOfTotalWeights;
                 const pointsNeededFromFuture = totalPointsNeeded - sumOfWeightedGrades;
@@ -480,8 +492,8 @@
                     message = `Pour atteindre <strong>${targetAvg}%</strong>, il vous faut une moyenne de <strong>${requiredAvgOnFuture.toFixed(1)}%</strong> sur les travaux restants.`;
                     resultClass = 'warning';
                 }
-                goalResult.innerHTML = message;
-                goalResult.className = `goal-result ${resultClass}`;
+                goalResultDiv.innerHTML = message;
+                goalResultDiv.className = `goal-result ${resultClass}`;
             }
             goalInput.addEventListener('input', calculate);
             calculate();
