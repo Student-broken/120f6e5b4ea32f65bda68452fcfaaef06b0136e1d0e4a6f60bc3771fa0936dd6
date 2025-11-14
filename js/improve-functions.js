@@ -53,19 +53,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateHistory(historyArray, newValue) {
-        if (!Array.isArray(historyArray)) historyArray = [];
-        if (historyArray.length > 0 && historyArray[historyArray.length - 1]?.toFixed(2) === newValue.toFixed(2)) {
-            return { updated: false, history: historyArray };
+        if (!Array.isArray(historyArray)) {
+            // If it's the first time, and there's a valid new value, start the history
+            historyArray = newValue !== null ? [newValue] : [];
+            return { updated: true, history: historyArray };
         }
-        historyArray.push(newValue);
-        while (historyArray.length > 50) { historyArray.shift(); }
-        return { updated: true, history: historyArray };
+        
+        // If there's a new valid value and it's different from the last, add it.
+        if (newValue !== null && (historyArray.length === 0 || historyArray[historyArray.length - 1]?.toFixed(2) !== newValue.toFixed(2))) {
+            historyArray.push(newValue);
+            while (historyArray.length > 50) { 
+                historyArray.shift(); 
+            }
+            return { updated: true, history: historyArray };
+        }
+        
+        return { updated: false, history: historyArray };
     }
+
 
     function getNumericGrade(result) {
         if (!result) return null;
         const trimmed = result.trim();
         if (gradeMap[trimmed]) return gradeMap[trimmed];
+        // Updated regex to handle scores like "8.5/10"
         const scoreMatch = trimmed.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/);
         if (scoreMatch) {
             const score = parseFloat(scoreMatch[1].replace(',', '.'));
@@ -78,30 +89,46 @@ document.addEventListener('DOMContentLoaded', () => {
     function calculateAverage(assignments) {
         let totalWeightedGrade = 0;
         let totalWeight = 0;
+        let gradedAssignmentsExist = false;
         assignments.forEach(assign => {
             const grade = getNumericGrade(assign.result);
             const weight = parseFloat(assign.pond);
+
+            // An assignment contributes to the average only if it has a grade and a valid weight.
             if (grade !== null && !isNaN(weight) && weight > 0) {
                 totalWeightedGrade += grade * weight;
                 totalWeight += weight;
+                gradedAssignmentsExist = true;
             }
         });
+
+        // Return an average only if at least one assignment has been graded.
+        if (!gradedAssignmentsExist) return null; 
+
         return totalWeight > 0 ? { average: totalWeightedGrade / totalWeight, weight: totalWeight } : null;
     }
     
     function calculateSubjectAverage(subject) {
         let totalWeightedCompetencyScore = 0;
         let totalCompetencyWeight = 0;
+        let hasGradedWork = false;
+
         subject.competencies.forEach(comp => {
             const compWeightMatch = comp.name.match(/\((\d+)%\)/);
             if (!compWeightMatch) return;
+
             const competencyWeight = parseFloat(compWeightMatch[1]);
             const competencyResult = calculateAverage(comp.assignments);
+            
             if (competencyResult) {
+                hasGradedWork = true;
                 totalWeightedCompetencyScore += competencyResult.average * competencyWeight;
                 totalCompetencyWeight += competencyWeight;
             }
         });
+
+        if (!hasGradedWork) return null; // No average if no competencies have graded work
+
         return totalCompetencyWeight > 0 ? totalWeightedCompetencyScore / totalCompetencyWeight : null;
     }
     
@@ -132,8 +159,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let needsDataSave = false;
         subjectsToRender.forEach(subject => {
+            // Don't render a widget if there's no average to show
             if (subject.average === null) return;
 
+            // For specific stages (not 'generale'), update the history with the new average
             if (etapeKey !== 'generale') {
                 const historyResult = updateHistory(mbsData.historique[subject.code], subject.average);
                 if (historyResult.updated) {
@@ -142,17 +171,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            const subjectHistory = (mbsData.historique[subject.code] || []).filter(h => h !== null);
-            let trend;
+            const subjectHistory = (mbsData.historique[subject.code] || []);
+            // If history is empty but there is an average, create a default starting point
+            if(subjectHistory.length === 0 && subject.average !== null){
+                subjectHistory.push(subject.average);
+            }
 
+            let trend;
             if (subjectHistory.length < 2) {
                 trend = { direction: '▲', change: 'Nouveau', class: 'up' };
             } else {
                 const currentAvg = subjectHistory[subjectHistory.length - 1];
-                const previousPoints = subjectHistory.slice(0, subjectHistory.length - 1);
-                const baselineAverage = previousPoints.reduce((sum, val) => sum + val, 0) / previousPoints.length;
+                // Use the second to last point as the baseline for change calculation
+                const baselineAverage = subjectHistory[subjectHistory.length - 2];
                 const change = currentAvg - baselineAverage;
-
+                
                 trend = change < 0 
                     ? { direction: '▼', change: `${change.toFixed(2)}%`, class: 'down' }
                     : { direction: '▲', change: `+${change.toFixed(2)}%`, class: 'up' };
@@ -280,7 +313,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderLineGraph(canvasId, subject) {
-        const history = (mbsData.historique[subject.code] || []).filter(h => h !== null);
+        let history = (mbsData.historique[subject.code] || []).filter(h => h !== null);
+
+        // If history is empty but a current average exists, start the graph with that single point.
+        if (history.length === 0 && subject.average !== null) {
+            history = [subject.average];
+        }
+
         const labels = history.map((_, i) => `Point ${i + 1}`);
         const lineGraphColor = '#3498db';
         const ctx = document.getElementById(canvasId).getContext('2d');
