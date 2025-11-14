@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
         mbsData = JSON.parse(localStorage.getItem('mbsData')) || {};
         if (!mbsData.settings) mbsData.settings = {};
         if (!mbsData.settings.objectives) mbsData.settings.objectives = {};
+        if (!mbsData.historique) mbsData.historique = {}; // Initialize history object
         if (!mbsData.valid) {
             widgetGrid.innerHTML = `<p style="text-align:center; width:100%;">Aucune donnée à analyser. Veuillez d'abord <a href="data.html">importer vos données</a>.</p>`;
             return;
@@ -27,6 +28,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }));
         detailsModal.addEventListener('click', e => { if (e.target === detailsModal) closeDetailsModal(); });
     }
+
+    /**
+     * Updates a history array with a new value, ensuring no consecutive duplicates
+     * and maintaining a maximum length.
+     * @param {Array} historyArray The array of historical values.
+     * @param {*} newValue The new value to add.
+     * @param {number} maxLength The maximum number of items to keep in the history.
+     * @returns {Array} The updated history array.
+     */
+    function updateHistory(historyArray, newValue, maxLength) {
+        if (!Array.isArray(historyArray)) {
+            historyArray = [];
+        }
+        // Don't add if the new value is the same as the last one
+        if (historyArray.length > 0 && historyArray[historyArray.length - 1].toFixed(2) === newValue.toFixed(2)) {
+            return historyArray;
+        }
+        historyArray.push(newValue);
+        while (historyArray.length > maxLength) {
+            historyArray.shift(); // Remove the oldest entry
+        }
+        return historyArray;
+    }
+
 
     function getNumericGrade(result) {
         if (!result) return null;
@@ -95,16 +120,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 ...subject, average: calculateSubjectAverage(subject)
             }));
         }
+
+        let hasHistoryChanges = false;
         subjectsToRender.forEach(subject => {
             if (subject.average === null) return;
-            let trend = { direction: '▲', change: 'Nouveau', class: 'up' };
-            if (etapeKey !== 'generale' && mbsData.historique?.[etapeKey]?.moyennes?.length > 1) {
-                const moyennes = mbsData.historique[etapeKey].moyennes;
-                const change = moyennes[moyennes.length - 1] - moyennes[moyennes.length - 2];
-                trend.change = `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`;
-                trend.direction = change < 0 ? '▼' : '▲';
-                trend.class = change < 0 ? 'down' : 'up';
+
+            // --- FIXED: History and Trend Logic ---
+            // Update history for the current subject, with a max length of 6
+            const initialHistoryLength = mbsData.historique[subject.code]?.length || 0;
+            if (etapeKey !== 'generale') {
+                 mbsData.historique[subject.code] = updateHistory(mbsData.historique[subject.code], subject.average, 6);
+                 if(mbsData.historique[subject.code].length !== initialHistoryLength) {
+                     hasHistoryChanges = true;
+                 }
             }
+
+            const subjectHistory = mbsData.historique[subject.code] || [];
+            let trend = { direction: '—', change: 'Stable', class: 'neutral' };
+
+            if (subjectHistory.length >= 2) {
+                const currentAvg = subjectHistory[subjectHistory.length - 1];
+                const previousAvg = subjectHistory[subjectHistory.length - 2];
+                const change = currentAvg - previousAvg;
+
+                if (Math.abs(change) >= 0.01) { // Check for a meaningful change
+                    trend.change = `${change > 0 ? '+' : ''}${change.toFixed(2)}%`;
+                    trend.direction = change > 0 ? '▲' : '▼';
+                    trend.class = change > 0 ? 'up' : 'down';
+                }
+            } else if (subjectHistory.length === 1) {
+                trend = { direction: '•', change: 'Nouveau', class: 'neutral' };
+            }
+            // --- END FIX ---
+
             const widget = document.createElement('div');
             widget.className = 'subject-widget';
             const canvasId = `gauge-${subject.code.replace(/\s+/g, '')}-${etapeKey}`;
@@ -126,6 +174,11 @@ document.addEventListener('DOMContentLoaded', () => {
             renderGauge(canvasId, subject.average, mbsData.settings.objectives[subject.code]);
             renderHistogram(`hist-${canvasId}`, subject);
         });
+
+        if (hasHistoryChanges) {
+            localStorage.setItem('mbsData', JSON.stringify(mbsData));
+        }
+
         if (!widgetGrid.children.length) {
             widgetGrid.innerHTML = `<p style="grid-column: 1 / -1; text-align:center;">Aucune donnée pour cette période.</p>`;
         }
