@@ -1,777 +1,888 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculateur de Moyenne Pondérée</title>
+    <title>Hyper-Accurate Dynamic Grade Projector</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary-color: #4f46e5;
-            --secondary-color: #10b981;
-            --background-color: #f9fafb;
-            --card-background: #ffffff;
+        /* Custom styles for dark mode and specific colors */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #0d1117; /* GitHub Dark Mode Background */
+            color: #c9d1d9; /* Light Text */
         }
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--background-color);
-            color: #1f2937;
+        .container { max-width: 1200px; }
+        .card { 
+            background-color: #161b22; /* Card Background */
+            border-radius: 12px; 
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.08); 
+            border: 1px solid #30363d;
         }
-        .main-container {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 24px;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 24px 16px;
-        }
-        @media (min-width: 1024px) {
-            .main-container {
-                grid-template-columns: 3fr 1fr;
-                padding: 32px;
-            }
-        }
-        .card {
-            background-color: var(--card-background);
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            padding: 24px;
-        }
+        .btn-primary { background-color: #238636; color: white; transition: background-color 0.2s; }
+        .btn-primary:hover { background-color: #2ea043; }
+        .progress-bar-fill { transition: width 0.4s ease-in-out, background-color 0.4s; }
+        
+        /* Monte Carlo colors */
+        .prob-high { background-color: #235d3d; } /* Dark Green */
+        .prob-mid { background-color: #925c0e; } /* Dark Yellow */
+        .prob-low { background-color: #6d2e32; } /* Dark Red */
 
-        /* Tabs */
-        .tab-btn.active {
-            border-color: var(--primary-color);
-            color: var(--primary-color);
-            font-weight: 600;
-        }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-
-        /* Tables */
-        .subject-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            margin-bottom: 24px;
-            overflow-x: auto;
-            display: block;
-        }
-        .subject-table thead th {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 12px 16px;
-            font-weight: 600;
-            text-align: left;
-        }
-        .subject-table thead th:first-child { border-top-left-radius: 8px; }
-        .subject-table thead th:last-child { border-top-right-radius: 8px; }
-        .subject-table tbody tr:nth-child(even) { background-color: #f3f4f6; }
-        .subject-table tbody tr:hover { background-color: #e5e7eb; }
-        .subject-table td, .subject-table th {
-            padding: 10px 16px;
-            border-bottom: 1px solid #e5e7eb;
-            white-space: nowrap;
-        }
-        .subject-table tbody tr:last-child td { border-bottom: none; }
-
-        .competency-row td {
-            background-color: #eef2ff !important;
-            font-weight: 600;
-            color: var(--primary-color);
-        }
-
-        /* Inputs */
-        .pond-input-field {
-            width: 50px;
-            text-align: center;
-            border: 1px solid #d1d5db;
-            border-radius: 4px;
-            padding: 4px;
-        }
-        .pond-input-field.modified-input {
-            border-color: var(--secondary-color);
-            background-color: #ecfdf5; /* green-50 */
-        }
-        .grade-percentage {
-            font-weight: 700;
-            color: var(--secondary-color);
-        }
-        .no-data {
-            color: #9ca3af;
-            font-style: italic;
-        }
-        .invalid {
-            color: #ef4444; /* red-500 */
-        }
-
-        /* Grade Input Container (for real-time calculation) */
-        .grade-container {
-            position: relative;
-            cursor: pointer;
-        }
-        .grade-input-field {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            padding: 0 4px;
-            text-align: center;
-            border: 2px solid var(--primary-color);
-            border-radius: 4px;
-            box-shadow: 0 0 0 2px var(--primary-color);
-        }
-        .hidden { display: none !important; }
-
-        /* Sidebar & Modals */
-        .avg-large {
-            font-size: 2.25rem; /* 3xl */
-            font-weight: 700;
-            color: var(--primary-color);
-        }
-        #subject-averages-list li {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px dashed #e5e7eb;
-        }
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: none;
-            z-index: 50;
-        }
-        .modal.active {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .modal-content {
-            background-color: white;
-            padding: 24px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
-        }
-        .unite-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid #f3f4f6;
-        }
-        .unite-item input {
-            width: 60px;
-            text-align: center;
-        }
+        /* Scenarios table styling */
+        .scenario-header { background-color: #21262d; color: #79c0ff; }
+        .subject-header { background-color: #161b22; color: #c9d1d9; }
+        
+        .text-90 { color: #38a169; } /* Green */
+        .text-80 { color: #ecc94b; } /* Yellow */
+        .text-70 { color: #f6ad55; } /* Orange */
+        .text-60 { color: #e53e3e; } /* Red */
     </style>
 </head>
-<body>
+<body class="p-4 md:p-8">
 
-    <header class="bg-white shadow-sm border-b border-gray-100">
-        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-            <h1 class="text-2xl font-bold text-gray-900">MBS Grade Projections</h1>
-            <p id="student-name" class="text-lg text-gray-600"></p>
-        </div>
-    </header>
+    <div class="container mx-auto space-y-8">
+        <header class="text-center">
+            <h1 class="text-4xl font-extrabold text-[#79c0ff]">🔬 Hyper-Accurate Grade Projector (v3)</h1>
+            <p class="text-[#8b949e] mt-2">Maximum algorithmic limit reached: EWM, Volatility & Full Probability Spectrum.</p>
+        </header>
 
-    <div class="main-container">
-        <!-- Main Content Area -->
-        <div class="content-panel">
-            <div class="card p-4 sm:p-6">
-                <!-- Tab Controls -->
-                <div class="flex border-b border-gray-200 space-x-4 mb-6">
-                    <button data-tab="etape1" class="tab-btn active pb-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700">Étape 1 (20%)</button>
-                    <button data-tab="etape2" class="tab-btn pb-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700">Étape 2 (20%)</button>
-                    <button data-tab="etape3" class="tab-btn pb-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700">Étape 3 (60%)</button>
-                </div>
-                <!-- Ponderation Controls -->
-                <div id="ponderation-controls" class="hidden bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-lg flex justify-between items-center">
-                    <p class="text-sm text-yellow-700">Vous avez modifié des pondérations. Sauvegardez pour les appliquer de manière permanente.</p>
-                    <div class="space-x-2">
-                        <button id="revert-ponds-btn" class="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Annuler</button>
-                        <button id="save-ponds-btn" class="px-3 py-1 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700">Sauvegarder</button>
-                    </div>
-                </div>
-                <!-- Tab Contents -->
-                <div id="tab-contents">
-                    <div id="etape1" class="tab-content active"></div>
-                    <div id="etape2" class="tab-content"></div>
-                    <div id="etape3" class="tab-content"></div>
-                </div>
+        <!-- Status and Progress Display -->
+        <div class="card p-5 space-y-3">
+            <h2 class="text-xl font-semibold text-[#79c0ff]">Calculation Status</h2>
+            <div class="h-3 bg-gray-600 rounded-full overflow-hidden">
+                <div id="progressBar" class="h-full bg-green-500 rounded-full progress-bar-fill" style="width: 0%;"></div>
             </div>
+            <p id="statusMessage" class="text-sm font-medium text-[#8b949e]">Ready to start simulation. Pushing the limits...</p>
         </div>
 
-        <!-- Sidebar (Averages and Settings) -->
-        <div class="sidebar space-y-6">
-            <!-- Global Average Card -->
-            <div class="card">
-                <h2 class="text-xl font-semibold mb-3">Moyenne Générale Projetée</h2>
-                <div class="text-center">
-                    <p id="moyenne-generale" class="avg-large">--</p>
-                    <p class="text-gray-500">Pondération totale: Étape 1(20%) + Étape 2(20%) + Étape 3(60%)</p>
-                </div>
-            </div>
+        <!-- Control Panel -->
+        <div class="card p-5 flex justify-center">
+            <button id="startButton" class="btn-primary px-8 py-4 text-xl font-bold rounded-full disabled:opacity-50 shadow-lg hover:shadow-xl" onclick="startSimulation()">
+                RUN MAX-ACCURACY SIMULATION
+            </button>
+        </div>
 
-            <!-- Term Average Card -->
-            <div class="card">
-                <h2 class="text-xl font-semibold mb-3">Moyenne de l'Étape Active</h2>
-                <div class="text-center mb-4">
-                    <p id="moyenne-etape" class="avg-large">--</p>
-                </div>
-                <h3 class="font-bold text-gray-700 mb-2 border-t pt-3">Moyennes par Matière (Unités Pondérées)</h3>
-                <ul id="subject-averages-list" class="space-y-1"></ul>
+        <!-- Results Display -->
+        <div id="resultsContainer" class="card p-6 hidden">
+            <h2 class="text-3xl font-bold text-white mb-4 border-b border-[#30363d] pb-3">Projection Results</h2>
+            <div id="gpiDisplay" class="mb-4 text-xl font-medium text-[#c9d1d9]"></div>
+            
+            <!-- Monte Carlo Section -->
+            <h3 class="text-2xl font-semibold mt-8 mb-4 text-red-400">Monte Carlo Probability Forecasts (5,000 Trials)</h3>
+            <p class="text-sm text-[#8b949e] mb-3">Chance of achieving the following global final averages based on current trends and volatility:</p>
+            <div id="monteCarloBody" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 text-center">
+                <!-- Probabilities go here -->
             </div>
-
-            <!-- Settings Card -->
-            <div class="card">
-                <h2 class="text-xl font-semibold mb-3">Paramètres de Calcul</h2>
-                <div class="space-y-4">
-                    <div>
-                        <label for="niveau-secondaire" class="block text-sm font-medium text-gray-700 mb-1">Niveau Secondaire</label>
-                        <select id="niveau-secondaire" class="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="">Sélectionner...</option>
-                            <option value="sec4">Secondaire 4</option>
-                            <option value="sec5">Secondaire 5</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="unites-mode" class="block text-sm font-medium text-gray-700 mb-1">Mode d'Unités</label>
-                        <select id="unites-mode" class="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="defaut">Unités QEP (Défaut Sec. 4/5)</option>
-                            <option value="perso">Unités Personnalisées</option>
-                            <option value="sans">Sans Unités (Moyenne simple)</option>
-                        </select>
-                        <button id="unites-btn" class="mt-2 text-xs text-indigo-600 hover:text-indigo-800 disabled:opacity-50" disabled>Voir/Modifier Unités</button>
-                    </div>
-                </div>
+            
+            <h3 class="text-2xl font-semibold mt-10 mb-4 text-[#79c0ff]">Annual Average Scenarios</h3>
+            <p class="text-sm text-[#8b949e] mb-3">Projected final average based on different assumed performance levels on remaining work:</p>
+            <table class="min-w-full divide-y divide-[#30363d] rounded-lg overflow-hidden">
+                <thead class="scenario-header">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Scenario</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider hidden lg:table-cell">Strategy Description</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider">Projected Avg</th>
+                    </tr>
+                </thead>
+                <tbody id="scenarioBody" class="divide-y divide-[#30363d] bg-[#161b22]">
+                    <!-- Scenarios go here -->
+                </tbody>
+            </table>
+            
+            <h3 class="text-2xl font-semibold mt-10 mb-4 text-[#79c0ff]">Deep Subject-Level Trend Analysis</h3>
+            <p class="text-sm text-[#8b949e] mb-3">Analysis uses Exponentially Weighted Mean (EWM) and Momentum scoring for predictive accuracy.</p>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-[#30363d] rounded-lg overflow-hidden">
+                    <thead class="subject-header">
+                        <tr>
+                            <th class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider">Subject</th>
+                            <th class="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider">Current Avg</th>
+                            <th class="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider">EWM ($\lambda=0.9$)</th>
+                            <th class="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider">Volat. ($\sigma$)</th>
+                            <th class="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider">Comp. Volat.</th>
+                            <th class="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider">Effort (0-10)</th>
+                            <th class="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider">Momentum</th>
+                            <th class="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider">Realist. Final</th>
+                        </tr>
+                    </thead>
+                    <tbody id="subjectBody" class="divide-y divide-[#30363d] bg-[#161b22]">
+                        <!-- Subject details go here -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <h3 class="text-2xl font-semibold mt-10 mb-4 text-[#79c0ff]">Required Final Grade for Subject Pass/Honors</h3>
+            <p class="text-sm text-[#8b949e] mb-3">The minimum percentage required on all *remaining* assignments to hit major benchmarks:</p>
+            <div id="requiredGradesBody" class="space-y-4">
+                <!-- Required Grades go here -->
             </div>
         </div>
     </div>
-
-    <!-- Units Customization Modal -->
-    <div id="unites-modal" class="modal">
-        <div class="modal-content">
-            <div class="flex justify-between items-center border-b pb-3 mb-4">
-                <h2 class="text-xl font-bold">Unités par Matière</h2>
-                <button id="close-unites-modal" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
-            </div>
-            <p class="text-sm text-gray-600 mb-4">Définissez les unités pour chaque matière. Ceci affecte la moyenne de l'étape.</p>
-            <div id="unites-list" class="space-y-2 max-h-80 overflow-y-auto">
-                <!-- Units will be populated here -->
-            </div>
-            <button id="save-unites-btn" class="w-full mt-6 py-2 px-4 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700 hidden">Sauvegarder Unités</button>
-        </div>
-    </div>
-
 
     <script>
-        // --- START OF PROVIDED JAVASCRIPT LOGIC ---
-        document.addEventListener('DOMContentLoaded', () => {
+        // --- CORE CONSTANTS ---
+        const TARGET_GRADES = [95, 90, 85, 80, 75, 70, 60];
+        const gradeMap = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 85, 'B': 80, 'B-': 75, 'C+': 70, 'C-': 60, 'D+': 55, 'D': 50, 'E': 45 };
+        const termWeights = { etape1: 0.20, etape2: 0.20, etape3: 0.60 };
+        const MONTE_CARLO_TRIALS = 5000;
+        const EWM_LAMBDA = 0.9; // Exponential Weighting Factor (higher means more trust in recent data)
 
-            // --- CONSTANTS AND STATE ---
-            const gradeMap = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 85, 'B': 80, 'B-': 75, 'C+': 70, 'C': 65, 'C-': 60, 'D+': 55, 'D': 50, 'E': 45 };
-            const defaultUnits = {
-                'sec4': { 'ART': 2, 'MUS': 2, 'DRM': 2, 'FRA': 6, 'ELA': 4, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 6, 'ST': 4, 'STE': 4, 'HQC': 4, 'CCQ': 2, 'EPS': 2, 'ENT': 2, 'INF': 2, 'PSY': 2 },
-                'sec5': { 'ART': 2, 'MUS': 2, 'DRM': 2, 'CAT': 4, 'FRA': 6, 'ELA': 6, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 4, 'MED': 4, 'PSY': 4, 'ENT': 4, 'FIN': 4, 'CHI': 4, 'PHY': 4, 'MON': 2, 'HQC': 4, 'CCQ': 2, 'EPS': 2, 'FIN': 2 }
-            };
-            const subjectList = { 'ART': "Arts Plastiques", 'MUS': "Musique", 'DRM': "Art Dramatique", 'CAT': "Conception et Application Technologique", 'FRA': "Français", 'ELA': "English Language Arts", 'EESL': "Anglais enrichi", 'ESL': "English Second Language", 'SN': "Math SN", 'CST': "Math CST", 'ST': "Science et Technologie", 'STE': "Science et Tech. Env.", 'HQC': "Histoire", 'CCQ': "Culture et Citoyenneté", 'EPS': "Éducation Physique", 'CHI': "Chimie", 'PHY': "Physique", 'MON': "Monde Contemporain", 'MED': "Média", 'ENT': "Entrepreneuriat", 'INF': "Informatique", 'PSY': "Psychologie", 'FIN': "Éducation Financière" };
-
-            let mbsData = {};
-            let activeTab = 'etape1';
-            
-            // --- DUMMY DATA FOR INITIAL LOAD ---
-            const defaultMbsData = {
-                nom: "Jean Tremblay",
-                valid: true,
-                settings: { niveau: 'sec5', unitesMode: 'defaut', customUnites: {} },
-                etape1: [
-                    // Subject 1: FRA (Français - 6 units Sec 5)
-                    { code: 'FRA-5', name: 'Français Langue d\'Enseignement', competencies: [
-                        { name: 'Comp. 1: Écrire des textes variés (40%)', assignments: [
-                            { category: 'Écriture', work: 'Dissertation', pond: '10', assignedDate: '2025-09-05', dueDate: '2025-09-20', result: 'B+' },
-                            { category: 'Écriture', work: 'Rapport lecture', pond: '5', assignedDate: '2025-10-01', dueDate: '2025-10-15', result: '80/100' }
-                        ]},
-                        { name: 'Comp. 2: Communiquer oralement (20%)', assignments: [
-                            { category: 'Oral', work: 'Présentation', pond: '10', assignedDate: '2025-10-20', dueDate: '2025-10-30', result: 'A' }
-                        ]},
-                        { name: 'Comp. 3: Lire et apprécier (40%)', assignments: [
-                            { category: 'Lecture', work: 'Examen', pond: '15', assignedDate: '2025-11-01', dueDate: '2025-11-15', result: '92%' }
-                        ]}
-                    ]},
-                    // Subject 2: PHY (Physique - 4 units Sec 5)
-                    { code: 'PHY-5', name: 'Physique 5e secondaire', competencies: [
-                        { name: 'Comp. 1: Problèmes (50%)', assignments: [
-                            { category: 'Lab', work: 'Labo Poids', pond: '10', assignedDate: '2025-09-10', dueDate: '2025-09-24', result: '18/20' },
-                            { category: 'Exam', work: 'Exam 1', pond: '20', assignedDate: '2025-10-01', dueDate: '2025-10-20', result: '65%' }
-                        ]},
-                        { name: 'Comp. 2: Théorie (50%)', assignments: [
-                            { category: 'Quiz', work: 'Quiz Unités', pond: '5', assignedDate: '2025-09-15', dueDate: '2025-09-15', result: '90%' }
-                        ]}
-                    ]}
-                ],
-                etape2: [], // Empty for demonstration
-                etape3: [], // Empty for demonstration
-            };
-
-            // --- INITIALIZATION ---
-            function init() {
-                // Load data from localStorage or use dummy data if empty
-                mbsData = JSON.parse(localStorage.getItem('mbsData'));
-                if (!mbsData || !mbsData.valid || !mbsData.nom) {
-                    mbsData = defaultMbsData;
-                    // Note: In a real environment, you might not save dummy data immediately, 
-                    // but we do so here for the first run demonstration.
-                    localStorage.setItem('mbsData', JSON.stringify(mbsData));
+        // --- MOCK DATA (Highly volatile, complex structure) ---
+        let mbsData = {
+            settings: { niveau: 'sec5', unitesMode: 'officiel' },
+            etape1: [
+                { code: 'FRA-5', name: 'Français', competencies: [{ name: 'Comp 1 (40%)', assignments: [{ result: '80%', pond: '10' }, { result: '65/100', pond: '20' }] }, { name: 'Comp 2 (60%)', assignments: [{ result: 'A', pond: '15' }] }] },
+                { code: 'MAT-5', name: 'Mathématiques', competencies: [{ name: 'Comp 1 (100%)', assignments: [{ result: '90%', pond: '30' }, { result: '75%', pond: '10' }] }] },
+                { code: 'PHY-5', name: 'Physique', competencies: [{ name: 'Comp 1 (100%)', assignments: [{ result: '55%', pond: '20' }, { result: '70%', pond: '10' }] }] }
+            ],
+            etape2: [
+                { code: 'FRA-5', name: 'Français', competencies: [{ name: 'Comp 1 (40%)', assignments: [{ result: '70%', pond: '15' }, { result: '92%', pond: '15' }] }, { name: 'Comp 2 (60%)', assignments: [{ result: 'B-', pond: '20' }] }] },
+                { code: 'MAT-5', name: 'Mathématiques', competencies: [{ name: 'Comp 1 (100%)', assignments: [{ result: '85%', pond: '25' }, { result: '95%', pond: '15' }] }] },
+                { code: 'PHY-5', name: 'Physique', competencies: [{ name: 'Comp 1 (100%)', assignments: [{ result: '60/80', pond: '20' }] }] }
+            ],
+            etape3: [
+                { 
+                    code: 'FRA-5', name: 'Français', 
+                    competencies: [
+                        { name: 'Comp 1 (40%)', assignments: [{ result: '88%', pond: '10' }, { result: '', pond: '20' }] }, // Needs projection
+                        { name: 'Comp 2 (60%)', assignments: [{ result: '', pond: '30' }] } // Needs projection
+                    ]
+                },
+                { 
+                    code: 'MAT-5', name: 'Mathématiques', 
+                    competencies: [
+                        { name: 'Comp 1 (100%)', assignments: [{ result: '82%', pond: '20' }, { result: '95%', pond: '30' }] } // All calculated, high effort
+                    ]
+                },
+                { 
+                    code: 'MON-5', name: 'Monde Contemporain', 
+                    competencies: [
+                        { name: 'Comp 1 (100%)', assignments: [{ result: '', pond: '40' }, { result: '', pond: '60' }] } // All missing grades
+                    ]
+                },
+                { 
+                    code: 'PHY-5', name: 'Physique', 
+                    competencies: [
+                        { name: 'Comp 1 (100%)', assignments: [{ result: '50%', pond: '20' }, { result: '', pond: '30' }] } // Needs projection, low recent grade
+                    ]
                 }
+            ]
+        };
 
-                document.getElementById('student-name').textContent = mbsData.nom;
-                loadSettings();
-                renderAll();
-                setupEventListeners();
+        const defaultUnits = {
+            sec4: { 'ART': 2, 'MUS': 2, 'FRA': 6, 'ELA': 4, 'MAT': 6, 'HQC': 4, 'CCQ': 2, 'EPS': 2 },
+            sec5: { 'ART': 2, 'FRA': 6, 'ELA': 6, 'MAT': 6, 'PHY': 4, 'MON': 2, 'EPS': 2 }
+        };
+        const subjectList = { 'ART': "Arts Plastiques", 'FRA': "Français", 'ELA': "English Language Arts", 'MAT': "Mathématiques", 'PHY': "Physique", 'MON': "Monde Contemporain", 'HQC': "Histoire", 'CCQ': "Culture et Citoyenneté", 'EPS': "Éducation Physique" };
+
+
+        // --- UTILITIES & PRE-PROCESSING ---
+
+        function getNumericGrade(result) {
+            if (!result) return null;
+            const trimmed = result.trim();
+            if (gradeMap[trimmed]) return gradeMap[trimmed];
+            const percentageMatch = trimmed.match(/(\d+[,.]?\d*)\s*%/);
+            if (percentageMatch) return parseFloat(percentageMatch[1].replace(',', '.'));
+            const scoreMatch = trimmed.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/);
+            if (scoreMatch) {
+                const score = parseFloat(scoreMatch[1].replace(',', '.'));
+                const max = parseFloat(scoreMatch[2].replace(',', '.'));
+                return (max > 0) ? (score / max) * 100 : null;
             }
+            return null;
+        }
 
-            // --- DATA & SETTINGS MANAGEMENT ---
-            function loadSettings() {
-                const settings = mbsData.settings || {};
-                document.getElementById('niveau-secondaire').value = settings.niveau || '';
-                document.getElementById('unites-mode').value = settings.unitesMode || 'defaut';
-                // Update unit button state
-                document.getElementById('unites-btn').disabled = settings.unitesMode === 'defaut' || settings.unitesMode === 'sans';
-            }
+        function getUnits() {
+            const { unitesMode, customUnites } = mbsData.settings || {};
+            if (unitesMode === 'sans') return new Proxy({}, { get: () => 1 });
+            if (unitesMode === 'perso') return customUnites || {};
+            const niveauKey = mbsData.settings?.niveau;
+            return (niveauKey && defaultUnits[niveauKey]) ? defaultUnits[niveauKey] : {};
+        }
 
-            function saveSettings() {
-                mbsData.settings = {
-                    niveau: document.getElementById('niveau-secondaire').value,
-                    unitesMode: document.getElementById('unites-mode').value,
-                    customUnites: mbsData.settings?.customUnites || {}
-                };
-                localStorage.setItem('mbsData', JSON.stringify(mbsData));
-                loadSettings(); // Reload settings to update button state
-                renderAll();
-            }
-            
-            function saveCustomUnits() {
-                if (document.getElementById('unites-mode').value !== 'perso') return;
-                let customUnites = {};
-                document.querySelectorAll('.unite-item input').forEach(input => {
-                    customUnites[input.dataset.code] = parseFloat(input.value) || 1;
-                });
-                mbsData.settings.customUnites = customUnites;
-                saveSettings();
-            }
+        function preProcessData(data) {
+            const preProcessed = JSON.parse(JSON.stringify(data));
+            ['etape1', 'etape2', 'etape3'].forEach(etape => {
+                if (preProcessed[etape]) {
+                    preProcessed[etape].forEach(subject => {
+                        subject.competencies.forEach(comp => {
+                            comp.assignments.forEach(assign => {
+                                assign.numericGrade = getNumericGrade(assign.result);
+                                assign.isCalculated = assign.numericGrade !== null;
+                            });
+                        });
+                    });
+                }
+            });
+            return preProcessed;
+        }
 
-            function savePonderations() {
-                document.querySelectorAll('.pond-input-field.modified-input').forEach(input => {
-                    const [etapeKey, subjectIndex, compIndex, assignIndex] = input.dataset.path.split('-');
-                    // Ensure the property exists before assignment
-                    const subject = mbsData[etapeKey][parseInt(subjectIndex)];
-                    const comp = subject.competencies[parseInt(compIndex)];
-                    const assign = comp.assignments[parseInt(assignIndex)];
+        // --- CORE GRADE CALCULATIONS ---
 
-                    if (assign) {
-                        assign.pond = input.value;
+        function calculateSubjectAverage(subject, projectionGradeFunc = null) {
+            let totalWeightedGrade = 0;
+            let totalCompetencyWeight = 0;
+            let totalRemainingWeight = 0;
+        
+            subject.competencies.forEach(comp => {
+                const compWeightMatch = comp.name.match(/\((\d+)%\)/);
+                const compWeight = compWeightMatch ? parseFloat(compWeightMatch[1]) : 0;
+                if (compWeight === 0) return;
+        
+                let totalAssignmentGrade = 0;
+                let totalAssignmentWeight = 0;
+                let compRemainingWeight = 0;
+        
+                comp.assignments.forEach(assign => {
+                    let grade = assign.numericGrade;
+                    let weight = parseFloat(assign.pond) || 1; 
+        
+                    if (assign.isCalculated) {
+                        totalAssignmentGrade += grade * weight;
+                        totalAssignmentWeight += weight;
+                    } else {
+                        // Assignment is missing a grade
+                        compRemainingWeight += weight;
+                        if (projectionGradeFunc) {
+                            let projectedGrade = projectionGradeFunc(subject, comp, assign);
+                            if (projectedGrade !== null && !isNaN(projectedGrade)) {
+                                totalAssignmentGrade += projectedGrade * weight;
+                                totalAssignmentWeight += weight;
+                            }
+                        }
                     }
                 });
-                localStorage.setItem('mbsData', JSON.stringify(mbsData));
-                renderAll(); // Re-render to remove highlights and update calculations
-            }
+        
+                totalRemainingWeight += (compRemainingWeight / (totalAssignmentWeight + compRemainingWeight)) * compWeight;
 
-            // --- RENDERING FUNCTIONS ---
-            function renderAll() {
-                renderTermTables();
-                renderSidePanel();
-                document.getElementById('ponderation-controls').classList.add('hidden');
-            }
-
-            function renderTermTables() {
-                renderTermData(mbsData.etape1, document.getElementById('etape1'));
-                renderTermData(mbsData.etape2, document.getElementById('etape2'));
-                renderTermData(mbsData.etape3, document.getElementById('etape3'));
-            }
-
-            function renderTermData(termData, container) {
-                if (!termData || termData.length === 0) {
-                    container.innerHTML = `<div class="p-6 text-center text-gray-500 bg-gray-50 rounded-lg"><p>Aucune donnée pour cette étape. Vous pouvez <a href="javascript:void(0)" onclick="alert('L'édition des données brutes se ferait sur une page dédiée dans une application complète.')" class="text-indigo-600 hover:text-indigo-800">ajouter vos données</a>.</p></div>`;
-                    return;
+                if (totalAssignmentWeight > 0) {
+                    const competencyAverage = totalAssignmentGrade / totalAssignmentWeight;
+                    totalWeightedGrade += competencyAverage * compWeight;
+                    totalCompetencyWeight += compWeight;
                 }
-                container.innerHTML = '';
-                termData.forEach((subject, subjectIndex) => {
-                    container.appendChild(renderSubjectTable(subject, container.id, subjectIndex));
-                });
-            }
-
-            function renderSubjectTable(subject, etapeKey, subjectIndex) {
-                const table = document.createElement('table');
-                table.className = 'subject-table';
-                table.innerHTML = `
-                    <thead>
-                        <tr><th colspan="6">${subject.code} - ${subject.name}</th></tr>
-                        <tr><th>Catégorie</th><th>Travail</th><th>Pond.</th><th>Date due</th><th>Résultat</th></tr>
-                    </thead>
-                    <tbody></tbody>`;
-                const tbody = table.querySelector('tbody');
-
-                subject.competencies.forEach((comp, compIndex) => {
-                    const compRow = document.createElement('tr');
-                    compRow.className = 'competency-row';
-                    compRow.innerHTML = `<td colspan="6">${comp.name}</td>`;
-                    tbody.appendChild(compRow);
-
-                    comp.assignments.forEach((assign, assignIndex) => {
-                        const assignRow = document.createElement('tr');
-                        const dataPath = `${etapeKey}-${subjectIndex}-${compIndex}-${assignIndex}`;
-                        
-                        // Check if the current pond value is different from the saved one
-                        const isModified = assign.pond !== document.querySelector(`.pond-input-field[data-path="${dataPath}"]`)?.value;
-
-                        assignRow.innerHTML = `
-                            <td>${assign.category || '<span class="no-data">-</span>'}</td>
-                            <td>${assign.work || '<span class="no-data">-</span>'}</td>
-                            <td><input type="number" class="pond-input-field ${isModified ? 'modified-input' : ''}" value="${assign.pond || ''}" data-path="${dataPath}" placeholder="--"></td>
-                            <td>${(assign.dueDate || '').replace('à','')}</td>
-                            <td>
-                                <div class="grade-container" data-original-result="${assign.result || ''}">
-                                    <span class="grade-display">${formatGrade(assign.result)}</span>
-                                    <input type="number" class="grade-input-field hidden" min="0" max="100" step="0.1">
-                                </div>
-                            </td>
-                        `;
-                        tbody.appendChild(assignRow);
-                    });
-                });
-                return table;
-            }
-
-            function renderSidePanel() {
-                const averages = calculateAllAverages();
-                const formatAvg = (avg) => avg !== null ? `<span class="grade-percentage">${avg.toFixed(2)}%</span>` : '--';
-
-                const globalAvgEl = document.getElementById('moyenne-generale');
-                globalAvgEl.innerHTML = formatAvg(averages.globalAverage);
-                globalAvgEl.classList.toggle('invalid', averages.globalAverage === null && !!mbsData.etape1);
-
-                const termAvgEl = document.getElementById('moyenne-etape');
-                termAvgEl.innerHTML = formatAvg(averages.termAverages[activeTab]);
-
-                const subjectListEl = document.getElementById('subject-averages-list');
-                subjectListEl.innerHTML = '';
-                const activeTermSubjects = averages.subjectAverages[activeTab];
-
-                if (activeTermSubjects && Object.keys(activeTermSubjects).length > 0) {
-                    Object.entries(activeTermSubjects).forEach(([code, subj]) => {
-                        const li = document.createElement('li');
-                        // Use a consistent name from subjectList if available, or fallback
-                        const nameToDisplay = subjectList[code] || subj.name || code;
-                        li.innerHTML = `<span>${nameToDisplay}</span><strong>${formatAvg(subj.average)}</strong>`;
-                        subjectListEl.appendChild(li);
-                    });
-                } else {
-                    subjectListEl.innerHTML = '<li class="no-data text-center">Aucune matière pour cette étape</li>';
+            });
+            
+            const finalAverage = totalCompetencyWeight > 0 ? Math.min(100, totalWeightedGrade / totalCompetencyWeight) : null;
+            return { average: finalAverage, remainingWeight: totalRemainingWeight };
+        }
+        
+        function calculateTermAverage(termData, units, projectionGradeFunc = null) {
+            if (!termData || termData.length === 0) return { average: null, subjects: {} };
+            let termWeightedSum = 0;
+            let termUnitSum = 0;
+            let subjectAverages = {};
+        
+            termData.forEach(subject => {
+                const { average } = calculateSubjectAverage(subject, projectionGradeFunc);
+                const codePrefix = subject.code.substring(0, 3);
+                
+                if (average !== null) {
+                    const unit = units[codePrefix] || 2;
+                    termWeightedSum += average * unit;
+                    termUnitSum += unit;
                 }
-            }
+                subjectAverages[codePrefix] = { name: subjectList[codePrefix] || subject.name, average };
+            });
+        
+            const termAverage = termUnitSum > 0 ? termWeightedSum / termUnitSum : null;
+            return { average: termAverage, subjects: subjectAverages };
+        }
 
-            function populateUnitesModal() {
-                const listContainer = document.getElementById('unites-list');
-                const mode = document.getElementById('unites-mode').value;
-                listContainer.innerHTML = '';
+        // --- DEEP SUBJECT ANALYSIS ---
 
-                // Enable/disable save button based on mode
-                document.getElementById('save-unites-btn').classList.toggle('hidden', mode !== 'perso');
+        function analyzeSubjectTrend(codePrefix, data) {
+            let grades = [];
+            let compGrades = {};
+            let currentSubject = null;
+            let allAssignments = [];
 
-                const allSubjects = new Map();
-                ['etape1', 'etape2', 'etape3'].forEach(etape => {
-                    if (mbsData[etape]) {
-                        mbsData[etape].forEach(subject => {
-                            const codePrefix = subject.code.substring(0, 3);
-                            if (!allSubjects.has(codePrefix)) {
-                                allSubjects.set(codePrefix, subjectList[codePrefix] || subject.name);
+            // Collect all grades across all terms
+            ['etape1', 'etape2', 'etape3'].forEach(etape => {
+                const subject = data[etape] ? data[etape].find(s => s.code.startsWith(codePrefix)) : null;
+                if (subject) {
+                    currentSubject = subject; 
+                    subject.competencies.forEach(comp => {
+                        const compName = comp.name.split('(')[0].trim();
+                        if (!compGrades[compName]) compGrades[compName] = [];
+        
+                        comp.assignments.forEach(assign => {
+                            if (assign.isCalculated) {
+                                grades.push(assign.numericGrade);
+                                compGrades[compName].push(assign.numericGrade);
+                                allAssignments.push(assign.numericGrade);
                             }
                         });
-                    }
-                });
+                    });
+                }
+            });
+        
+            if (grades.length === 0) return { mean: null, stdDev: 0, compVolat: 0, effortScore: 0, momentum: 0, remainingWeight: 100 };
+            
+            // 1. Exponentially Weighted Mean (EWM) - Focus on Recency
+            // Grades are naturally ordered by term, so we process in reverse chronological order
+            let weightedSum = 0;
+            let totalWeight = 0;
+            allAssignments.slice().reverse().forEach((g, index) => { 
+                const weight = Math.pow(EWM_LAMBDA, index); 
+                weightedSum += g * weight;
+                totalWeight += weight;
+            });
+            const ewm = totalWeight > 0 ? weightedSum / totalWeight : 0;
+            
+            // 2. Standard Deviation (Instability)
+            const simpleMean = grades.reduce((sum, g) => sum + g, 0) / grades.length;
+            const variance = grades.reduce((sum, g) => sum + Math.pow(g - simpleMean, 2), 0) / grades.length;
+            const stdDev = Math.sqrt(variance);
 
-                const units = getUnits();
-                // Sort subjects alphabetically for cleaner display
-                const sortedSubjects = Array.from(allSubjects.entries()).sort((a, b) => a[1].localeCompare(b[1]));
-
-                sortedSubjects.forEach(([code, name]) => {
-                    const item = document.createElement('div');
-                    item.className = 'unite-item';
-                    let valueDisplay = '';
-                    if (mode === 'perso') {
-                        const currentValue = (mbsData.settings.customUnites || {})[code] || 2; // Default custom unit to 2 if not set
-                        valueDisplay = `<input type="number" data-code="${code}" value="${currentValue}" min="0" step="1">`;
-                    } else if (mode === 'sans') {
-                        valueDisplay = `<span>1 (Fixe)</span>`;
-                    } else { // defaut mode
-                        valueDisplay = `<span>${units[code] || 2} (Défaut)</span>`;
-                    }
-                    item.innerHTML = `<label>${name} (${code})</label>${valueDisplay}`;
-                    listContainer.appendChild(item);
-                });
+            // 3. Competency Volatility
+            const compAverages = Object.values(compGrades).map(g => g.length > 0 ? g.reduce((s, x) => s + x, 0) / g.length : null).filter(x => x !== null);
+            let compVolat = 0;
+            if (compAverages.length > 1) {
+                const avgOfComps = compAverages.reduce((s, x) => s + x, 0) / compAverages.length;
+                const compVariance = compAverages.reduce((s, x) => s + Math.pow(x - avgOfComps, 2), 0) / compAverages.length;
+                compVolat = Math.sqrt(compVariance);
             }
 
-            // --- CALCULATION LOGIC (Copied and slightly cleaned from user code) ---
+            // 4. Effort Score (0-10) - Based on Improvement Momentum (last 5 grades)
+            let effortScore = 0;
+            const lastFive = allAssignments.slice(-5);
+            if (lastFive.length >= 2) {
+                const gradeChange = lastFive[lastFive.length - 1] - lastFive[0];
+                effortScore = Math.min(10, Math.max(0, gradeChange / 3)); // 30% improvement gives max effort score of 10
+            }
 
-            function getNumericGrade(result) {
-                if (!result) return null;
-                const trimmed = result.trim();
-                if (gradeMap[trimmed]) return gradeMap[trimmed];
-                
-                const percentageMatch = trimmed.match(/(\d+[,.]?\d*)\s*%/);
-                if (percentageMatch) return parseFloat(percentageMatch[1].replace(',', '.'));
+            // 5. Momentum Score (Recent performance vs. EWM)
+            const recentAvg = grades.slice(-3).reduce((s, g) => s + g, 0) / grades.slice(-3).length;
+            const momentum = recentAvg - ewm; // Positive means improving, negative means slowing
 
-                const scoreMatch = trimmed.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/);
-                if (scoreMatch) {
-                    const score = parseFloat(scoreMatch[1].replace(',', '.'));
-                    const max = parseFloat(scoreMatch[2].replace(',', '.'));
-                    return (max > 0) ? (score / max) * 100 : null;
+            // 6. Remaining Weight
+            const { remainingWeight } = calculateSubjectAverage(currentSubject);
+        
+            return { ewm, stdDev, compVolat, effortScore: effortScore.toFixed(1), momentum: momentum.toFixed(1), remainingWeight: remainingWeight.toFixed(1) };
+        }
+
+        // --- SCENARIO DEFINITION & PROJECTION ---
+
+        function getScenarioParameters(gpi, allSubjectTrends) {
+            const trendValues = Object.values(allSubjectTrends).filter(t => t.ewm !== null);
+            const globalStdDev = trendValues.map(t => t.stdDev).reduce((a, b) => a + b, 0) / trendValues.length || 0;
+            const globalEffort = trendValues.map(t => parseFloat(t.effortScore)).reduce((a, b) => a + b, 0) / trendValues.length || 0;
+            const globalMomentum = trendValues.map(t => parseFloat(t.momentum)).reduce((a, b) => a + b, 0) / trendValues.length || 0;
+        
+            const gpiClean = gpi !== null ? gpi : 75;
+            
+            return {
+                'Absolute Maximum': { 
+                    description: "Assumes 100% on all remaining work. The theoretical ceiling.", 
+                    factor: 1.0, gradeFloor: 100, trendStrategy: 'flat' 
+                },
+                'Hyper-Growth Trajectory': { 
+                    description: `Trusts Momentum: EWM + Global Momentum + Effort Bonus. High risk/reward.`, 
+                    factor: 1.0, 
+                    gradeFloor: gpiClean + 5 + Math.max(0, globalMomentum) + globalEffort,
+                    trendStrategy: 'momentumOptimistic'
+                },
+                'Realistic EWM Projection': { 
+                    description: "The core predictive model. Uses the subject's EWM adjusted by its internal Volatility.", 
+                    factor: 1.0, 
+                    gradeFloor: gpiClean + Math.max(0, globalEffort * 0.5), // Small global effort boost
+                    trendStrategy: 'ewmAdjusted'
+                },
+                'Steady-State (Low Volatility)': { 
+                    description: "Ignores recent fluctuations. Uses long-term simple mean minus Competency Volatility.", 
+                    factor: 1.0, 
+                    gradeFloor: gpiClean - globalStdDev, 
+                    trendStrategy: 'simpleMeanConservative'
+                },
+                'Minimal Effort (Pass Only)': {
+                    description: "Assumes only 60% is scored on all remaining assignments to determine minimum outcome.",
+                    factor: 1.0,
+                    gradeFloor: 60,
+                    trendStrategy: 'flat'
+                },
+                'Burnout/Crash Risk': {
+                    description: "Worst-case scenario: Projects at EWM - StdDev (if Momentum is negative).",
+                    factor: 1.0,
+                    gradeFloor: Math.max(50, gpiClean - (globalStdDev * 2)),
+                    trendStrategy: 'volatilityWorstCase'
                 }
-                return null;
+            };
+        }
+
+        function generateProjectionGrade(subject, comp, scenario, allSubjectTrends) {
+            const codePrefix = subject.code.substring(0, 3);
+            const trend = allSubjectTrends[codePrefix];
+            let baseGrade = scenario.gradeFloor;
+        
+            if (trend && trend.ewm !== null) {
+                switch (scenario.trendStrategy) {
+                    case 'flat':
+                        baseGrade = scenario.gradeFloor;
+                        break;
+                    case 'ewmAdjusted':
+                        // Realistic: EWM + (Effort * 0.2) - (StdDev * 0.3)
+                        const effortBonus = parseFloat(trend.effortScore) * 0.2;
+                        const volatilityPenalty = trend.stdDev * 0.3;
+                        baseGrade = trend.ewm + effortBonus - volatilityPenalty; 
+                        break;
+                    case 'momentumOptimistic':
+                        // High Growth: EWM + Momentum Score + Effort Bonus
+                        baseGrade = trend.ewm + parseFloat(trend.momentum) + (parseFloat(trend.effortScore) * 0.3);
+                        break;
+                    case 'simpleMeanConservative':
+                        // Steady-State: Simple Mean (using EWM as proxy) - Comp Volatility
+                        baseGrade = trend.ewm - trend.compVolat;
+                        break;
+                    case 'volatilityWorstCase':
+                        // Crash Risk: EWM - StdDev - CompVolat (only if momentum is negative)
+                        if (parseFloat(trend.momentum) < 0) {
+                            baseGrade = trend.ewm - trend.stdDev - trend.compVolat;
+                        } else {
+                            baseGrade = trend.ewm - trend.stdDev; // Still conservative
+                        }
+                        break;
+                }
             }
             
-            function calculateAllAverages() {
-                const units = getUnits();
-                const niveau = mbsData.settings?.niveau;
-                let allTermAverages = { etape1: null, etape2: null, etape3: null };
-                let allSubjectAverages = {};
+            let projectedGrade = baseGrade * scenario.factor;
+            projectedGrade = Math.min(100, Math.max(50, projectedGrade)); 
+        
+            return projectedGrade;
+        }
+
+        // --- MONTE CARLO SIMULATION ---
+
+        function normalRandom(mean, stdDev) {
+            let u = 0, v = 0;
+            while (u === 0) u = Math.random(); 
+            while (v === 0) v = Math.random();
+            const z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+            return z * stdDev + mean;
+        }
+
+        function runMonteCarloSimulation(processedData, units, allSubjectTrends, gpi) {
+            const successfulTrials = TARGET_GRADES.reduce((acc, target) => ({ ...acc, [target]: 0 }), {});
+
+            const subjectsNeedingProjection = processedData.etape3.filter(subject => 
+                subject.competencies.some(comp => comp.assignments.some(a => !a.isCalculated))
+            );
+
+            if (subjectsNeedingProjection.length === 0) {
+                return TARGET_GRADES.reduce((acc, target) => ({ ...acc, [target]: (gpi >= target) ? 1.0 : 0.0 }), {});
+            }
+
+            for (let i = 0; i < MONTE_CARLO_TRIALS; i++) {
+                let trialData = JSON.parse(JSON.stringify(processedData));
+                const randomProjectionFunc = (subject, comp, assign) => {
+                    const codePrefix = subject.code.substring(0, 3);
+                    const trend = allSubjectTrends[codePrefix];
+                    if (!trend || trend.ewm === null || trend.stdDev === 0) return 70; 
+                    
+                    // Use EWM as the mean and StdDev as volatility for the random draw
+                    let projected = normalRandom(trend.ewm, trend.stdDev);
+                    return Math.min(100, Math.max(50, projected));
+                };
+
+                // Apply random grades to missing Etape 3 assignments
+                subjectsNeedingProjection.forEach(s => {
+                    s.competencies.forEach(c => {
+                        c.assignments.forEach(a => {
+                            if (!a.isCalculated) {
+                                a.numericGrade = randomProjectionFunc(s, c, a);
+                                a.isCalculated = true;
+                            }
+                        });
+                    });
+                });
+
+                // Calculate the final average for the trial
+                let trialGlobalWeightedSum = 0;
+                let trialTotalWeight = 0;
 
                 ['etape1', 'etape2', 'etape3'].forEach(etape => {
-                    if (!mbsData[etape]) return;
-                    let termWeightedSum = 0;
-                    let termUnitSum = 0;
-                    allSubjectAverages[etape] = {};
-
-                    mbsData[etape].forEach((subject, subjectIndex) => {
-                        const average = calculateSubjectAverage(subject, etape, subjectIndex);
-                        const codePrefix = subject.code.substring(0, 3);
-                        allSubjectAverages[etape][codePrefix] = { name: subjectList[codePrefix] || subject.name, average };
-
-                        if (average !== null && niveau) {
-                            const unit = units[codePrefix] || 2;
-                            termWeightedSum += average * unit;
-                            termUnitSum += unit;
-                        }
-                    });
-                    allTermAverages[etape] = termUnitSum > 0 ? termWeightedSum / termUnitSum : null;
-                });
-
-                let globalWeightedSum = 0;
-                let totalWeight = 0;
-                const termWeights = { etape1: 0.20, etape2: 0.20, etape3: 0.60 };
-                Object.entries(allTermAverages).forEach(([etape, avg]) => {
-                    if (avg !== null) {
-                        globalWeightedSum += avg * termWeights[etape];
-                        totalWeight += termWeights[etape];
+                    const termData = etape === 'etape3' ? subjectsNeedingProjection : trialData[etape];
+                    
+                    // We must use the calculated average from the trial data, as Etape 3 is randomized
+                    const termResult = calculateTermAverage(termData, units, randomProjectionFunc);
+                    
+                    if (termResult.average !== null) {
+                        trialGlobalWeightedSum += termResult.average * termWeights[etape];
+                        trialTotalWeight += termWeights[etape];
                     }
                 });
 
-                const globalAverage = totalWeight > 0 ? globalWeightedSum / totalWeight : null;
-                return { subjectAverages: allSubjectAverages, termAverages: allTermAverages, globalAverage };
-            }
+                const finalAvg = trialTotalWeight > 0 ? trialGlobalWeightedSum / trialTotalWeight : gpi || 0;
 
-            function calculateSubjectAverage(subject, etapeKey, subjectIndex) {
-                let totalWeightedGrade = 0;
-                let totalCompetencyWeight = 0;
-
-                subject.competencies.forEach((comp, compIndex) => {
-                    const compWeightMatch = comp.name.match(/\((\d+)%\)/);
-                    if (!compWeightMatch) return;
-                    const compWeight = parseFloat(compWeightMatch[1]);
-
-                    let totalAssignmentGrade = 0;
-                    let totalAssignmentWeight = 0;
-
-                    comp.assignments.forEach((assign, assignIndex) => {
-                        const dataPath = `${etapeKey}-${subjectIndex}-${compIndex}-${assignIndex}`;
-                        
-                        // Try to find the input field for live updates (if present in the DOM)
-                        const pondInput = document.querySelector(`.pond-input-field[data-path="${dataPath}"]`);
-                        const gradeContainer = pondInput ? pondInput.closest('tr').querySelector('.grade-container') : null;
-                        const gradeInput = gradeContainer ? gradeContainer.querySelector('.grade-input-field') : null;
-
-                        let grade = null;
-                        if (gradeInput && !gradeInput.classList.contains('hidden') && gradeInput.value.trim() !== '') {
-                            // Use live input grade if visible
-                            grade = parseFloat(gradeInput.value);
-                        } else {
-                            // Use original result grade
-                            grade = getNumericGrade(assign.result);
-                        }
-
-                        let weight = parseFloat(pondInput ? pondInput.value : assign.pond);
-
-                        if (grade !== null && !isNaN(grade) && !isNaN(weight) && weight > 0) {
-                            totalAssignmentGrade += grade * weight;
-                            totalAssignmentWeight += weight;
-                        }
-                    });
-
-                    if (totalAssignmentWeight > 0) {
-                        const competencyAverage = totalAssignmentGrade / totalAssignmentWeight;
-                        totalWeightedGrade += competencyAverage * compWeight;
-                        totalCompetencyWeight += compWeight;
-                    }
+                // Check against all targets
+                TARGET_GRADES.forEach(target => {
+                    if (finalAvg >= target) successfulTrials[target]++;
                 });
-
-                return totalCompetencyWeight > 0 ? totalWeightedGrade / totalCompetencyWeight : null;
             }
 
-            function getUnits() {
-                const { niveau, unitesMode, customUnites } = mbsData.settings || {};
-                if (unitesMode === 'sans') return new Proxy({}, { get: () => 1 });
-                if (unitesMode === 'perso') return customUnites || {};
-                return (niveau && defaultUnits[niveau]) ? defaultUnits[niveau] : {};
-            }
+            const probabilities = {};
+            TARGET_GRADES.forEach(target => {
+                probabilities[target] = successfulTrials[target] / MONTE_CARLO_TRIALS;
+            });
+            return probabilities;
+        }
+        
+        // --- REQUIRED GRADE CALCULATION (Per Subject) ---
 
-            // --- UTILITY & FORMATTING ---
-            function formatGrade(result) {
-                if (!result) return '<span class="no-data">-</span>';
-                const numGrade = getNumericGrade(result);
-                const trimmedResult = result.trim();
+        function calculateRequiredGrade(subject, targetGrade) {
+            const codePrefix = subject.code.substring(0, 3);
+            let totalAssignmentGrade = 0;
+            let totalAssignmentWeight = 0;
+            let compWeights = {};
+
+            // 1. Calculate current performance and total weight remaining
+            subject.competencies.forEach(comp => {
+                const compWeightMatch = comp.name.match(/\((\d+)%\)/);
+                const compWeight = compWeightMatch ? parseFloat(compWeightMatch[1]) : 0;
+                if (compWeight === 0) return;
                 
-                if (numGrade === null) return trimmedResult;
+                let currentCompGradeSum = 0;
+                let currentCompWeight = 0;
+                let remainingCompWeight = 0;
 
-                const isLetterGrade = !!gradeMap[trimmedResult];
-                const scoreMatch = trimmedResult.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/);
+                comp.assignments.forEach(assign => {
+                    let weight = parseFloat(assign.pond) || 0; 
+                    if (assign.isCalculated) {
+                        currentCompGradeSum += assign.numericGrade * weight;
+                        currentCompWeight += weight;
+                    } else {
+                        remainingCompWeight += weight;
+                    }
+                });
+                
+                // Store results for competency
+                compWeights[comp.name] = { 
+                    weight: compWeight, 
+                    currentCompGradeSum, 
+                    currentCompWeight, 
+                    remainingCompWeight 
+                };
 
-                if (isLetterGrade) {
-                    return `${trimmedResult} <i>(~<span class="grade-percentage">${numGrade.toFixed(1)}%</span>)</i>`;
+                // The subject average is a weighted sum of competency averages.
+                // We need the *current weighted contribution* to the subject average.
+                if (currentCompWeight > 0) {
+                    const compAvg = currentCompGradeSum / currentCompWeight;
+                    totalAssignmentGrade += compAvg * compWeight; // This is the weighted contribution
                 }
-                if (scoreMatch) {
-                    return `<span>${scoreMatch[0]}</span> <span class="grade-percentage">${numGrade.toFixed(1)}%</span>`;
+                totalAssignmentWeight += compWeight; // Total possible competency weight
+            });
+            
+            let totalRemainingWeight = 0;
+            let currentSubjectGrade = 0;
+            let currentWeightedContribution = 0; // Points earned out of 100 possible subject points
+
+            // Calculate the actual current subject average and total remaining weight based on the competency structure
+            Object.values(compWeights).forEach(cw => {
+                const compRatio = cw.remainingCompWeight > 0 ? cw.currentCompWeight / (cw.currentCompWeight + cw.remainingCompWeight) : 1;
+                
+                // If the competency is partially complete, its current contribution is calculated
+                if (cw.currentCompWeight > 0) {
+                    const compAvg = cw.currentCompGradeSum / cw.currentCompWeight;
+                    currentWeightedContribution += compAvg * compRatio * cw.weight / 100;
+                    currentSubjectGrade += compAvg * cw.weight; // for simple average check
                 }
-                // Default to raw text if it looks like a percentage (e.g., 85%)
-                return `<span class="grade-percentage">${trimmedResult}</span>`;
+                
+                // The total weight remaining for the *subject* is the sum of the uncalculated portions
+                const compTotalWeight = cw.currentCompWeight + cw.remainingCompWeight;
+                const remainingCompWeightPct = compTotalWeight > 0 ? cw.remainingCompWeight / compTotalWeight : 0;
+
+                totalRemainingWeight += (remainingCompWeightPct * cw.weight);
+            });
+            
+            // This is the contribution already *locked in* to the final 100% subject grade.
+            const pointsEarnedSoFar = totalAssignmentGrade * (100 - totalRemainingWeight) / 100; 
+
+            // If subject is 100% complete
+            if (totalRemainingWeight <= 0.01) {
+                return { required: (currentSubjectGrade / totalAssignmentWeight).toFixed(1) + '% (Final)', achievable: (currentSubjectGrade / totalAssignmentWeight) >= targetGrade };
             }
 
-            // --- EVENT LISTENERS ---
-            function setupEventListeners() {
-                // Tabs
-                document.querySelectorAll('.tab-btn').forEach(tab => {
-                    tab.addEventListener('click', () => {
-                        document.querySelector('.tab-btn.active').classList.remove('active');
-                        tab.classList.add('active');
-                        document.querySelector('.tab-content.active').classList.remove('active');
-                        activeTab = tab.dataset.tab;
-                        document.getElementById(activeTab).classList.add('active');
-                        renderSidePanel();
-                    });
-                });
-
-                // Settings
-                document.getElementById('niveau-secondaire').addEventListener('change', saveSettings);
-                document.getElementById('unites-mode').addEventListener('change', () => {
-                    saveSettings();
-                    // populateUnitesModal() is called inside saveSettings -> renderAll, but we call it here 
-                    // to ensure the modal shows the correct state immediately if opened after changing the mode.
-                    populateUnitesModal(); 
-                });
-
-                // Modals
-                const unitesModal = document.getElementById('unites-modal');
-                document.getElementById('unites-btn').addEventListener('click', () => {
-                    populateUnitesModal();
-                    unitesModal.classList.add('active');
-                });
-                document.getElementById('close-unites-modal').addEventListener('click', () => {
-                    saveCustomUnits();
-                    unitesModal.classList.remove('active');
-                });
-                document.getElementById('save-unites-btn').addEventListener('click', () => {
-                    saveCustomUnits();
-                    unitesModal.classList.remove('active');
-                });
-                
-                // Ponderation controls
-                document.getElementById('save-ponds-btn').addEventListener('click', savePonderations);
-                document.getElementById('revert-ponds-btn').addEventListener('click', renderAll);
-
-                // Dynamic content listeners (Event Delegation)
-                const tabContents = document.getElementById('tab-contents');
-                
-                tabContents.addEventListener('input', e => {
-                    const target = e.target;
-                    // Handle Ponderation changes (marks input as modified)
-                    if (target.classList.contains('pond-input-field')) {
-                        const [etapeKey, subjectIndex, compIndex, assignIndex] = target.dataset.path.split('-');
-                        const originalPond = mbsData[etapeKey][subjectIndex].competencies[compIndex].assignments[assignIndex].pond;
-                        target.classList.toggle('modified-input', target.value != originalPond);
-                        document.getElementById('ponderation-controls').classList.remove('hidden');
-                        renderSidePanel();
-                    }
-                    // Handle Grade input changes (updates real-time average)
-                    if (target.classList.contains('grade-input-field')) {
-                        renderSidePanel();
-                    }
-                });
-
-                // Toggle Grade display to input mode
-                tabContents.addEventListener('click', e => {
-                    const gradeDisplay = e.target.closest('.grade-display');
-                    if (gradeDisplay) {
-                        const container = gradeDisplay.closest('.grade-container');
-                        const inputField = container.querySelector('.grade-input-field');
-                        const originalResult = container.dataset.originalResult;
-                        const numericGrade = getNumericGrade(originalResult);
-                        
-                        gradeDisplay.classList.add('hidden');
-                        inputField.classList.remove('hidden');
-                        inputField.value = numericGrade !== null ? numericGrade.toFixed(2) : '';
-                        inputField.focus();
-                        inputField.select();
-                    }
-                });
-
-                // Revert Grade input to display mode (on blur/focusout)
-                tabContents.addEventListener('focusout', e => {
-                    const target = e.target;
-                    if (target.classList.contains('grade-input-field')) {
-                         // Check if the input is empty or invalid after focus out
-                        if (target.value.trim() === '' || isNaN(parseFloat(target.value))) {
-                             // If empty/invalid, hide the input and show the original result
-                            target.classList.add('hidden');
-                            target.previousElementSibling.classList.remove('hidden');
-                        } else {
-                            // If a value was entered, keep the input visible for easy editing, but update calculations
-                        }
-                        renderSidePanel();
-                    }
-                });
-
-                tabContents.addEventListener('keydown', e => {
-                    if (e.target.classList.contains('grade-input-field') && (e.key === 'Enter' || e.key === 'Escape')) {
-                        if (e.key === 'Escape') e.target.value = ''; // Clear input on escape
-                        e.target.blur(); // Trigger focusout
-                    }
-                });
-                
-                // Custom units input changes (inside modal)
-                document.getElementById('unites-modal').addEventListener('input', e => {
-                    if (e.target.closest('.unite-item') && document.getElementById('unites-mode').value === 'perso') {
-                        // Automatically update real-time calculation when custom units are changed
-                        // without requiring a full save/close of the modal.
-                        saveCustomUnits();
-                    }
-                });
+            // Calculation: Required Score = (Target Points - Points Earned So Far) / (Weight Remaining / 100)
+            const weightRemainingDecimal = totalRemainingWeight / 100;
+            const pointsNeeded = targetGrade - currentWeightedContribution;
+            
+            // If the points needed are negative, the grade is already achieved
+            if (pointsNeeded <= 0) {
+                return { required: `Achieved`, achievable: true };
             }
 
-            // --- START THE APP ---
-            init();
+            const requiredScore = pointsNeeded / weightRemainingDecimal;
+
+            if (requiredScore > 100) {
+                return { required: `Impossible (${requiredScore.toFixed(0)}%)`, achievable: false };
+            } else if (requiredScore < 0) {
+                 return { required: `Achieved`, achievable: true };
+            } else {
+                return { required: `${requiredScore.toFixed(1)}%`, achievable: true };
+            }
+        }
+
+        // --- UI UTILITIES ---
+
+        function reportProgress(message, step, totalSteps) {
+            const statusElement = document.getElementById('statusMessage');
+            const progressElement = document.getElementById('progressBar');
+            const percentage = totalSteps > 0 ? (step / totalSteps) * 100 : 0;
+            
+            statusElement.textContent = `(Step ${step}/${totalSteps}) ${message}...`;
+            progressElement.style.width = `${percentage}%`;
+
+            if (percentage >= 100) {
+                progressElement.classList.remove('bg-green-500');
+                progressElement.classList.add('bg-[#238636]');
+                statusElement.textContent = `(DONE) MAXIMUM ACCURACY SIMULATION COMPLETE.`;
+            } else {
+                 progressElement.classList.add('bg-green-500');
+                 progressElement.classList.remove('bg-[#238636]');
+            }
+        }
+
+        // --- MAIN ASYNCHRONOUS ORCHESTRATOR ---
+
+        async function calculateAllProjections(data) {
+            const units = getUnits();
+            const totalSteps = 6; 
+            let step = 0;
+            
+            // 1. Pre-process Data 
+            reportProgress("Pre-processing and normalizing all grades", ++step, totalSteps);
+            const processedData = preProcessData(data);
+            await new Promise(r => setTimeout(r, 50)); 
+        
+            // 2. Calculate Base Averages and Global Performance Index (GPI)
+            reportProgress("Calculating base GPI and term averages", ++step, totalSteps);
+            const { allTermAverages, allSubjects } = ['etape1', 'etape2', 'etape3'].reduce((acc, etape) => {
+                const result = calculateTermAverage(processedData[etape], units);
+                acc.allTermAverages[etape] = result.average;
+                if (processedData[etape]) processedData[etape].forEach(s => acc.allSubjects[s.code.substring(0, 3)] = true);
+                return acc;
+            }, { allTermAverages: {}, allSubjects: {} });
+
+            processedData.allTermAverages = allTermAverages; 
+        
+            let currentGlobalWeightedSum = 0;
+            let totalWeight = 0;
+            Object.entries(allTermAverages).forEach(([etape, avg]) => {
+                if (avg !== null) {
+                    currentGlobalWeightedSum += avg * termWeights[etape];
+                    totalWeight += termWeights[etape];
+                }
+            });
+            const gpi = totalWeight > 0 ? currentGlobalWeightedSum / totalWeight : null;
+            await new Promise(r => setTimeout(r, 50)); 
+        
+            // 3. Deep Trend, Volatility, and Effort Analysis for all subjects
+            reportProgress("Performing deep EWM, volatility, and momentum analysis", ++step, totalSteps);
+            const allSubjectTrends = Object.keys(allSubjects).reduce((acc, code) => {
+                acc[code] = analyzeSubjectTrend(code, processedData);
+                return acc;
+            }, {});
+            await new Promise(r => setTimeout(r, 50)); 
+            
+            // 4. Run Global Scenarios 
+            reportProgress("Running 6 multi-scenario global projections", ++step, totalSteps);
+            const scenarios = getScenarioParameters(gpi, allSubjectTrends);
+            const projectedFinalAverages = {};
+            
+            // --- This complex loop calculates the final average for each scenario ---
+            Object.entries(scenarios).forEach(([scenarioName, scenarioParams]) => {
+                let scenarioWeightedSum = 0;
+                let scenarioTotalWeight = 0;
+                
+                const projectionFunc = (subject, comp, assign) => generateProjectionGrade(subject, comp, scenarioParams, allSubjectTrends);
+                
+                ['etape1', 'etape2', 'etape3'].forEach(etape => {
+                    const termData = processedData[etape] || [];
+                    let termAvg = allTermAverages[etape];
+
+                    const termNeedsProjection = termAvg === null || (etape === 'etape3' && termData.some(s => s.competencies.some(c => c.assignments.some(a => !a.isCalculated))));
+                    
+                    let projectedTermResult = { average: termAvg };
+        
+                    if (termNeedsProjection) {
+                        projectedTermResult = calculateTermAverage(termData, units, projectionFunc);
+                        termAvg = projectedTermResult.average;
+                    }
+        
+                    if (termAvg !== null) {
+                        scenarioWeightedSum += termAvg * termWeights[etape];
+                        scenarioTotalWeight += termWeights[etape];
+                    }
+                });
+        
+                projectedFinalAverages[scenarioName] = scenarioTotalWeight > 0 ? scenarioWeightedSum / scenarioTotalWeight : null;
+            });
+            await new Promise(r => setTimeout(r, 50)); 
+
+            // 5. Run Monte Carlo Simulation
+            reportProgress(`Running Monte Carlo simulation (${MONTE_CARLO_TRIALS} trials) for all ${TARGET_GRADES.length} targets`, ++step, totalSteps);
+            const monteCarloResults = runMonteCarloSimulation(processedData, units, allSubjectTrends, gpi);
+            await new Promise(r => setTimeout(r, 50)); 
+
+            // 6. Calculate Subject Required Grades
+            reportProgress("Calculating required final scores for all subjects and targets", ++step, totalSteps);
+            const subjectRequiredGrades = Object.keys(allSubjects).reduce((acc, code) => {
+                const subjectData = processedData.etape3.find(s => s.code.startsWith(code));
+                if (subjectData) {
+                    acc[code] = TARGET_GRADES.map(target => ({
+                        target,
+                        ...calculateRequiredGrade(subjectData, target)
+                    }));
+                }
+                return acc;
+            }, {});
+
+            return { gpi, projectedFinalAverages, allSubjectTrends, monteCarloResults, subjectRequiredGrades };
+        }
+
+        // --- UI RENDER FUNCTIONS ---
+        
+        function renderResults(results) {
+            const container = document.getElementById('resultsContainer');
+            const gpiDisplay = document.getElementById('gpiDisplay');
+            const scenarioBody = document.getElementById('scenarioBody');
+            const subjectBody = document.getElementById('subjectBody');
+            const monteCarloBody = document.getElementById('monteCarloBody');
+            const requiredGradesBody = document.getElementById('requiredGradesBody');
+            
+            container.classList.remove('hidden');
+            gpiDisplay.innerHTML = `<strong>Global Performance Index (GPI) based on completed work:</strong> <span class="text-green-400 font-bold text-2xl">${results.gpi ? results.gpi.toFixed(2) + '%' : 'N/A'}</span>`;
+            scenarioBody.innerHTML = '';
+            subjectBody.innerHTML = '';
+            monteCarloBody.innerHTML = '';
+            requiredGradesBody.innerHTML = '';
+
+            const scenarios = getScenarioParameters(results.gpi, results.allSubjectTrends);
+
+            // RENDER 1: Scenarios
+            Object.entries(results.projectedFinalAverages).forEach(([name, avg]) => {
+                const row = document.createElement('tr');
+                const avgClass = avg > 90 ? 'text-90 font-bold' : avg > 80 ? 'text-80' : avg > 70 ? 'text-70' : 'text-60';
+                
+                row.innerHTML = `
+                    <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-white">${name}</td>
+                    <td class="px-4 py-2 text-sm text-[#8b949e] hidden lg:table-cell">${scenarios[name].description}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-base text-right ${avgClass}">${avg ? avg.toFixed(2) + '%' : 'N/A'}</td>
+                `;
+                scenarioBody.appendChild(row);
+            });
+
+            // RENDER 2: Monte Carlo
+            TARGET_GRADES.forEach(target => {
+                const prob = results.monteCarloResults[target] || 0;
+                const probPct = (prob * 100).toFixed(1);
+                let bgColor = 'prob-low';
+                if (prob > 0.8) bgColor = 'prob-high';
+                else if (prob > 0.5) bgColor = 'prob-mid';
+                
+                monteCarloBody.innerHTML += `
+                    <div class="card p-3 ${bgColor} border-0">
+                        <p class="text-3xl font-extrabold text-white">${probPct}%</p>
+                        <p class="text-xs font-semibold text-gray-200 mt-1">Chance of ${target}+</p>
+                    </div>
+                `;
+            });
+
+            // RENDER 3: Subject Details
+            Object.entries(results.allSubjectTrends).forEach(([code, trend]) => {
+                const name = subjectList[code] || code;
+                const finalProjection = results.projectedFinalAverages['Realistic EWM Projection']; 
+
+                const row = document.createElement('tr');
+                const projClass = finalProjection > 90 ? 'text-90 font-bold' : finalProjection > 80 ? 'text-80' : finalProjection > 70 ? 'text-70' : 'text-60';
+                const momentumClass = parseFloat(trend.momentum) > 0 ? 'text-green-500' : 'text-red-500';
+
+                // NOTE: Using EWM itself as the "Realistic Final" average for simplicity in this table
+                const realisticFinalAvg = trend.ewm;
+
+                row.innerHTML = `
+                    <td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-white">${name}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm text-right">${trend.ewm !== null ? trend.ewm.toFixed(1) + '%' : 'N/A'}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm text-right">${trend.ewm !== null ? trend.ewm.toFixed(1) : 'N/A'}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm text-right text-yellow-400">${trend.stdDev.toFixed(1)}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm text-right text-orange-400">${trend.compVolat.toFixed(1)}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm text-right text-green-400">${trend.effortScore}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm text-right ${momentumClass}">${trend.momentum}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm text-right ${projClass}">${realisticFinalAvg !== null ? realisticFinalAvg.toFixed(2) + '%' : 'N/A'}</td>
+                `;
+                subjectBody.appendChild(row);
+            });
+
+            // RENDER 4: Required Grades (Per Subject)
+            Object.entries(results.subjectRequiredGrades).forEach(([code, requiredTargets]) => {
+                const name = subjectList[code] || code;
+                const remainingWeight = results.allSubjectTrends[code].remainingWeight;
+
+                if (parseFloat(remainingWeight) < 0.01) return; // Skip completed subjects
+
+                const subjectCard = document.createElement('div');
+                subjectCard.className = 'card p-4 mb-4';
+                
+                let content = `<h4 class="text-xl font-bold mb-2 text-white">${name} <span class="text-sm text-[#8b949e] ml-2">(${remainingWeight}% Remaining)</span></h4>`;
+                content += '<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 mt-3">';
+
+                requiredTargets.forEach(req => {
+                    let color = 'bg-gray-700';
+                    if (req.required.includes('Achieved')) color = 'bg-green-700';
+                    else if (req.required.includes('Impossible')) color = 'bg-red-700';
+                    else if (parseFloat(req.required) <= 75) color = 'bg-green-600';
+                    else if (parseFloat(req.required) <= 90) color = 'bg-yellow-600';
+                    else color = 'bg-indigo-700';
+
+                    content += `
+                        <div class="p-2 rounded-lg text-center font-semibold ${color}">
+                            <span class="text-xs font-light text-gray-200">Target ${req.target}%</span>
+                            <div class="text-sm text-white mt-1">${req.required}</div>
+                        </div>
+                    `;
+                });
+                content += '</div>';
+                subjectCard.innerHTML = content;
+                requiredGradesBody.appendChild(subjectCard);
+            });
+        }
+
+        // --- SIMULATION START ---
+
+        async function startSimulation() {
+            const startButton = document.getElementById('startButton');
+            startButton.disabled = true;
+            document.getElementById('resultsContainer').classList.add('hidden');
+            
+            try {
+                // Check if mbsdata is available, otherwise use mock
+                let dataToUse = mbsData;
+                if (typeof localStorage !== 'undefined' && localStorage.getItem('mbsdata')) {
+                    try {
+                        dataToUse = JSON.parse(localStorage.getItem('mbsdata'));
+                    } catch (e) {
+                        console.warn("Could not parse localStorage.mbsdata. Using mock data.");
+                    }
+                }
+                
+                const results = await calculateAllProjections(dataToUse);
+                renderResults(results);
+            } catch (error) {
+                console.error("MAX-ACCURACY Simulation Error:", error);
+                document.getElementById('statusMessage').textContent = `(CRITICAL ERROR) Simulation failed: ${error.message}. Check console for details.`;
+            } finally {
+                startButton.disabled = false;
+            }
+        }
+
+        // Initialize display with instructions if no data is present
+        document.addEventListener('DOMContentLoaded', () => {
+            const loadingEl = document.getElementById('statusMessage');
+            if (typeof localStorage === 'undefined' || !localStorage.getItem('mbsdata')) {
+                loadingEl.innerHTML += '<br><span class="text-yellow-400">NOTE: Using internal MOCK DATA. Press RUN to see the simulation.</span>';
+            }
         });
-        // --- END OF JAVASCRIPT LOGIC ---
-
-        // Note: The user's original code used localStorage for data persistence. 
-        // For a collaborative or multi-user application, this should be upgraded to use a persistent database 
-        // like Firestore, leveraging the provided __app_id, __firebase_config, and __initial_auth_token.
-
     </script>
 </body>
 </html>
