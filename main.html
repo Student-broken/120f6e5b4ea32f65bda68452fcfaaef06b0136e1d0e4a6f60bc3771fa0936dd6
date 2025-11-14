@@ -31,6 +31,10 @@
             --border-color: #e0e6eb;
             --tab-border-color: #ddd;
             --input-bg-color: white;
+            /* Button Inversion Colors (Light Mode Base) */
+            --btn-secondary-bg: var(--secondary-color);
+            --btn-secondary-color: white;
+            --btn-secondary-hover-bg: #3a536b;
         }
 
         /* DARK MODE VARIABLES (Grey/Black Focus) */
@@ -48,6 +52,11 @@
             --border-color: #333333;
             --tab-border-color: #444444;
             --input-bg-color: #282828;
+            
+            /* Button Inversion Colors (Dark Mode Inverted) */
+            --btn-secondary-bg: #bbbbbb; /* Light grey background */
+            --btn-secondary-color: #121212; /* Dark text */
+            --btn-secondary-hover-bg: #d0d0d0;
 
             /* Specific element adjustments for dark mode */
             .site-header { color: var(--text-color); }
@@ -68,27 +77,26 @@
         body, .site-header-container, .side-panel, .moyenne-widget, .subject-table, .modal-content, .tab-btn, .btn, select, input {
             transition: background-color var(--transition-duration) ease, color var(--transition-duration) ease, border-color var(--transition-duration) ease, box-shadow var(--transition-duration) ease;
         }
-        
-        /* Loading Animation Overlay */
-        #loading-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: var(--background-color);
-            z-index: 2000; display: flex; justify-content: center; align-items: center;
-            opacity: 1; visibility: visible;
-            transition: opacity 0.5s ease-out 0.2s, visibility 0.5s ease-out 0.2s;
+
+        /* Page Load Animation Keyframes */
+        @keyframes fadeInSlideUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        #loading-overlay.hidden {
+        /* Initial state and animation application for main elements */
+        .site-header-container, .main-container, footer {
             opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
+            transform: translateY(20px);
+            animation: fadeInSlideUp 0.8s ease-out forwards;
         }
-        .loader {
-            border: 5px solid var(--widget-darker-color);
-            border-top: 5px solid var(--primary-color);
-            border-radius: 50%; width: 50px; height: 50px;
-            animation: spin 1s cubic-bezier(0.19, 1, 0.22, 1) infinite; /* Smooth spin */
+        .main-container {
+            animation-delay: 0.15s; /* Stagger the main content */
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        footer {
+            animation-delay: 0.3s; /* Stagger the footer */
+        }
 
         /* General Styles */
         body {
@@ -112,7 +120,7 @@
             transition: color 0.2s, transform 0.2s;
         }
         .nav-arrow:hover { color: var(--primary-color); transform: scale(1.05); }
-        /* Dark Mode Toggle Button Styling (New) */
+        /* Dark Mode Toggle Button Styling */
         .icon-btn {
             background: none; border: 2px solid var(--light-grey); color: var(--text-color);
             width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
@@ -165,8 +173,18 @@
         .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
         .btn-primary { background-color: var(--primary-color); }
         .btn-primary:hover { background-color: #3498db; }
-        .btn-secondary { background-color: var(--secondary-color); }
-        .btn-secondary:hover { background-color: #3a536b; }
+        
+        /* Secondary Button (Inverted in Dark Mode) */
+        .btn-secondary { 
+            background-color: var(--btn-secondary-bg);
+            color: var(--btn-secondary-color); 
+        }
+        .btn-secondary:hover { 
+            background-color: var(--btn-secondary-hover-bg); 
+            /* Ensure text color stays dark/light as needed on hover */
+            color: var(--btn-secondary-color);
+        }
+
         .btn-full-width { width: 100%; display: block; }
         .tabs { display: flex; border-bottom: 2px solid var(--tab-border-color); margin-bottom: 20px; }
         .tab-btn { padding: 12px 20px; cursor: pointer; border: none; background: none; font-size: 1.05em; font-weight: 600; color: var(--light-grey); position: relative; }
@@ -218,10 +236,7 @@
 </head>
 <body>
 
-    <!-- Loading Animation Overlay -->
-    <div id="loading-overlay">
-        <div class="loader"></div>
-    </div>
+    <!-- Removed #loading-overlay -->
 
     <header class="site-header-container">
         <div class="header-left">
@@ -235,8 +250,10 @@
             <button id="theme-toggle" class="icon-btn" aria-label="Changer de thème (Mode Clair/Sombre)">
                 <i class="fas fa-moon"></i>
             </button>
-            <a href="data.html" class="btn btn-secondary">Mettre à jour les données</a>
-            <a href="improve.html" class="btn btn-primary">Analyser ma performance</a>
+            <!-- Text shortened to 'Mise à jour' -->
+            <a href="data.html" class="btn btn-secondary">Mise à jour</a>
+            <!-- Text shortened to 'Analyser' -->
+            <a href="improve.html" class="btn btn-primary">Analyser</a>
         </div>
     </header>
 
@@ -283,13 +300,15 @@
                 </select>
             </div>
             <div class="control-group">
+                <!-- Secondary button for inversion -->
                 <button id="unites-btn" class="btn btn-secondary btn-full-width">Configurer les unités</button>
             </div>
             
-            <div id="ponderation-controls" class="hidden" style="background-color: #fff9f0; padding: 15px; border-radius: 8px; border: 1px solid var(--warning-color); margin-bottom: 20px;">
-                <p style="font-weight: bold; text-align: center; margin-top: 0;">Pondérations modifiées</p>
+            <div id="ponderation-controls" class="hidden" style="background-color: #fff9f0; padding: 15px; border-radius: 8px; border: 1px var(--warning-color); margin-bottom: 20px;">
+                <p style="font-weight: bold; text-align: center; margin-top: 0; color: var(--text-color);">Pondérations modifiées</p>
                 <div style="display: flex; gap: 10px;">
                     <button id="save-ponds-btn" class="btn btn-primary" style="flex:1;">Sauvegarder</button>
+                    <!-- Secondary button for inversion -->
                     <button id="revert-ponds-btn" class="btn btn-secondary" style="background-color: #95a5a6; flex:1;">Annuler</button>
                 </div>
             </div>
@@ -326,13 +345,12 @@
         <p><a href="ticket.html">Signaler un problème</a></p>
     </footer>
 
-    <!-- Place new JavaScript logic here -->
+    <!-- JavaScript logic remains for theme and modal -->
     <script>
         // Theme setup and save to local storage
         const themeToggle = document.getElementById('theme-toggle');
         const html = document.documentElement;
         const toggleIcon = themeToggle.querySelector('i');
-        const loadingOverlay = document.getElementById('loading-overlay');
         
         const THEME_KEY = 'mbs-theme';
 
@@ -343,7 +361,7 @@
             toggleIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
         };
 
-        // 1. Initial Load Theme
+        // 1. Initial Load Theme (No separate loading screen logic required)
         const storedTheme = localStorage.getItem(THEME_KEY);
         if (storedTheme) {
             updateTheme(storedTheme);
@@ -361,15 +379,7 @@
             updateTheme(newTheme);
         });
 
-        // 3. Page Loading Animation Hide (Fades out after 300ms delay)
-        window.addEventListener('load', () => {
-            // Delay added to ensure the loading animation is visible even on fast loads
-            setTimeout(() => {
-                loadingOverlay.classList.add('hidden');
-            }, 300);
-        });
-
-        // 4. Modal/Popup Animation Control (Open/Close)
+        // 3. Modal/Popup Animation Control (Open/Close)
         const unitesModal = document.getElementById('unites-modal');
         const unitesBtn = document.getElementById('unites-btn');
         const closeUnitesModal = document.getElementById('close-unites-modal');
@@ -392,7 +402,7 @@
             }
         });
 
-        // Add a placeholder for the original functions file (optional, but good practice)
+        // Placeholder for the original functions file
         // console.log("Placeholder for js/main-functions.js logic.")
     </script>
     <script src="js/main-functions.js"></script>
