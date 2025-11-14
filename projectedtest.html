@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analyseur Prédictif de Précision Limite</title>
+    <title>Analyseur Dynamique de Prédiction Stochastique</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* General Setup */
@@ -123,6 +123,7 @@
         .badge-yellow { background-color: #FEF3C7; color: #92400E; } 
         .badge-red { background-color: #FEE2E2; color: #991B1B; } 
         .badge-violet { background-color: #E9D5FF; color: #5B21B6; }
+        .badge-blue { background-color: #DBEAFE; color: #1E40AF; }
 
         /* Prediction Cards */
         .prediction-card {
@@ -136,6 +137,7 @@
         }
         .card-green { border-left-color: var(--secondary-color); }
         .card-violet { border-left-color: var(--primary-color); }
+        .card-yellow { border-left-color: var(--warning-color); }
         .card-red { border-left-color: var(--danger-color); }
         .card-score {
             font-size: 1.875rem; 
@@ -182,6 +184,23 @@
             width: 500px;
         }
 
+        /* Scorecard style update */
+        .score-card {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            background-color: #f3f4f6;
+            transition: all 0.15s;
+        }
+        .score-card strong {
+            font-size: 1.5rem;
+        }
+        .score-icon {
+            font-size: 1.5rem;
+            margin-right: 1rem;
+        }
+
     </style>
 </head>
 <body>
@@ -190,14 +209,14 @@
 
         <!-- Sidebar - Résumé des notes -->
         <div class="side-panel lg:sticky lg:top-4">
-            <h2 class="text-2xl font-bold mb-4 text-gray-800 border-b pb-2">Moteur d'Analyse de Performance</h2>
+            <h2 class="text-2xl font-bold mb-4 text-gray-800 border-b pb-2">Moteur Stochastique Prédictif</h2>
 
-            <div class="bg-indigo-50 p-4 rounded-lg mb-4 border-l-4 border-indigo-600">
-                <p class="text-sm font-medium text-gray-700">Moyenne Générale Pondérée (Actuelle)</p>
-                <strong id="moyenne-generale" class="text-4xl font-extrabold text-gray-900">--</strong>
+            <div class="bg-violet-100 p-4 rounded-lg mb-4 border-l-4 border-violet-600">
+                <p class="text-sm font-medium text-gray-700">Prédiction Globale Stochastique (Tendance MC)</p>
+                <strong id="moyenne-prediction" class="text-4xl font-extrabold text-violet-700">--</strong>
             </div>
             
-            <h3 class="text-lg font-semibold mt-6 mb-3 text-gray-800 border-t pt-3">Indices de Risque Global</h3>
+            <h3 class="text-lg font-semibold mt-6 mb-3 text-gray-800 border-t pt-3">Indices de Risque Dynamique</h3>
             <div id="deep-analysis-scorecard" class="space-y-3 mb-6">
                 <!-- Consistency/Effort -->
                 <div class="score-card score-high" id="consistency-score">
@@ -274,13 +293,19 @@
                 <div id="simulation" class="tab-content">
                     <h2 class="text-2xl font-bold mb-4 text-primary-color">Analyse Prédictive Monte Carlo Avancée</h2>
                     <p class="text-gray-600 mb-6 border-b pb-4">
-                        *L'algorithme a exécuté <strong class="text-primary-color">10,000 scénarios probabilistes stochastiques par matière</strong>, ajustés par la volatilité individuelle (écart-type) et le niveau d'effort/consistance. Précision limite absolue.*
+                        *L'algorithme a exécuté <strong class="text-primary-color">10,000 scénarios probabilistes stochastiques par matière</strong>, ajustés par la volatilité individuelle et le **Multiplicateur de Performance Prédite (MPP)**. Précision limite absolue.*
                     </p>
 
-                    <!-- Global Predictions -->
-                    <h3 class="text-xl font-semibold mb-3 mt-4 text-gray-700">Prédictions de Moyenne Finale Globale</h3>
+                    <!-- Global Predictions (Confidence Intervals) -->
+                    <h3 class="text-xl font-semibold mb-3 mt-4 text-gray-700">Prédictions de Moyenne Finale Globale (Intervalles de Confiance)</h3>
                     <div id="global-predictions" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <!-- Predictions will be rendered here -->
+                    </div>
+
+                    <!-- Effort/Volatility Mismatch Analysis -->
+                    <h3 class="text-xl font-semibold mb-3 mt-8 text-gray-700 border-t pt-4">Analyse de Déséquilibre Volatilité / Effort (Mismatch)</h3>
+                    <div id="mismatch-analysis" class="space-y-4">
+                        <!-- Mismatch analysis will be rendered here -->
                     </div>
 
                     <!-- Probability Analysis -->
@@ -345,7 +370,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- INITIALIZATION ---
     function init() {
-        mbsData = JSON.parse(localStorage.getItem('mbsData')) || {};
+        // Mock data initialization if needed for debugging or retrieve from Local Storage
+        mbsData = JSON.parse(localStorage.getItem('mbsData')) || { 
+            valid: true, nom: 'Étudiant', settings: { niveau: 'sec5', unitesMode: 'defaut' } 
+        };
 
         if (!mbsData.valid || !mbsData.nom) {
             const mainContainer = document.querySelector('.main-container');
@@ -400,11 +428,13 @@ document.addEventListener('DOMContentLoaded', () => {
         renderSidePanel(analysis);
         renderDeepAnalysis(analysis);
         renderMonteCarlo(analysis);
+        renderMismatchAnalysis(analysis);
     }
 
     function renderTermTables() {
         ['etape1', 'etape2', 'etape3'].forEach(key => {
             const container = document.getElementById(key);
+            // We use allSubjectStats from cachedAnalysis to ensure subject order consistency
             if (container) renderTermData(mbsData[key], container, key, cachedAnalysis);
         });
     }
@@ -412,24 +442,38 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderTermData(termData, container, etapeKey, analysis) {
         if (!container) return; 
 
-        if (!termData || termData.length === 0) {
-            container.innerHTML = '<p class="no-data text-gray-500">Aucune donnée de base pour cette étape.</p>';
+        if (!termData || termData.length === 0 || !analysis.subjectStats) {
+            container.innerHTML = `<p class="no-data text-gray-500">Aucune donnée de base pour cette étape.</p>`;
             return;
         }
         container.innerHTML = '';
-        termData.forEach((subject, subjectIndex) => {
-            const codePrefix = subject.code.substring(0, 3);
+        
+        // Use the comprehensive list of subjects from the overall stats to ensure all subjects are listed, 
+        // even if they only appear in another term.
+        const allSubjectsInTerm = Object.keys(analysis.subjectStats).filter(code => analysis.subjectStats[code]?.[etapeKey]);
+
+        if (allSubjectsInTerm.length === 0) {
+            container.innerHTML = `<p class="no-data text-gray-500">Aucune matière avec données dans cette étape.</p>`;
+            return;
+        }
+
+
+        // Render each subject that has data in this specific term
+        allSubjectsInTerm.forEach(codePrefix => {
+            const subject = mbsData[etapeKey].find(s => s.code.startsWith(codePrefix));
             const subjStats = analysis.subjectStats[codePrefix]?.[etapeKey];
 
-            // 1. Render Subject Table (Simplified)
-            container.appendChild(renderSubjectTable(subject, etapeKey, subjectIndex, subjStats));
-            
-            // 2. Render Subject Analysis
-            container.appendChild(renderSubjectAnalysis(codePrefix, etapeKey, analysis));
+            if (subject && subjStats) {
+                // 1. Render Subject Table (Simplified)
+                container.appendChild(renderSubjectTable(subject, etapeKey, subjStats));
+                
+                // 2. Render Subject Analysis
+                container.appendChild(renderSubjectAnalysis(codePrefix, etapeKey, analysis));
+            }
         });
     }
 
-    function renderSubjectTable(subject, etapeKey, subjectIndex, subjStats) {
+    function renderSubjectTable(subject, etapeKey, subjStats) {
         const table = document.createElement('table');
         table.className = 'subject-table';
         const codePrefix = subject.code.substring(0, 3);
@@ -447,13 +491,14 @@ document.addEventListener('DOMContentLoaded', () => {
             <tbody></tbody>`;
         const tbody = table.querySelector('tbody');
 
-        subject.competencies.forEach((comp, compIndex) => {
-            const compAvg = subjStats?.competencyAverages?.[compIndex]?.avg;
-            const compConsistency = subjStats?.competencyAverages?.[compIndex]?.consistency;
+        // Only show competencies that had data processed
+        subjStats.competencyAverages.forEach((comp, compIndex) => {
+            const compAvg = comp.avg;
+            const compConsistency = comp.consistency;
 
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td>${comp.name}</td>
+                <td>${subject.competencies[compIndex].name}</td>
                 <td>${compAvg !== null ? `<span class="grade-percentage">${compAvg.toFixed(2)}%</span>` : '<span class="no-data">N/D</span>'}</td>
                 <td>
                     ${compConsistency !== null ? `
@@ -480,14 +525,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const subjStats = analysis.subjectStats[subjectCode]?.[etapeKey];
         const subjOverallStats = analysis.subjectOverallStats[subjectCode];
         const trend = analysis.subjectTrends?.[subjectCode];
+        const prediction = analysis.predictions.subjects[subjectCode];
 
-        if (subjAvg === null || subjAvg === undefined) {
+        if (subjAvg === null || subjAvg === undefined || !prediction) {
             analysisDiv.innerHTML = `<p class="text-sm text-gray-500">Aucune donnée pour l'analyse de ${subjectList[subjectCode]}.</p>`;
             return analysisDiv;
         }
 
         // 1. Overall Consistency Badge
-        let overallConsistency = subjStats?.overallConsistency || 0;
+        let overallConsistency = subjOverallStats?.overallConsistency || 0;
         let consistencyBadge = { label: 'Volatilité Max', class: 'badge-red', icon: '❌' };
         if (overallConsistency >= 90) consistencyBadge = { label: 'Très Stable', class: 'badge-green', icon: '✅' };
         else if (overallConsistency >= 70) consistencyBadge = { label: 'Stable', class: 'badge-yellow', icon: '⚠️' };
@@ -499,54 +545,114 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (stdDev > 5) volatilityBadge.class = 'badge-yellow';
         else volatilityBadge.class = 'badge-green';
         
-        // 3. Trend Badge (Only for Etape 2 & 3)
+        // 3. Trend Badge (Only if E2 exists)
         let trendBadge = { label: 'N/A', class: 'badge-violet', icon: ' ' };
-        let trendDescription = 'Analyse de tendance disponible après l\'Étape 2.';
+        let trendDescription = '';
 
         if (trend && etapeKey !== 'etape1') {
             const diff = trend.diff;
             if (diff > 2) {
                 trendBadge = { label: `Forte Hausse (+${diff.toFixed(1)}%)`, class: 'badge-green', icon: '⬆️' };
-                trendDescription = 'La note est en nette amélioration. L\'effort porte ses fruits.';
+                trendDescription = 'Forte amélioration. Le MPP est ajusté à la hausse.';
             } else if (diff < -2) {
                 trendBadge = { label: `Baisse Importante (${diff.toFixed(1)}%)`, class: 'badge-red', icon: '⬇️' };
-                trendDescription = 'Baisse significative. Urgent d\'analyser les causes et la répartition de l\'effort.';
+                trendDescription = 'Baisse significative. Le MPP est ajusté à la baisse.';
             } else {
                 trendBadge = { label: 'Stable', class: 'badge-yellow', icon: '↔️' };
-                trendDescription = 'Tendance stable. Maintenez l\'effort.';
+                trendDescription = 'Tendance stable. Le MPP est neutre.';
             }
         }
 
+        // 4. MPP Badge
+        const mpp = prediction.mpp;
+        let mppBadge = { label: `MPP: ${mpp.toFixed(2)}`, class: 'badge-blue', icon: '⚙️' };
+        if (mpp > 1.05) mppBadge.class = 'badge-green';
+        else if (mpp < 0.95) mppBadge.class = 'badge-red';
+        else mppBadge.class = 'badge-yellow';
+
+
         analysisDiv.innerHTML = `
             <div class="flex items-center mb-2 flex-wrap">
-                <span class="text-lg font-semibold text-gray-800 mr-4">Diagnostic Détaillé - ${subjectList[subjectCode]}</span>
+                <span class="text-lg font-semibold text-gray-800 mr-4">${subjectList[subjectCode]}</span>
                 <span class="analysis-badge ${consistencyBadge.class}">${consistencyBadge.icon} Consistance E/C: ${overallConsistency.toFixed(0)}/100</span>
                 <span class="analysis-badge ${volatilityBadge.class}">${volatilityBadge.icon} ${volatilityBadge.label}</span>
                 ${etapeKey !== 'etape1' ? `<span class="analysis-badge ${trendBadge.class} mt-2 md:mt-0">${trendBadge.icon} Tendance: ${trendBadge.label}</span>` : ''}
+                <span class="analysis-badge ${mppBadge.class} mt-2 md:mt-0">${mppBadge.icon} Multiplicateur Prédit (MPP): x${mpp.toFixed(2)}</span>
             </div>
-            <p class="text-sm text-gray-700 mt-2">Moyenne de l'étape : <strong>${subjAvg.toFixed(2)}%</strong>. Volatilité (écart-type) des notes individuelles : **${stdDev.toFixed(1)}%**.</p>
+            <p class="text-sm text-gray-700 mt-2">MPP (Multiplicateur de Performance Prédite) = Facteur Dynamique pour la simulation E3.</p>
         `;
 
         return analysisDiv;
     }
 
+    function renderMismatchAnalysis(analysis) {
+        const container = document.getElementById('mismatch-analysis');
+        if (!container) return;
+
+        let mismatchHtml = '';
+        Object.entries(analysis.predictions.subjects).forEach(([code, subjPred]) => {
+            const subjName = subjectList[code] || code;
+            const consistency = subjPred.consistency;
+            const stdDev = subjPred.stdDev;
+            const mpp = subjPred.mpp;
+            
+            // Mismatch Score: High volatility (high stdDev) + low consistency (low score) = high mismatch
+            const mismatch = (stdDev * 1.5) + (100 - consistency) / 2;
+            
+            let color = 'border-blue-500';
+            let summary = 'Équilibre correct. Volatilité gérée par la bonne consistance.';
+
+            if (mismatch > 25) {
+                color = 'border-red-500';
+                summary = '❌ **Mismatch Critique**. Votre effort (consistance faible) est annulé par la forte volatilité (écart-type). Le risque est maximum, le MPP est pénalisé.';
+            } else if (mismatch > 15) {
+                color = 'border-yellow-500';
+                summary = '⚠️ **Mismatch Modéré**. Il y a un écart entre l\'effort et la stabilité. Matière à risque d\'imprévu.';
+            } else if (mismatch < 5) {
+                color = 'border-green-500';
+                summary = '✅ **Excellent Alignement**. Faible volatilité et haute consistance. Stabilité assurée.';
+            }
+
+            mismatchHtml += `
+                <div class="p-3 rounded-lg border-l-4 ${color} bg-white shadow-sm">
+                    <div class="flex justify-between items-center text-gray-800">
+                        <strong class="text-lg">${subjName}</strong>
+                        <span class="text-sm font-semibold">Score Mismatch: ${mismatch.toFixed(1)}</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-1">${summary}</p>
+                    <p class="text-xs text-gray-500 mt-1">Consistance: ${consistency.toFixed(0)}/100 | Écart-type: ${stdDev.toFixed(1)}% | MPP: x${mpp.toFixed(2)}</p>
+                </div>
+            `;
+        });
+
+        container.innerHTML = mismatchHtml;
+    }
+
+
     function renderSidePanel(analysis) {
         const formatAvg = (avg) => avg !== null ? `<span class="grade-percentage">${avg.toFixed(2)}%</span>` : '--';
-
-        document.getElementById('moyenne-generale').innerHTML = formatAvg(analysis.globalAverage);
+        
+        // Prediction (MC Trend) in the sidebar
+        const mcTrend = analysis.predictions.global?.trend;
+        document.getElementById('moyenne-prediction').innerHTML = formatAvg(mcTrend);
         
         document.getElementById('active-etape-name').textContent = activeTab.replace('etape', '');
         
         const subjectListEl = document.getElementById('subject-averages-list');
         subjectListEl.innerHTML = '';
         const activeTermSubjects = analysis.subjectAverages[activeTab];
+        
+        // Display current term averages (if data exists)
         if (activeTermSubjects && Object.keys(activeTermSubjects).length > 0) {
-            Object.entries(activeTermSubjects).forEach(([code, subj]) => {
-                const li = document.createElement('li');
-                li.className = 'flex justify-between';
-                li.innerHTML = `<span>${subj.name}</span><strong>${formatAvg(subj.average)}</strong>`;
-                subjectListEl.appendChild(li);
-            });
+            // Filter out subjects with null average (no data for the current term)
+            const listItems = Object.entries(activeTermSubjects)
+                .filter(([code, subj]) => subj.average !== null)
+                .map(([code, subj]) => {
+                    return `<li class="flex justify-between"><span>${subj.name}</span><strong>${formatAvg(subj.average)}</strong></li>`;
+                })
+                .join('');
+            
+            subjectListEl.innerHTML = listItems || '<li class="no-data text-gray-500">Aucune moyenne calculée pour cette étape</li>';
         } else {
             subjectListEl.innerHTML = '<li class="no-data text-gray-500">Aucune matière pour cette étape</li>';
         }
@@ -594,19 +700,19 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (!globalPredEl || !probTableEl || !subjPredEl) return;
 
-        // --- 1. Global Predictions ---
+        // --- 1. Global Predictions (Confidence Intervals based on MC) ---
         const predictionScenarios = [
-            { name: "1. Max Théorique (100% dans tout)", key: 'theoreticalMax', desc: 'Si toutes les matières restantes obtiennent 100% à l\'Étape 3.', class: 'card-green' },
-            { name: "2. Optimiste Ponderé", key: 'optimistic', desc: 'Prédiction en tenant compte d\'une amélioration de 1.5 écart-type par matière.', class: 'card-green' },
-            { name: "3. Tendanciel Stochastique (Plus Probable)", key: 'trend', desc: 'Résultat moyen des 10,000 simulations Monte Carlo (plus réaliste).', class: 'card-violet' },
-            { name: "4. Pessimiste Ponderé", key: 'pessimistic', desc: 'Prédiction en tenant compte d\'une chute de 1.0 écart-type par matière.', class: 'card-yellow' },
-            { name: "5. Seuil de Réussite (Min 60%)", key: 'minPass', desc: 'Moyenne finale si l\'Étape 3 atteint la note minimale pour assurer 60% global.', class: 'card-red' },
+            { name: "5% Pessimiste (P5)", key: 'p5', desc: '95% de chance d\'obtenir au moins ce score.', class: 'card-red' },
+            { name: "25% Tendance Basse (P25)", key: 'p25', desc: 'Limite basse du quartile de prédiction.', class: 'card-yellow' },
+            { name: "50% Médian (P50)", key: 'p50', desc: 'Score médian. 50% de chance d\'être au-dessus.', class: 'card-violet' },
+            { name: "75% Tendance Haute (P75)", key: 'p75', desc: 'Limite haute du quartile de prédiction.', class: 'card-violet' },
+            { name: "95% Optimiste (P95)", key: 'p95', desc: '5% de chance d\'être meilleur que ce score.', class: 'card-green' },
         ];
         
         globalPredEl.innerHTML = predictionScenarios.map(scenario => {
             const value = predictions.global?.[scenario.key];
             const display = value !== null ? (value > 100 ? '>100%' : `${value.toFixed(2)}%`) : '--';
-            const colorClass = scenario.key === 'minPass' && value > 80 ? 'card-red' : scenario.class;
+            const colorClass = scenario.class;
             
             return `
                 <div class="prediction-card ${colorClass}">
@@ -632,6 +738,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             let requiredAvgDisplay = requiredAvg !== null ? (requiredAvg > 100 ? 'IMPOSSIBLE (100+)' : `${requiredAvg.toFixed(2)}%`) : '--';
             if (requiredAvg !== null && requiredAvg < 60) requiredAvgDisplay = `<span class="text-green-600">FAIBLE (${requiredAvg.toFixed(2)}%)</span>`;
+            else if (requiredAvg !== null && requiredAvg > 100) requiredAvgDisplay = `<span class="text-red-600">IMPOSSIBLE (100+%)</span>`;
             
             return `
                 <tr class="${probClass}">
@@ -654,7 +761,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="flex justify-between items-center">
                         <p class="font-bold text-lg text-gray-800">${subjectList[code] || code}</p>
                         <div class="text-sm text-gray-500">
-                            Ecart-type: ${subjPred.stdDev.toFixed(1)}% | Consistance E/C: ${subjPred.consistency.toFixed(0)}/100
+                            MPP: x${subjPred.mpp.toFixed(2)} | Consistance E/C: ${subjPred.consistency.toFixed(0)}/100
                         </div>
                     </div>
                     <p class="text-sm text-gray-500">Prédiction Tendancielle Stochastique Finale (Résultat MC)</p>
@@ -743,6 +850,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function calculateConsistencyScore(grades) {
         const stdDev = calculateStdDev(grades);
+        // Consistency is inversely proportional to volatility (StdDev * 2 is a heuristic penalty)
         return Math.max(0, 100 - (stdDev * 2));
     }
     
@@ -761,14 +869,13 @@ document.addEventListener('DOMContentLoaded', () => {
         let allSubjectStats = {}; // { code: { etape: { stats } } }
         let allSubjectOverallStats = {}; // { code: { allGrades, stdDev, overallConsistency } }
         let allGradesGlobal = [];
+        
+        const knownEtapeKeys = ['etape1', 'etape2']; // Only these are considered 'known' data
 
         // 1. Calculate Averages and Stats per Subject/Etape
-        ['etape1', 'etape2', 'etape3'].forEach(etape => {
+        knownEtapeKeys.forEach(etape => {
             if (!mbsData[etape]) return;
-            let termWeightedSum = 0;
-            let termUnitSum = 0;
             allSubjectAverages[etape] = {};
-            allSubjectStats[etape] = {};
 
             mbsData[etape].forEach((subject, subjectIndex) => {
                 const codePrefix = subject.code.substring(0, 3);
@@ -787,11 +894,11 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // 1.5 Calculate Overall Subject Stats (across all terms)
+        // 1.5 Calculate Overall Subject Stats (across all known terms)
         Object.keys(allSubjectStats).forEach(code => {
             let grades = [];
             let consistencies = [];
-            ['etape1', 'etape2'].forEach(etape => {
+            knownEtapeKeys.forEach(etape => {
                 if (allSubjectStats[code][etape]) {
                     grades.push(...allSubjectStats[code][etape].allGrades);
                     consistencies.push(allSubjectStats[code][etape].overallConsistency);
@@ -803,11 +910,11 @@ document.addEventListener('DOMContentLoaded', () => {
             allSubjectOverallStats[code] = { allGrades: grades, stdDev: overallStdDev, overallConsistency };
         });
 
-        // 2. Calculate Term Averages and Global Averages
+        // 2. Calculate Term Averages and Global Averages (Only Known Terms)
         let globalWeightedSum = 0;
         let totalKnownWeight = 0;
         
-        ['etape1', 'etape2', 'etape3'].forEach(etape => {
+        knownEtapeKeys.forEach(etape => {
             let termWeightedSum = 0;
             let termUnitSum = 0;
             
@@ -828,7 +935,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        const globalAverage = totalKnownWeight > 0 ? globalWeightedSum / totalKnownWeight : null;
+        // Global Average is calculated ONLY on known terms (E1 + E2)
+        const globalAverageKnown = totalKnownWeight > 0 ? globalWeightedSum / totalKnownWeight : null;
 
         // 3. Calculate Global Statistics
         let globalStdDev = allGradesGlobal.length >= 2 ? calculateStdDev(allGradesGlobal) : 0;
@@ -849,13 +957,13 @@ document.addEventListener('DOMContentLoaded', () => {
         let burnoutRiskScore = calculateBurnoutRisk(niveau, allTermAverages, globalStdDev, allSubjectOverallStats, units);
 
         // 6. Monte Carlo Predictions
-        const predictions = runMonteCarloSimulation(globalAverage, allTermAverages, allSubjectAverages, allSubjectOverallStats, units);
+        const predictions = runMonteCarloSimulation(globalAverageKnown, allTermAverages, allSubjectAverages, subjectTrends, allSubjectOverallStats, units);
 
 
         return { 
             subjectAverages: allSubjectAverages, 
             termAverages: allTermAverages, 
-            globalAverage, 
+            globalAverage: globalAverageKnown, 
             globalStdDev, 
             globalConsistencyScore, 
             subjectStats: allSubjectStats,
@@ -876,29 +984,24 @@ document.addEventListener('DOMContentLoaded', () => {
         // Component 2: Global Volatility (StdDev) - Max 40 points
         let volatilityScore = Math.min(40, globalStdDev * 2.5); 
 
-        // Component 3: Grade Drop - Max 30 points
-        let dropScore = 0;
-        const avg1 = termAverages.etape1;
-        const avg2 = termAverages.etape2;
-        if (avg1 !== null && avg2 !== null) {
-            const gradeDrop = avg1 - avg2;
-            dropScore = Math.min(30, Math.max(0, gradeDrop * 3)); 
-        } else {
-             // Use Subject Volatility as a proxy for drop risk
-             let totalStdDev = 0;
-             let count = 0;
-             Object.values(allSubjectOverallStats).forEach(s => {
-                 if (s.stdDev > 0) { totalStdDev += s.stdDev; count++; }
-             });
-             if (count > 0) dropScore = Math.min(30, (totalStdDev / count) * 2);
-        }
+        // Component 3: Effort Mismatch (Average of all subject mismatches) - Max 30 points
+        let totalMismatch = 0;
+        let count = 0;
+        Object.values(allSubjectOverallStats).forEach(s => {
+            if (s.stdDev > 0) { 
+                const mismatch = (s.stdDev * 1.5) + (100 - s.overallConsistency) / 2;
+                totalMismatch += mismatch;
+                count++; 
+            }
+        });
+        let mismatchScore = count > 0 ? Math.min(30, (totalMismatch / count) * 1.5) : 0; // Normalize and cap at 30
 
-        return Math.min(100, workloadScore + volatilityScore + dropScore);
+        return Math.min(100, workloadScore + volatilityScore + mismatchScore);
     }
     
     // --- MONTE CARLO CORE LOGIC ---
-    function runMonteCarloSimulation(globalAverage, termAverages, subjectAverages, subjectOverallStats, units) {
-        const globalPred = { theoreticalMax: null, optimistic: null, trend: null, pessimistic: null, minPass: null };
+    function runMonteCarloSimulation(globalAverageKnown, termAverages, subjectAverages, subjectTrends, subjectOverallStats, units) {
+        const globalPred = { p5: null, p25: null, p50: null, p75: null, p95: null };
         const subjectPreds = {};
         const targets = [95, 92, 90, 88, 85, 80, 75, 70, 60];
         const probabilityAnalysis = {};
@@ -909,6 +1012,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let currentKnownGlobalSum = 0;
         let totalKnownWeight = 0;
         
+        // Only include terms that have data in the Known Sum
         if (avg1 !== null) {
             currentKnownGlobalSum += avg1 * TERM_WEIGHTS.etape1;
             totalKnownWeight += TERM_WEIGHTS.etape1;
@@ -921,21 +1025,29 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalWeight = TERM_WEIGHTS.etape1 + TERM_WEIGHTS.etape2 + TERM_WEIGHTS.etape3;
         const remainingWeight = totalWeight - totalKnownWeight;
 
-        if (remainingWeight === 0 && globalAverage !== null) {
-             globalPred.theoreticalMax = globalPred.optimistic = globalPred.trend = globalPred.pessimistic = globalPred.minPass = globalAverage;
+        // If no remaining weight, prediction is the known average
+        if (remainingWeight <= 0) {
+             globalPred.p5 = globalPred.p25 = globalPred.p50 = globalPred.p75 = globalPred.p95 = globalAverageKnown;
              targets.forEach(t => {
-                probabilityAnalysis[t] = { requiredAvg: null, prob: globalAverage >= t ? 100 : 0 };
+                probabilityAnalysis[t] = { requiredAvg: null, prob: globalAverageKnown >= t ? 100 : 0 };
              });
              return { global: globalPred, subjects: subjectPreds, probabilityAnalysis };
         }
-        if (globalAverage === null) return { global: globalPred, subjects: subjectPreds, probabilityAnalysis };
+        
+        // Identify subjects relevant for E3 prediction (those with units and at least one known term average)
+        const relevantSubjects = Object.keys(subjectOverallStats).filter(code => units[code] && (subjectAverages.etape1?.[code] || subjectAverages.etape2?.[code]));
+        
+        if (relevantSubjects.length === 0) {
+            targets.forEach(t => { probabilityAnalysis[t] = { requiredAvg: 0, prob: 100 }; }); // Optimistic assumption if no data available
+            return { global: globalPred, subjects: subjectPreds, probabilityAnalysis };
+        }
 
-        // --- 1. Calculate Required Average for Etape 3 (Deterministic) ---
+        // --- 1. Required Average for Etape 3 (Deterministic) ---
         targets.forEach(target => {
             const requiredAvg = (target * totalWeight - currentKnownGlobalSum) / remainingWeight;
             
             // Simplified probability (based on Z-Score, using best current avg as proxy)
-            const currentTrendAvg = avg2 !== null ? avg2 : (avg1 !== null ? avg1 : target); 
+            const currentTrendAvg = avg2 !== null ? avg2 : (avg1 !== null ? avg1 : 75); // Use 75 as baseline if no term data
             const stdDevProxy = subjectOverallStats && Object.values(subjectOverallStats).length > 0 ? 
                                 Object.values(subjectOverallStats).reduce((sum, s) => sum + s.stdDev, 0) / Object.values(subjectOverallStats).length : 5;
             
@@ -949,9 +1061,39 @@ document.addEventListener('DOMContentLoaded', () => {
         let finalGrades = [];
         let subjectSumGrades = {};
 
-        const relevantSubjects = Object.keys(subjectOverallStats).filter(code => units[code] && (subjectAverages.etape1?.[code] || subjectAverages.etape2?.[code]));
-        
         relevantSubjects.forEach(code => subjectSumGrades[code] = 0);
+        
+        // Pre-calculate MPP for each subject
+        relevantSubjects.forEach(code => {
+            const subjStats = subjectOverallStats[code];
+            const trend = subjectTrends[code];
+
+            let trendAvg = subjectAverages.etape2?.[code]?.average || subjectAverages.etape1?.[code]?.average || 75; // Baseline
+
+            // T1: Trend Adjustment (up to +/- 5%)
+            let trendAdjustment = trend?.diff ? Math.min(5, Math.max(-5, trend.diff)) * 0.5 : 0; // max 5% diff affects mean by 2.5%
+
+            // T2: Consistency Adjustment (up to +/- 5%)
+            // Reward stability (Consist > 90) or penalize instability (Consist < 70)
+            let consistencyAdjustment = 0;
+            if (subjStats.overallConsistency >= 90) consistencyAdjustment = 2.5; // Reward
+            else if (subjStats.overallConsistency < 70) consistencyAdjustment = -2.5; // Penalize
+
+            // T3: Volatility Multiplier (affects spread, not mean, handled later)
+            const consistencyFactor = Math.max(0.1, 1 - (subjStats.overallConsistency / 100));
+            
+            // Final Mean Multiplier (MPP)
+            const mpp = Math.min(1.10, Math.max(0.90, 1 + (trendAdjustment + consistencyAdjustment) / 100)); // Cap MPP between 0.90 and 1.10
+            
+            subjectPreds[code] = { 
+                mpp: mpp,
+                stdDev: subjStats.stdDev,
+                consistency: subjStats.overallConsistency,
+                trend: 0, // Placeholder for final MC avg
+                consistencyFactor: consistencyFactor // Used for spreading SD
+            };
+        });
+
 
         // Run N simulations
         for (let i = 0; i < NUM_MONTE_CARLO_RUNS; i++) {
@@ -960,24 +1102,27 @@ document.addEventListener('DOMContentLoaded', () => {
             let simTotalUnitWeight = 0;
             
             relevantSubjects.forEach(code => {
-                const subjStats = subjectOverallStats[code];
+                const subjPred = subjectPreds[code];
                 const subjAvg1 = subjectAverages.etape1?.[code]?.average || null;
                 const subjAvg2 = subjectAverages.etape2?.[code]?.average || null;
                 const unit = units[code] || 2;
                 
-                let trendAvg = subjAvg2 !== null ? subjAvg2 : (subjAvg1 !== null ? subjAvg1 : 70); // Default to 70 if no data
-                let stdDev = subjStats.stdDev;
+                let trendAvg = subjAvg2 !== null ? subjAvg2 : (subjAvg1 !== null ? subjAvg1 : 75);
+                let stdDev = subjPred.stdDev;
                 
-                // Adjustment for low consistency (higher risk = higher SD for prediction)
-                const consistencyFactor = Math.max(0.1, 1 - (subjStats.overallConsistency / 100)); // 0.1 (perfect) to 1.0 (bad)
-                stdDev = stdDev * (1 + consistencyFactor * 0.5); // Increase SD by up to 50% for high risk
+                // Adjust Mean by MPP
+                const adjustedMean = trendAvg * subjPred.mpp;
 
-                // Generate a random grade for E3 based on trend average and modified SD
-                // Uses Box-Muller transform for normal distribution approximation (random() generates uniform)
-                let z = Math.sqrt(-2 * Math.log(Math.random())) * Math.cos(2 * Math.PI * Math.random());
-                let predictedE3Avg = Math.min(100, Math.max(0, trendAvg + z * stdDev));
+                // Adjust Volatility (SD) based on low consistency (high risk = higher SD for prediction)
+                stdDev = stdDev * (1 + subjPred.consistencyFactor * 0.5); 
 
-                // Final grade for subject in this simulation: (E1+E2 + E3) / Total
+                // Generate a random grade for E3 using Box-Muller (Normal Distribution)
+                const u1 = Math.random();
+                const u2 = Math.random();
+                let z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+                let predictedE3Avg = Math.min(100, Math.max(0, adjustedMean + z * stdDev));
+
+                // Calculate final grade for subject in this simulation: (E1+E2 + E3) / Total
                 let subjKnownSum = 0;
                 if (subjAvg1 !== null) subjKnownSum += subjAvg1 * TERM_WEIGHTS.etape1;
                 if (subjAvg2 !== null) subjKnownSum += subjAvg2 * TERM_WEIGHTS.etape2;
@@ -997,34 +1142,22 @@ document.addEventListener('DOMContentLoaded', () => {
             finalGrades.push(finalGlobalGrade);
         }
 
-        // --- 3. Final Monte Carlo Results ---
-        
-        // Global Trend (Average of all runs)
-        const mcTrendAvg = finalGrades.reduce((a, b) => a + b) / NUM_MONTE_CARLO_RUNS;
-        globalPred.trend = mcTrendAvg;
+        // --- 3. Final Monte Carlo Results (Percentiles) ---
+        finalGrades.sort((a, b) => a - b);
 
-        // Calculate MC StdDev for Global
-        const mcVariance = finalGrades.reduce((sum, grade) => sum + Math.pow(grade - mcTrendAvg, 2), 0) / NUM_MONTE_CARLO_RUNS;
-        const mcStdDev = Math.sqrt(mcVariance);
-        
-        // Optimistic and Pessimistic (based on MC distribution)
-        globalPred.optimistic = Math.min(100, mcTrendAvg + mcStdDev * 1.5);
-        globalPred.pessimistic = Math.max(60, mcTrendAvg - mcStdDev * 1.0);
+        globalPred.p5 = finalGrades[Math.floor(NUM_MONTE_CARLO_RUNS * 0.05)] || 0;
+        globalPred.p25 = finalGrades[Math.floor(NUM_MONTE_CARLO_RUNS * 0.25)] || 0;
+        globalPred.p50 = finalGrades[Math.floor(NUM_MONTE_CARLO_RUNS * 0.50)] || 0;
+        globalPred.p75 = finalGrades[Math.floor(NUM_MONTE_CARLO_RUNS * 0.75)] || 0;
+        globalPred.p95 = finalGrades[Math.floor(NUM_MONTE_CARLO_RUNS * 0.95)] || 0;
+        globalPred.trend = finalGrades.reduce((a, b) => a + b) / NUM_MONTE_CARLO_RUNS; // Actual Mean
 
-        // Max Théorique and Min Pass (deterministic, based on section 1)
-        const required95Avg = probabilityAnalysis[95]?.requiredAvg;
-        globalPred.theoreticalMax = (currentKnownGlobalSum + (100 * remainingWeight)) / totalWeight;
-        
-        const required60Avg = probabilityAnalysis[60]?.requiredAvg;
-        globalPred.minPass = required60Avg !== null ? Math.max(60, (currentKnownGlobalSum + Math.max(0, required60Avg) * remainingWeight) / totalWeight) : globalPred.trend;
+        const mcStdDev = calculateStdDev(finalGrades);
 
         // Subject Final Predictions
         relevantSubjects.forEach(code => {
-            subjectPreds[code] = { 
-                trend: subjectSumGrades[code] / NUM_MONTE_CARLO_RUNS,
-                stdDev: subjectOverallStats[code].stdDev,
-                consistency: subjectOverallStats[code].overallConsistency
-            };
+            // Update the trend (actual MC average)
+            subjectPreds[code].trend = subjectSumGrades[code] / NUM_MONTE_CARLO_RUNS;
         });
         
         // Re-evaluate probability based on MC trend and its own SD
@@ -1040,11 +1173,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // Approx. Probability based on Z-Score (CDF)
     function calculateProbability(mean, stdDev, requiredTarget) {
         if (mean === null) return 0;
-        if (stdDev === 0) return mean >= requiredTarget ? 100 : 0;
+        if (stdDev <= 0.1) return mean >= requiredTarget ? 100 : 0; // Near deterministic case
         
+        // If the required target is impossible (above 100 or below 0), probability is 0
+        if (requiredTarget > 100) return 0;
+        if (requiredTarget < 60 && mean < 60) return 100; // If already failing and target is low, high chance to meet low bar
+
         const z = (requiredTarget - mean) / stdDev;
 
-        // Quick approximation of CDF from Z-Score
+        // Quick approximation of CDF (Inverse of probability of NOT meeting the target)
+        // This estimates the area of the curve *below* the target, we want the area *above* (1 - CDF)
+        // Approximating 1-CDF(z)
         if (z < -3.0) return 99; 
         if (z < -2.5) return 98;
         if (z < -2.0) return 95; 
@@ -1105,6 +1244,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentUnits = getUnits();
         const subjectCodes = new Set();
 
+        // Collect all unique subject codes present in data
         ['etape1', 'etape2', 'etape3'].forEach(etapeKey => {
             mbsData[etapeKey]?.forEach(subject => {
                 const codePrefix = subject.code.substring(0, 3);
@@ -1113,15 +1253,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         Array.from(subjectCodes).sort().forEach(code => {
-            const currentUnitValue = currentUnits[code] || 1;
+            // Use the current unit or 2 as a default, especially if data is missing for this subject
+            const currentUnitValue = currentUnits[code] || 2; 
             const li = document.createElement('div');
             li.className = 'unite-item flex justify-between items-center border-b border-gray-200 py-2';
             li.innerHTML = `
                 <span class="text-gray-700">${subjectList[code] || code} (${code})</span>
-                <input type="number" class="w-20 text-right p-1 border rounded-md" value="${currentUnitValue}" min="0" max="10" data-code="${code}">
+                <input type="number" class="w-20 text-right p-1 border rounded-md" value="${currentUnitValue}" min="0" max="10" data-code="${code}" onchange="saveCustomUnits()">
             `;
             unitesListEl.appendChild(li);
         });
+        // Attach event listener for inputs inside the modal
+        window.saveCustomUnits = saveCustomUnits;
     }
 
     // --- START THE APP ---
