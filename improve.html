@@ -66,19 +66,21 @@
         .subject-widget {
             background-color: var(--widget-background); border-radius: 12px;
             box-shadow: var(--shadow-widget); padding: 20px;
-            cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex; flex-direction: column;
         }
         .subject-widget:hover { transform: translateY(-5px); box-shadow: 0 12px 20px rgba(0,0,0,0.1); }
+        .widget-main-content { cursor: pointer; }
         .widget-top-section { display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; }
         .widget-info { flex: 1; }
         .widget-title { font-size: 1.2em; font-weight: 700; color: var(--secondary-color); margin: 0 0 10px 0; }
         .widget-average { font-size: 2.5em; font-weight: 700; color: var(--primary-color); margin: 0; }
-        .widget-trend { display: flex; align-items: center; gap: 5px; font-weight: 600; font-size: 0.9em; margin-top: 5px; }
+        .widget-gauge-container { display: flex; justify-content: center; align-items: center; margin: 15px 0; height: 100px; }
+        .widget-footer { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 15px; border-top: 1px solid #f0f0f0;}
+        .widget-trend { display: flex; align-items: center; gap: 5px; font-weight: 600; font-size: 0.9em; }
         .widget-trend.up { color: var(--success-color); }
         .widget-trend.down { color: var(--danger-color); }
-        .widget-visuals { margin-top: 20px; }
-        .gauge-container { width: 120px; height: 60px; position: relative; } /* Gauge visual container */
-        .histogram-container { margin-top: 15px; }
+        .btn-goal { font-size: 0.8em; padding: 6px 12px; border-radius: 6px; background-color: var(--secondary-color); color: white; border: none; cursor: pointer; }
         .modal-overlay {
             position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(5px); z-index: 1000; display: flex;
@@ -95,11 +97,7 @@
         .modal-title { font-family: 'Playfair Display', serif; font-size: 1.8em; margin: 0; }
         .modal-body { padding: 25px; }
         .competency-widgets { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
-        .comp-widget {
-            flex: 1; min-width: 150px; background-color: var(--widget-background);
-            border-radius: 8px; padding: 15px; text-align: center;
-            border: 1px solid #e0e6eb; cursor: pointer; transition: all 0.2s;
-        }
+        .comp-widget { flex: 1; min-width: 150px; background-color: var(--widget-background); border-radius: 8px; padding: 15px; text-align: center; border: 1px solid #e0e6eb; cursor: pointer; }
         .comp-widget.active { border-color: var(--primary-color); box-shadow: 0 0 0 2px var(--primary-color); }
         .calculator-container { background-color: var(--widget-background); border-radius: 8px; padding: 20px; border: 1px solid #e0e6eb; }
         .goal-input { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
@@ -138,7 +136,6 @@
         const gradeMap = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 85, 'B': 80, 'B-': 75, 'C+': 70, 'C': 65, 'C-': 60, 'D+': 55, 'D': 50, 'E': 45 };
         let mbsData = {};
         let activeChart = null;
-        const OBJECTIVE_GRADE = 85; // User-defined objective for the gauge
 
         const widgetGrid = document.getElementById('widget-grid');
         const detailsModal = document.getElementById('details-modal');
@@ -149,6 +146,7 @@
                 widgetGrid.innerHTML = `<p style="text-align:center; width:100%;">Aucune donnée à analyser. Veuillez d'abord <a href="data.html">importer vos données</a>.</p>`;
                 return;
             }
+            if (!mbsData.goals) mbsData.goals = {}; // Initialize goals object
             setupEventListeners();
             renderWidgets('generale');
         }
@@ -236,29 +234,42 @@
                 }
                 const widget = document.createElement('div');
                 widget.className = 'subject-widget';
+                const gaugeId = `gauge-${subject.code}-${etapeKey}`;
+                const histId = `hist-${subject.code}-${etapeKey}`;
+                
                 widget.innerHTML = `
-                    <div class="widget-top-section">
-                        <div class="widget-info">
-                            <h3 class="widget-title">${subject.name}</h3>
-                            <p class="widget-average">${subject.average.toFixed(2)}%</p>
-                             <div class="widget-trend ${trend.class}">
-                                <span>${trend.direction}</span>
-                                <span>${trend.change}</span>
+                    <div class="widget-main-content">
+                        <div class="widget-top-section">
+                            <div class="widget-info">
+                                <h3 class="widget-title">${subject.name}</h3>
+                                <p class="widget-average">${subject.average.toFixed(2)}%</p>
                             </div>
                         </div>
-                        <div class="gauge-container" id="gauge-${subject.code}-${etapeKey}"></div>
+                        <div class="widget-gauge-container" id="${gaugeId}"></div>
+                        <div class="histogram-container"><canvas id="${histId}"></canvas></div>
                     </div>
-                    <div class="widget-visuals">
-                        <div class="histogram-container">
-                            <canvas id="hist-${subject.code}-${etapeKey}"></canvas>
+                    <div class="widget-footer">
+                         <div class="widget-trend ${trend.class}">
+                            <span>${trend.direction}</span>
+                            <span>${trend.change}</span>
                         </div>
-                    </div>`;
-                widget.addEventListener('click', () => openDetailsModal(subject));
+                        <button class="btn-goal">Définir un objectif</button>
+                    </div>
+                `;
+                
+                // Event listeners for the widget parts
+                widget.querySelector('.widget-main-content').addEventListener('click', () => openDetailsModal(subject));
+                widget.querySelector('.btn-goal').addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent modal from opening
+                    setGoal(subject.code, etapeKey);
+                });
+
                 widgetGrid.appendChild(widget);
                 
                 // Render visuals after appending to DOM
-                renderGauge(document.getElementById(`gauge-${subject.code}-${etapeKey}`), subject.average, OBJECTIVE_GRADE);
-                renderHistogram(document.getElementById(`hist-${subject.code}-${etapeKey}`), subject);
+                const goal = mbsData.goals?.[subject.code];
+                renderGauge(document.getElementById(gaugeId), subject.average, goal);
+                renderHistogram(document.getElementById(histId), subject);
             });
             if (!widgetGrid.children.length) {
                 widgetGrid.innerHTML = `<p style="grid-column: 1 / -1; text-align:center;">Aucune donnée pour cette période.</p>`;
@@ -266,77 +277,84 @@
         }
 
         function renderGauge(container, value, goal) {
+            if (!container) return;
+            container.innerHTML = ''; // Clear previous gauge
             const svgNS = "http://www.w3.org/2000/svg";
             const svg = document.createElementNS(svgNS, "svg");
-            svg.setAttribute("viewBox", "0 0 120 65");
-            container.appendChild(svg);
+            svg.setAttribute("viewBox", "-10 -5 220 110");
 
-            const angle = (val) => -90 + (val / 100) * 180;
+            const angle = (val) => -180 + (val / 100) * 180;
             const toRad = (angle) => angle * Math.PI / 180;
             const arc = (radius, startAngle, endAngle) => {
-                const start = { x: 60 + radius * Math.cos(toRad(startAngle)), y: 60 + radius * Math.sin(toRad(startAngle)) };
-                const end = { x: 60 + radius * Math.cos(toRad(endAngle)), y: 60 + radius * Math.sin(toRad(endAngle)) };
-                return `M ${start.x} ${start.y} A ${radius} ${radius} 0 0 1 ${end.x} ${end.y}`;
+                const start = { x: 100 + radius * Math.cos(toRad(startAngle)), y: 100 + radius * Math.sin(toRad(startAngle)) };
+                const end = { x: 100 + radius * Math.cos(toRad(endAngle)), y: 100 + radius * Math.sin(toRad(endAngle)) };
+                const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+                return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${end.x} ${end.y}`;
             };
 
-            // Background arc
             const bgArc = document.createElementNS(svgNS, "path");
-            bgArc.setAttribute("d", arc(50, -90, 90));
+            bgArc.setAttribute("d", arc(90, -180, 0));
             bgArc.setAttribute("fill", "none");
             bgArc.setAttribute("stroke", "#e0e6eb");
-            bgArc.setAttribute("stroke-width", "10");
+            bgArc.setAttribute("stroke-width", "20");
             svg.appendChild(bgArc);
             
-            // Foreground arc
             const fgArc = document.createElementNS(svgNS, "path");
-            fgArc.setAttribute("d", arc(50, -90, angle(value)));
+            fgArc.setAttribute("d", arc(90, -180, angle(value)));
             fgArc.setAttribute("fill", "none");
             fgArc.setAttribute("stroke", "var(--primary-color)");
-            fgArc.setAttribute("stroke-width", "10");
-            fgArc.setAttribute("stroke-linecap", "round");
+            fgArc.setAttribute("stroke-width", "20");
             svg.appendChild(fgArc);
 
-             // Goal line
-            const goalAngleRad = toRad(angle(goal));
-            const line = document.createElementNS(svgNS, "line");
-            line.setAttribute("x1", 60 + 40 * Math.cos(goalAngleRad));
-            line.setAttribute("y1", 60 + 40 * Math.sin(goalAngleRad));
-            line.setAttribute("x2", 60 + 58 * Math.cos(goalAngleRad));
-            line.setAttribute("y2", 60 + 58 * Math.sin(goalAngleRad));
-            line.setAttribute("stroke", "var(--danger-color)");
-            line.setAttribute("stroke-width", "2");
-            svg.appendChild(line);
+            if (goal) {
+                const goalAngleRad = toRad(angle(goal));
+                const line = document.createElementNS(svgNS, "line");
+                line.setAttribute("x1", 100);
+                line.setAttribute("y1", 100);
+                line.setAttribute("x2", 100 + 95 * Math.cos(goalAngleRad));
+                line.setAttribute("y2", 100 + 95 * Math.sin(goalAngleRad));
+                line.setAttribute("stroke", "var(--danger-color)");
+                line.setAttribute("stroke-width", "3");
+                svg.appendChild(line);
+            }
+            
+            const needleAngleRad = toRad(angle(value));
+            const needle = document.createElementNS(svgNS, "polygon");
+            needle.setAttribute("points", `100,90 ${100 + 80 * Math.cos(needleAngleRad)},${100 + 80 * Math.sin(needleAngleRad)} 100,110`);
+            needle.setAttribute("fill", "var(--secondary-color)");
+            svg.appendChild(needle);
+            
+            const pivot = document.createElementNS(svgNS, "circle");
+            pivot.setAttribute("cx", "100");
+            pivot.setAttribute("cy", "100");
+            pivot.setAttribute("r", "5");
+            pivot.setAttribute("fill", "var(--secondary-color)");
+            svg.appendChild(pivot);
+            
+            container.appendChild(svg);
         }
 
         function renderHistogram(canvas, subject) {
             const grades = [];
-            subject.competencies.forEach(comp => {
-                comp.assignments.forEach(assign => {
-                    const grade = getNumericGrade(assign.result);
-                    if (grade !== null) grades.push(grade);
-                });
-            });
-
-            const bins = { 'Echec (<60)': 0, 'C (60-69)': 0, 'B (70-89)': 0, 'A (90+)': 0 };
+            subject.competencies.forEach(comp => comp.assignments.forEach(assign => {
+                const grade = getNumericGrade(assign.result);
+                if (grade !== null) grades.push(grade);
+            }));
+            const bins = { 'Échec (<60)': 0, 'Passable (60-74)': 0, 'Bien (75-89)': 0, 'Excellent (90+)': 0 };
             grades.forEach(g => {
-                if (g < 60) bins['Echec (<60)']++;
-                else if (g < 70) bins['C (60-69)']++;
-                else if (g < 90) bins['B (70-89)']++;
-                else bins['A (90+)']++;
+                if (g < 60) bins['Échec (<60)']++;
+                else if (g < 75) bins['Passable (60-74)']++;
+                else if (g < 90) bins['Bien (75-89)']++;
+                else bins['Excellent (90+)']++;
             });
-            
             new Chart(canvas.getContext('2d'), {
                 type: 'bar',
                 data: {
                     labels: Object.keys(bins),
-                    datasets: [{
-                        data: Object.values(bins),
-                        backgroundColor: ['#e74c3c', '#f39c12', '#2980b9', '#27ae60']
-                    }]
+                    datasets: [{ data: Object.values(bins), backgroundColor: ['#e74c3c', '#f39c12', '#2980b9', '#27ae60'] }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
+                    responsive: true, maintainAspectRatio: false,
                     scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
                     plugins: { legend: { display: false }, title: { display: true, text: 'Distribution des notes' } }
                 }
@@ -354,7 +372,6 @@
                 </div>`;
             const competencyContainer = modalContent.querySelector('.competency-widgets');
             const graphContainer = modalContent.querySelector('.graph-container');
-
             const uniqueCompetencies = new Map();
             subject.competencies.forEach(comp => {
                 if (!uniqueCompetencies.has(comp.name)) uniqueCompetencies.set(comp.name, { name: comp.name, assignments: [] });
@@ -404,12 +421,27 @@
             });
         }
         
+        function setGoal(subjectCode, etapeKey) {
+            const currentGoal = mbsData.goals?.[subjectCode] || '';
+            const newGoal = prompt(`Entrez votre objectif de note pour cette matière (0-100) :`, currentGoal);
+            const goalValue = parseFloat(newGoal);
+            if (newGoal !== null && !isNaN(goalValue) && goalValue >= 0 && goalValue <= 100) {
+                mbsData.goals[subjectCode] = goalValue;
+            } else if (newGoal === '') { // Allow clearing the goal
+                delete mbsData.goals[subjectCode];
+            } else if (newGoal !== null) {
+                alert("Veuillez entrer un nombre valide entre 0 et 100.");
+                return;
+            }
+            localStorage.setItem('mbsData', JSON.stringify(mbsData));
+            renderWidgets(document.querySelector('.tab-btn.active').dataset.etape);
+        }
+
         function setupGoalCalculator(subject, container) {
             let sumOfWeightedGrades = 0; // ∑(w * x) for completed
             let sumOfCompletedWeights = 0; // ∑w for completed
             let sumOfFutureWeights = 0; // ∑w for future
             let sumOfTotalWeights = 0; // ∑w for all
-
             subject.competencies.forEach(comp => {
                 comp.assignments.forEach(assign => {
                     const weight = parseFloat(assign.pond);
@@ -455,11 +487,9 @@
                     goalResult.className = 'goal-result danger';
                     return;
                 }
-                
-                // Formula: Required = ( (Target * TotalWeight) - (CurrentAvg * CompletedWeight) ) / FutureWeight
-                const totalPointsNeeded = targetAvg * sumOfTotalWeights;
+                const totalPointsNeeded = (targetAvg / 100) * sumOfTotalWeights;
                 const pointsNeededFromFuture = totalPointsNeeded - sumOfWeightedGrades;
-                const requiredAvgOnFuture = pointsNeededFromFuture / sumOfFutureWeights;
+                const requiredAvgOnFuture = (pointsNeededFromFuture / sumOfFutureWeights) * 100;
                 
                 let message, resultClass;
                 if (requiredAvgOnFuture > 100) {
