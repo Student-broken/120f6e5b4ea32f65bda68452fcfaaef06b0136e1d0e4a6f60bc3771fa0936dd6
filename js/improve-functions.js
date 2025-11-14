@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateHistory(historyArray, newValue) {
         if (!Array.isArray(historyArray)) historyArray = [];
+        if (newValue === null) return { updated: false, history: historyArray };
         if (historyArray.length > 0 && historyArray[historyArray.length - 1]?.toFixed(2) === newValue.toFixed(2)) {
             return { updated: false, history: historyArray };
         }
@@ -67,6 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function calculateSubjectAverage(subject) {
+        if (!subject || !subject.competencies) return null;
         let totalWeightedCompetencyScore = 0;
         let totalCompetencyWeight = 0;
         subject.competencies.forEach(comp => {
@@ -111,34 +113,38 @@ document.addEventListener('DOMContentLoaded', () => {
         subjectsToRender.forEach(subject => {
             if (subject.average === null) return;
 
-            // --- KEY FIX: ALWAYS use the OVERALL average for history updates ---
             const allCompetenciesForSubject = ['etape1', 'etape2', 'etape3'].flatMap(
                 ek => (mbsData[ek] || []).find(s => s.code === subject.code)?.competencies || []
             );
             const overallAverage = calculateSubjectAverage({ competencies: allCompetenciesForSubject });
 
-            if (overallAverage !== null) {
-                const historyResult = updateHistory(mbsData.historique[subject.code], overallAverage);
-                if (historyResult.updated) {
-                    mbsData.historique[subject.code] = historyResult.history;
-                    needsDataSave = true;
-                }
+            const historyResult = updateHistory(mbsData.historique[subject.code], overallAverage);
+            if (historyResult.updated) {
+                mbsData.historique[subject.code] = historyResult.history;
+                needsDataSave = true;
             }
-            // --- END FIX ---
-
+            
             const subjectHistory = (mbsData.historique[subject.code] || []).filter(h => h !== null);
             let trend;
+
+            // --- CRITICAL FIX: Trend Calculation Logic ---
             if (subjectHistory.length < 2) {
                 trend = { direction: '▲', change: 'Nouveau', class: 'up' };
             } else {
                 const currentAvg = subjectHistory[subjectHistory.length - 1];
                 const previousPoints = subjectHistory.slice(0, subjectHistory.length - 1);
-                const baselineAverage = previousPoints.reduce((sum, val) => sum + val, 0) / previousPoints.length;
+                
+                // If there's only one previous point, compare directly. Otherwise, use the average of all previous points.
+                const baselineAverage = previousPoints.length === 1 
+                    ? previousPoints[0] 
+                    : previousPoints.reduce((sum, val) => sum + val, 0) / previousPoints.length;
+
                 const change = currentAvg - baselineAverage;
                 trend = change < 0 
                     ? { direction: '▼', change: `${change.toFixed(2)}%`, class: 'down' }
                     : { direction: '▲', change: `+${change.toFixed(2)}%`, class: 'up' };
             }
+            // --- END FIX ---
 
             const widget = document.createElement('div');
             widget.className = 'subject-widget';
@@ -237,9 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderHistogram(canvasId, subject) {
         const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-        const colors = isDarkMode
-            ? ['#ff5252', '#ff9800', '#cddc39', '#4caf50']
-            : ['#e74c3c', '#f39c12', '#a0c800', '#27ae60'];
+        const colors = isDarkMode ? ['#ff5252', '#ff9800', '#cddc39', '#4caf50'] : ['#e74c3c', '#f39c12', '#a0c800', '#27ae60'];
         const grades = subject.competencies.flatMap(comp => comp.assignments.map(a => getNumericGrade(a.result)).filter(g => g !== null));
         const bins = { 'Echec (<60)': 0, 'C (60-69)': 0, 'B (70-89)': 0, 'A (90+)': 0 };
         grades.forEach(g => {
@@ -309,12 +313,10 @@ document.addEventListener('DOMContentLoaded', () => {
             stepButtons.forEach(btn => btn.classList.remove('active'));
             stepButtons[stepIndex].classList.add('active');
             
-            let selectionsForThisStep = new Set();
+            const selectionsForThisStep = new Set();
             for(let i = 0; i <= stepIndex; i++) {
                 selectionsForThisStep.add(gradedAssignments[i].uniqueId);
-                if (tempSelections[i]) {
-                    tempSelections[i].forEach(id => selectionsForThisStep.add(id));
-                }
+                if (tempSelections[i]) tempSelections[i].forEach(id => selectionsForThisStep.add(id));
             }
 
             assignmentsContainer.innerHTML = gradedAssignments.map(assign => {
