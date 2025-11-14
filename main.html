@@ -1,385 +1,414 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tableau de Bord - Outil MBS</title>
-    <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
-    <!-- Font Awesome for icons (Updated & Reliable CDN Link) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            /* Animation Transition */
-            --transition-duration: 0.35s;
+document.addEventListener('DOMContentLoaded', () => {
+    const gradeMap = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 85, 'B': 80, 'B-': 75, 'C+': 70, 'C': 65, 'C-': 60, 'D+': 55, 'D': 50, 'E': 45 };
+    let mbsData = {};
+    let activeChart = null;
+    let activeGauges = {};
 
-            /* Light Mode Variables */
-            --primary-color: #2980b9;
-            --secondary-color: #2c3e50;
-            --side-panel-color: #ffffff;
-            --widget-darker-color: #f0f4f7;
-            --background-color: #f7f9fb;
-            --widget-background: #ffffff;
-            --text-color: #34495e;
-            --light-grey: #bdc3c7;
-            --footer-grey: #7f8c8d;
-            --success-color: #27ae60;
-            --danger-color: #e74c3c;
-            --warning-color: #f39c12;
-            --shadow-header: 0 2px 4px rgba(0, 0, 0, 0.05);
-            --shadow-widget: 0 8px 15px rgba(0, 0, 0, 0.08);
-            --border-color: #e0e6eb;
-            --tab-border-color: #ddd;
-            --input-bg-color: white;
-            /* Button Inversion Colors (Light Mode Base) */
-            --btn-secondary-bg: var(--secondary-color);
-            --btn-secondary-color: white;
-            --btn-secondary-hover-bg: #3a536b;
+    const widgetGrid = document.getElementById('widget-grid');
+    const detailsModal = document.getElementById('details-modal');
+
+    function init() {
+        mbsData = JSON.parse(localStorage.getItem('mbsData')) || {};
+        if (!mbsData.settings) mbsData.settings = {};
+        if (!mbsData.settings.objectives) mbsData.settings.objectives = {};
+        if (!mbsData.historique) mbsData.historique = {}; // Initialize history object
+        if (!mbsData.valid) {
+            widgetGrid.innerHTML = `<p style="text-align:center; width:100%;">Aucune donnée à analyser. Veuillez d'abord <a href="data.html">importer vos données</a>.</p>`;
+            return;
         }
+        setupEventListeners();
+        renderWidgets('generale');
+    }
 
-        /* DARK MODE VARIABLES */
-        [data-theme="dark"] {
-            --background-color: #121212;
-            --side-panel-color: #1e1e1e;
-            --widget-background: #1e1e1e;
-            --widget-darker-color: #282828;
-            --text-color: #e0e0e0;
-            --secondary-color: #bbbbbb;
-            --light-grey: #757575;
-            --footer-grey: #a0a0a0;
-            --shadow-header: 0 2px 5px rgba(255, 255, 255, 0.1);
-            --shadow-widget: 0 5px 10px rgba(0, 0, 0, 0.3);
-            --border-color: #333333;
-            --tab-border-color: #444444;
-            --input-bg-color: #282828;
-            /* Button Inversion Colors (Dark Mode Inverted) */
-            --btn-secondary-bg: #bbbbbb; /* Light grey background */
-            --btn-secondary-color: #121212; /* Dark text */
-            --btn-secondary-hover-bg: #d0d0d0;
+    function setupEventListeners() {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => {
+            document.querySelector('.tab-btn.active').classList.remove('active');
+            btn.classList.add('active');
+            renderWidgets(btn.dataset.etape);
+        }));
+        detailsModal.addEventListener('click', e => { if (e.target === detailsModal) closeDetailsModal(); });
+    }
 
-            /* Specific element adjustments for dark mode */
-            .site-header { color: var(--text-color); }
-            .nav-arrow { color: var(--text-color); }
-            .moyenne-widget { border-color: #333; }
-            .subject-averages { border-top-color: #333; }
-            .subject-table thead tr:first-child th { background-color: #333; color: white; }
-            .subject-table thead tr:last-child th { background-color: #222; color: var(--text-color); }
-            .subject-table th, .subject-table td { border-bottom-color: #282828; }
-            .competency-row td { background-color: #222; color: var(--secondary-color); }
-            footer { border-top-color: #333; }
-            .modal-content { background-color: var(--side-panel-color); }
-            .unite-item:nth-child(even) { background-color: #222; }
-            .pond-input-field.modified-input, .grade-input-field.modified-input { background-color: #332b1a; border-color: var(--warning-color); }
+    /**
+     * Updates a history array with a new value, ensuring no consecutive duplicates
+     * and maintaining a maximum length.
+     * @param {Array} historyArray The array of historical values.
+     * @param {*} newValue The new value to add.
+     * @param {number} maxLength The maximum number of items to keep in the history.
+     * @returns {Array} The updated history array.
+     */
+    function updateHistory(historyArray, newValue, maxLength) {
+        if (!Array.isArray(historyArray)) {
+            historyArray = [];
         }
-
-        /* GLOBAL TRANSITIONS for smooth theme change */
-        body, .site-header-container, .side-panel, .moyenne-widget, .subject-table, .modal-content, .tab-btn, .btn, select, input {
-            transition: background-color var(--transition-duration) ease, color var(--transition-duration) ease, border-color var(--transition-duration) ease, box-shadow var(--transition-duration) ease;
+        // Don't add if the new value is the same as the last one
+        if (historyArray.length > 0 && historyArray[historyArray.length - 1].toFixed(2) === newValue.toFixed(2)) {
+            return historyArray;
         }
+        historyArray.push(newValue);
+        while (historyArray.length > maxLength) {
+            historyArray.shift(); // Remove the oldest entry
+        }
+        return historyArray;
+    }
 
-        /* SMOOTHER Page Load Animation Keyframes */
-        @keyframes fadeInSlideUp {
-            from {
-                opacity: 0;
-                transform: translateY(25px);
+
+    function getNumericGrade(result) {
+        if (!result) return null;
+        const trimmed = result.trim();
+        if (gradeMap[trimmed]) return gradeMap[trimmed];
+        const scoreMatch = trimmed.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/);
+        if (scoreMatch) {
+            const score = parseFloat(scoreMatch[1].replace(',', '.'));
+            const max = parseFloat(scoreMatch[2].replace(',', '.'));
+            return max > 0 ? (score / max) * 100 : null;
+        }
+        return null;
+    }
+
+    function calculateAverage(assignments) {
+        let totalWeightedGrade = 0;
+        let totalWeight = 0;
+        assignments.forEach(assign => {
+            const grade = getNumericGrade(assign.result);
+            const weight = parseFloat(assign.pond);
+            if (grade !== null && !isNaN(weight) && weight > 0) {
+                totalWeightedGrade += grade * weight;
+                totalWeight += weight;
             }
-            to {
-                opacity: 1;
-                transform: translateY(0);
+        });
+        return totalWeight > 0 ? { average: totalWeightedGrade / totalWeight, weight: totalWeight } : null;
+    }
+    
+    function calculateSubjectAverage(subject) {
+        let totalWeightedCompetencyScore = 0;
+        let totalCompetencyWeight = 0;
+        subject.competencies.forEach(comp => {
+            const compWeightMatch = comp.name.match(/\((\d+)%\)/);
+            if (!compWeightMatch) return;
+            const competencyWeight = parseFloat(compWeightMatch[1]);
+            const competencyResult = calculateAverage(comp.assignments);
+            if (competencyResult) {
+                totalWeightedCompetencyScore += competencyResult.average * competencyWeight;
+                totalCompetencyWeight += competencyWeight;
             }
-        }
-        /* Initial state and animation application for main elements */
-        .site-header-container, .main-container, footer {
-            opacity: 0;
-            transform: translateY(25px);
-            /* Smoother easing function and slightly longer duration */
-            animation: fadeInSlideUp 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-        }
-        .main-container {
-            animation-delay: 0.2s; /* Stagger the main content */
-        }
-        footer {
-            animation-delay: 0.4s; /* Stagger the footer */
-        }
-
-        /* General Styles */
-        body {
-            margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--background-color); color: var(--text-color);
-        }
-        .site-header-container {
-            background-color: var(--widget-background); box-shadow: var(--shadow-header);
-            border-bottom: 1px solid var(--border-color); padding: 15px 25px;
-            display: flex; align-items: center; justify-content: space-between; position: relative; margin-bottom: 20px;
-        }
-        .header-left { display: flex; align-items: center; }
-        .header-center { position: absolute; left: 50%; transform: translateX(-50%); }
-        .header-right { display: flex; align-items: center; gap: 15px; } /* Added align-items for vertical centering */
-        .site-header {
-            padding: 0; margin: 0; color: var(--secondary-color);
-            font-size: 2.2em; font-weight: 700; font-family: 'Playfair Display', serif;
-        }
-        .nav-arrow {
-            font-size: 2em; color: var(--secondary-color); text-decoration: none;
-            transition: color 0.2s, transform 0.2s;
-        }
-        .nav-arrow:hover { color: var(--primary-color); transform: scale(1.05); }
-        /* Dark Mode Toggle Button Styling */
-        .icon-btn {
-            background: none; border: 2px solid var(--light-grey); color: var(--text-color);
-            width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; font-size: 1.1em;
-            transition: all 0.2s ease, background-color var(--transition-duration);
-        }
-        .icon-btn:hover {
-            border-color: var(--primary-color); color: var(--primary-color);
-            transform: scale(1.1);
+        });
+        return totalCompetencyWeight > 0 ? totalWeightedCompetencyScore / totalCompetencyWeight : null;
+    }
+    
+    function renderWidgets(etapeKey) {
+        widgetGrid.innerHTML = '';
+        Object.values(activeGauges).forEach(chart => chart.destroy());
+        activeGauges = {};
+        let subjectsToRender = [];
+        if (etapeKey === 'generale') {
+            const allSubjects = new Map();
+            ['etape1', 'etape2', 'etape3'].forEach(etape => {
+                (mbsData[etape] || []).forEach(subject => {
+                    if (!allSubjects.has(subject.code)) {
+                        allSubjects.set(subject.code, { name: subject.name, competencies: [] });
+                    }
+                    allSubjects.get(subject.code).competencies.push(...subject.competencies);
+                });
+            });
+            subjectsToRender = Array.from(allSubjects.entries()).map(([code, data]) => ({
+                code, name: data.name, competencies: data.competencies,
+                average: calculateSubjectAverage({ competencies: data.competencies })
+            }));
+        } else {
+            subjectsToRender = (mbsData[etapeKey] || []).map(subject => ({
+                ...subject, average: calculateSubjectAverage(subject)
+            }));
         }
 
-        .main-container {
-            display: flex; max-width: 1600px; margin: 0 auto;
-            padding: 0 20px; align-items: flex-start; gap: 30px;
-        }
-        .data-section { flex: 3; }
-        .side-panel {
-            flex: 1; position: sticky; top: 20px; background-color: var(--side-panel-color);
-            border-radius: 12px; padding: 25px; box-shadow: var(--shadow-widget);
-        }
-        .moyenne-widgets { display: flex; gap: 15px; margin-bottom: 25px; }
-        .moyenne-widget {
-            flex: 1; background-color: var(--widget-darker-color); border-radius: 10px;
-            padding: 15px; text-align: center; border: 1px solid var(--border-color);
-        }
-        .moyenne-widget h4 { margin: 0 0 8px 0; font-size: 0.85em; color: var(--secondary-color); font-weight: 500; }
-        .moyenne-value { font-size: 2.2em; font-weight: bold; color: var(--primary-color); }
-        .moyenne-value.invalid { color: var(--danger-color); }
-        .control-group { margin-bottom: 20px; }
-        .control-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
-        select {
-            width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd;
-            background-color: var(--input-bg-color); color: var(--text-color); -webkit-appearance: none; appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='5'%3E%3Cpath d='M0 0l5 5 5-5z' fill='%232c3e50'/%3E%3C/svg%3E");
-            background-repeat: no-repeat; background-position: right 15px center; background-size: 10px;
-        }
-        [data-theme="dark"] select {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='5'%3E%3Cpath d='M0 0l5 5 5-5z' fill='%23bbbbbb'/%3E%3C/svg%3E");
-        }
-        .subject-averages { margin-top: 25px; padding-top: 15px; border-top: 1px solid var(--border-color); }
-        .subject-averages h4 { margin-top: 0; color: var(--secondary-color); font-size: 1.1em; margin-bottom: 15px; }
-        #subject-averages-list { list-style: none; padding: 0; margin: 0; font-size: 0.9em; }
-        #subject-averages-list li { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dotted var(--border-color); }
-        .btn {
-            display: inline-block; padding: 12px 20px; border: none; border-radius: 8px;
-            font-size: 0.95em; font-weight: 600; cursor: pointer; text-decoration: none;
-            color: white; transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
-            text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
-        .btn-primary { background-color: var(--primary-color); }
-        .btn-primary:hover { background-color: #3498db; }
-        
-        /* Secondary Button (Inverted in Dark Mode) */
-        .btn-secondary { 
-            background-color: var(--btn-secondary-bg);
-            color: var(--btn-secondary-color); 
-        }
-        .btn-secondary:hover { 
-            background-color: var(--btn-secondary-hover-bg); 
-            color: var(--btn-secondary-color);
-        }
+        let hasHistoryChanges = false;
+        subjectsToRender.forEach(subject => {
+            if (subject.average === null) return;
 
-        .btn-full-width { width: 100%; display: block; }
-        .tabs { display: flex; border-bottom: 2px solid var(--tab-border-color); margin-bottom: 20px; }
-        .tab-btn { padding: 12px 20px; cursor: pointer; border: none; background: none; font-size: 1.05em; font-weight: 600; color: var(--light-grey); position: relative; }
-        .tab-btn.active { color: var(--primary-color); }
-        .tab-btn.active::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 3px; background-color: var(--primary-color); transition: width 0.3s ease; }
-        .tab-content { display: none; transition: opacity 0.3s ease; }
-        .tab-content.active { display: block; }
-        .subject-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 30px; background: var(--widget-background); box-shadow: var(--shadow-widget); border-radius: 12px; overflow: hidden; }
-        .subject-table th, .subject-table td { padding: 14px 18px; text-align: left; border-bottom: 1px solid #f0f0f0; }
-        [data-theme="dark"] .subject-table th, [data-theme="dark"] .subject-table td { border-bottom-color: #282828; }
-        .subject-table thead tr:first-child th { background-color: var(--secondary-color); color: white; font-size: 1.1em; }
-        .subject-table thead tr:last-child th { background-color: #f8f9fa; color: var(--text-color); font-size: 0.85em; text-transform: uppercase; }
-        .competency-row td { background-color: #eaf2f8; color: var(--secondary-color); font-weight: bold; font-style: italic; }
-        .no-data { color: var(--light-grey); font-style: italic; text-align: center; padding: 40px; }
-        .grade-percentage { font-weight: 700; color: var(--success-color); }
-        footer { text-align: center; padding: 25px; font-size: 0.9em; color: var(--footer-grey); border-top: 1px solid var(--border-color); margin-top: 40px; }
-        footer a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
-        footer a:hover { text-decoration: underline; }
+            // --- FIXED: History and Trend Logic ---
+            // Update history for the current subject, with a max length of 6
+            const initialHistoryLength = mbsData.historique[subject.code]?.length || 0;
+            if (etapeKey !== 'generale') {
+                 mbsData.historique[subject.code] = updateHistory(mbsData.historique[subject.code], subject.average, 6);
+                 if(mbsData.historique[subject.code].length !== initialHistoryLength) {
+                     hasHistoryChanges = true;
+                 }
+            }
 
-        /* Modal/Popup Animations */
-        .modal-overlay { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; 
-            z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s;
-        }
-        .modal-overlay.active { opacity: 1; visibility: visible; }
-        .modal-content { 
-            background-color: white; padding: 30px; border-radius: 12px; width: 450px; position: relative; 
-            transform: scale(0.9) translateY(-20px); 
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        .modal-overlay.active .modal-content {
-            transform: scale(1) translateY(0);
-        }
-        .modal-close { position: absolute; top: 10px; right: 15px; font-size: 2em; cursor: pointer; color: var(--light-grey); }
-        .unite-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; }
-        .unite-item:nth-child(even) { background-color: #fcfdfe; }
-        .unite-item input { width: 70px; text-align: center; padding: 6px; border: 1px solid #ddd; border-radius: 6px; }
-        .hidden { display: none !important; }
-        .pond-input-field, .grade-input-field { 
-            text-align: center; border-radius: 6px; border: 1px solid #ccc; padding: 6px; width: 60px;
-            background-color: var(--input-bg-color); color: var(--text-color);
-        }
-        .grade-input-field { width: 80px; }
-        .pond-input-field.modified-input, .grade-input-field.modified-input { border-color: var(--warning-color); background-color: #fff9f0; }
-        .grade-display { cursor: pointer; min-height: 30px; display: inline-block; padding: 4px; border-radius: 4px; }
-    </style>
-</head>
-<body>
+            const subjectHistory = mbsData.historique[subject.code] || [];
+            let trend = { direction: '—', change: 'Stable', class: 'neutral' };
 
-    <header class="site-header-container">
-        <div class="header-left">
-            <a href="index.html" class="nav-arrow" title="Retour à l'accueil">←</a>
-        </div>
-        <div class="header-center">
-            <h1 class="site-header">Outil MBS</h1>
-        </div>
-        <div class="header-right">
-            <button id="theme-toggle" class="icon-btn" aria-label="Changer de thème (Mode Clair/Sombre)">
-                <i class="fa-solid fa-moon"></i>
-            </button>
-            <a href="data.html" class="btn btn-secondary">Mise à jour</a>
-            <a href="improve.html" class="btn btn-primary">Analyser</a>
-        </div>
-    </header>
+            if (subjectHistory.length >= 2) {
+                const currentAvg = subjectHistory[subjectHistory.length - 1];
+                const previousAvg = subjectHistory[subjectHistory.length - 2];
+                const change = currentAvg - previousAvg;
 
-    <main class="main-container">
-        <section class="data-section">
-            <div class="tabs">
-                <button class="tab-btn active" data-tab="etape1">Étape 1</button>
-                <button class="tab-btn" data-tab="etape2">Étape 2</button>
-                <button class="tab-btn" data-tab="etape3">Étape 3</button>
-            </div>
-            <div id="tab-contents">
-                <div id="etape1" class="tab-content active">
-                    <!-- Placeholder text restored. The "no-data" class is used for styling. -->
-                    <p class="no-data">Veuillez vous rendre sur la page "Mise à jour" pour importer vos données.</p>
+                if (Math.abs(change) >= 0.01) { // Check for a meaningful change
+                    trend.change = `${change > 0 ? '+' : ''}${change.toFixed(2)}%`;
+                    trend.direction = change > 0 ? '▲' : '▼';
+                    trend.class = change > 0 ? 'up' : 'down';
+                }
+            } else if (subjectHistory.length === 1) {
+                trend = { direction: '•', change: 'Nouveau', class: 'neutral' };
+            }
+            // --- END FIX ---
+
+            const widget = document.createElement('div');
+            widget.className = 'subject-widget';
+            const canvasId = `gauge-${subject.code.replace(/\s+/g, '')}-${etapeKey}`;
+            widget.innerHTML = `
+                <div class="widget-top-section">
+                    <div class="widget-info">
+                        <h3 class="widget-title">${subject.name}</h3>
+                        <p class="widget-average">${subject.average.toFixed(2)}%</p>
+                        <div class="widget-trend ${trend.class}">
+                            <span>${trend.direction}</span>
+                            <span>${trend.change}</span>
+                        </div>
+                    </div>
+                    <div class="gauge-container"><canvas id="${canvasId}"></canvas></div>
                 </div>
-                <div id="etape2" class="tab-content"></div>
-                <div id="etape3" class="tab-content"></div>
-            </div>
-        </section>
+                <div class="histogram-container"><canvas id="hist-${canvasId}"></canvas></div>`;
+            widget.addEventListener('click', () => openDetailsModal(subject, etapeKey));
+            widgetGrid.appendChild(widget);
+            renderGauge(canvasId, subject.average, mbsData.settings.objectives[subject.code]);
+            renderHistogram(`hist-${canvasId}`, subject);
+        });
 
-        <aside class="side-panel">
-            <div class="moyenne-widgets">
-                <div class="moyenne-widget"><h4>Moyenne générale</h4><div id="moyenne-generale" class="moyenne-value">--</div></div>
-                <div class="moyenne-widget"><h4>Moyenne de l'étape</h4><div id="moyenne-etape" class="moyenne-value">--</div></div>
-            </div>
-            <div class="control-group">
-                <label for="niveau-secondaire">Niveau Secondaire</label>
-                <select id="niveau-secondaire">
-                    <option value="">-- Sélectionner --</option>
-                    <option value="sec4">Secondaire 4</option>
-                    <option value="sec5">Secondaire 5</option>
-                </select>
-            </div>
-            <div class="control-group">
-                <button id="unites-btn" class="btn btn-secondary btn-full-width">Configurer les unités</button>
-            </div>
-            
-            <div id="ponderation-controls" class="hidden" style="background-color: #fff9f0; padding: 15px; border-radius: 8px; border: 1px solid var(--warning-color); margin-bottom: 20px;">
-                <p style="font-weight: bold; text-align: center; margin-top: 0; color: var(--text-color);">Pondérations modifiées</p>
-                <div style="display: flex; gap: 10px;">
-                    <button id="save-ponds-btn" class="btn btn-primary" style="flex:1;">Sauvegarder</button>
-                    <button id="revert-ponds-btn" class="btn btn-secondary" style="background-color: #95a5a6; flex:1;">Annuler</button>
-                </div>
-            </div>
+        if (hasHistoryChanges) {
+            localStorage.setItem('mbsData', JSON.stringify(mbsData));
+        }
 
-            <div class="subject-averages">
-                <h4>Moyennes par matière</h4>
-                <ul id="subject-averages-list"><li class="no-data">Aucune donnée</li></ul>
+        if (!widgetGrid.children.length) {
+            widgetGrid.innerHTML = `<p style="grid-column: 1 / -1; text-align:center;">Aucune donnée pour cette période.</p>`;
+        }
+    }
+
+    function renderGauge(canvasId, value, goal) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 120, 0);
+        gradient.addColorStop(0, '#e74c3c');
+        gradient.addColorStop(0.6, '#f39c12');
+        gradient.addColorStop(1, '#27ae60');
+        const gaugeChart = new Chart(ctx, {
+            type: 'doughnut', data: { datasets: [{ data: [100], backgroundColor: [gradient], borderWidth: 0 }] },
+            options: { responsive: true, maintainAspectRatio: false, circumference: 180, rotation: -90, cutout: '60%', plugins: { tooltip: { enabled: false } } },
+            plugins: [{
+                id: 'gaugeNeedleAndLine',
+                afterDraw: chart => {
+                    const { ctx, chartArea } = chart;
+                    const angle = Math.PI + (value / 100) * Math.PI;
+                    const cx = chartArea.left + chartArea.width / 2;
+                    const cy = chartArea.top + chartArea.height;
+                    const needleRadius = chart.getDatasetMeta(0).data[0].outerRadius;
+                    ctx.save();
+                    ctx.translate(cx, cy); ctx.rotate(angle); ctx.beginPath();
+                    ctx.moveTo(0, -5); ctx.lineTo(needleRadius - 10, 0); ctx.lineTo(0, 5);
+                    ctx.fillStyle = 'var(--secondary-color)'; ctx.fill();
+                    ctx.restore();
+                    if (goal) {
+                        const goalAngle = Math.PI + (goal / 100) * Math.PI;
+                        const innerRadius = chart.getDatasetMeta(0).data[0].innerRadius;
+                        ctx.save();
+                        ctx.translate(cx, cy); ctx.rotate(goalAngle); ctx.beginPath();
+                        ctx.moveTo(innerRadius, 0); ctx.lineTo(needleRadius, 0); // Correct radial line
+                        ctx.strokeStyle = 'var(--danger-color)'; ctx.lineWidth = 3; ctx.stroke();
+                        ctx.restore();
+                    }
+                }
+            }]
+        });
+        activeGauges[canvasId] = gaugeChart;
+    }
+
+    function renderHistogram(canvasId, subject) {
+        const grades = [];
+        subject.competencies.forEach(comp => comp.assignments.forEach(assign => {
+            const grade = getNumericGrade(assign.result);
+            if (grade !== null) grades.push(grade);
+        }));
+        const bins = { 'Echec (<60)': 0, 'C (60-69)': 0, 'B (70-89)': 0, 'A (90+)': 0 };
+        grades.forEach(g => {
+            if (g < 60) bins['Echec (<60)']++; else if (g < 70) bins['C (60-69)']++;
+            else if (g < 90) bins['B (70-89)']++; else bins['A (90+)']++;
+        });
+        new Chart(document.getElementById(canvasId).getContext('2d'), {
+            type: 'bar', data: { labels: Object.keys(bins), datasets: [{ data: Object.values(bins), backgroundColor: ['#e74c3c', '#f39c12', '#a0c800', '#27ae60'] }] },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false }, title: { display: true, text: 'Distribution des notes' } } }
+        });
+    }
+    
+    function openDetailsModal(subject, etapeKey) {
+        const modalContent = document.getElementById('modal-content');
+        modalContent.innerHTML = `
+            <div class="modal-header"><h2 class="modal-title">${subject.name} (${subject.code})</h2></div>
+            <div class="modal-body">
+                <div class="competency-widgets"></div>
+                <div class="graph-container" style="display:none;"><canvas id="assignmentsChart"></canvas></div>
+                <div class="calculator-container"></div>
+            </div>`;
+        const competencyContainer = modalContent.querySelector('.competency-widgets');
+        const graphContainer = modalContent.querySelector('.graph-container');
+        const uniqueCompetencies = new Map();
+        subject.competencies.forEach(comp => {
+            if (!uniqueCompetencies.has(comp.name)) uniqueCompetencies.set(comp.name, { name: comp.name, assignments: [] });
+            uniqueCompetencies.get(comp.name).assignments.push(...comp.assignments);
+        });
+        const compsForChart = Array.from(uniqueCompetencies.values());
+        compsForChart.forEach((comp, index) => {
+            const compResult = calculateAverage(comp.assignments);
+            if (!compResult) return;
+            const compWidget = document.createElement('div');
+            compWidget.className = 'comp-widget'; compWidget.dataset.index = index;
+            compWidget.innerHTML = `<h4>${comp.name}</h4><div class="avg">${compResult.average.toFixed(1)}%</div>`;
+            competencyContainer.appendChild(compWidget);
+        });
+        if (competencyContainer.children.length > 0) {
+            graphContainer.style.display = 'block';
+            createOrUpdateChart(compsForChart[0]);
+            competencyContainer.children[0].classList.add('active');
+        }
+        competencyContainer.querySelectorAll('.comp-widget').forEach(widget => {
+            widget.addEventListener('click', () => {
+                competencyContainer.querySelector('.active')?.classList.remove('active');
+                widget.classList.add('active');
+                createOrUpdateChart(compsForChart[widget.dataset.index]);
+            });
+        });
+        setupGoalFramework(subject, modalContent.querySelector('.calculator-container'), etapeKey);
+        detailsModal.classList.add('active');
+    }
+
+    function closeDetailsModal() { detailsModal.classList.remove('active'); }
+
+    function createOrUpdateChart(competency) {
+        if(activeChart) activeChart.destroy();
+        const ctx = document.getElementById('assignmentsChart').getContext('2d');
+        const gradedAssignments = competency.assignments.filter(a => getNumericGrade(a.result) !== null);
+        activeChart = new Chart(ctx, {
+            type: 'bar', data: { labels: gradedAssignments.map(a => a.work.replace('<br>', ' ')), datasets: [{ data: gradedAssignments.map(a => getNumericGrade(a.result)), backgroundColor: 'rgba(41, 128, 185, 0.6)' }] },
+            options: { scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } }
+        });
+    }
+
+    function setupGoalFramework(subject, container, etapeKey) {
+        const currentObjective = mbsData.settings.objectives[subject.code] || '';
+        container.innerHTML = `
+            <h3>Planificateur d'Objectifs</h3>
+            <div class="goal-input">
+                <label for="objective-input" id="objective-label">Objectif :</label>
+                <input type="number" id="objective-input" min="0" max="100" value="${currentObjective}">%
+                <button id="save-objective-btn" class="btn-save">Sauvegarder</button>
             </div>
-        </aside>
-    </main>
-
-    <div class="modal-overlay" id="unites-modal">
-        <div class="modal-content">
-            <span class="modal-close" id="close-unites-modal">&times;</span>
-            <h3>Configuration des Unités</h3>
-            <div class="control-group">
-                <select id="unites-mode">
-                    <option value="defaut">Unités par défaut</option>
-                    <option value="sans">Sans unités (tout = 1)</option>
-                    <option value="perso">Personnalisée</option>
-                </select>
-            </div>
-            <div id="unites-list"></div>
-        </div>
-    </div>
-
-    <footer>
-        <p>Outil MBS - Moyenne, Bilan, Stratégie</p>
-        <p><a href="ticket.html">Signaler un problème</a></p>
-    </footer>
-
-    <script>
-        // Theme setup and save to local storage
-        const themeToggle = document.getElementById('theme-toggle');
-        const html = document.documentElement;
-        const toggleIcon = themeToggle.querySelector('i');
-        
-        const THEME_KEY = 'mbs-theme';
-
-        const updateTheme = (theme) => {
-            html.setAttribute('data-theme', theme);
-            localStorage.setItem(THEME_KEY, theme);
-            // Change icon for the opposite theme
-            if (theme === 'dark') {
-                toggleIcon.classList.remove('fa-moon');
-                toggleIcon.classList.add('fa-sun');
+            <div id="calculator-content"></div>`;
+        const objectiveInput = container.querySelector('#objective-input');
+        const saveObjectiveBtn = container.querySelector('#save-objective-btn');
+        saveObjectiveBtn.addEventListener('click', () => {
+            const newObjective = parseFloat(objectiveInput.value);
+            if (!isNaN(newObjective) && newObjective >= 0 && newObjective <= 100) {
+                mbsData.settings.objectives[subject.code] = newObjective;
             } else {
-                toggleIcon.classList.remove('fa-sun');
-                toggleIcon.classList.add('fa-moon');
+                delete mbsData.settings.objectives[subject.code];
             }
-        };
-
-        // 1. Initial Load Theme
-        const storedTheme = localStorage.getItem(THEME_KEY);
-        // Determine the initial theme
-        const initialTheme = storedTheme || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        updateTheme(initialTheme);
-
-
-        // 2. Theme Toggle Handler
-        themeToggle.addEventListener('click', () => {
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            updateTheme(newTheme);
+            localStorage.setItem('mbsData', JSON.stringify(mbsData));
+            saveObjectiveBtn.textContent = 'Sauvé!';
+            setTimeout(() => { saveObjectiveBtn.textContent = 'Sauvegarder'; }, 1500);
+            renderWidgets(document.querySelector('.tab-btn.active').dataset.etape);
         });
+        const calculatorContent = container.querySelector('#calculator-content');
+        const hasFutureWork = subject.competencies.some(comp => comp.assignments.some(a => getNumericGrade(a.result) === null && parseFloat(a.pond) > 0));
+        if (hasFutureWork) {
+            container.querySelector('#objective-label').textContent = 'Objectif pour cette matière :';
+            setupIntraSubjectCalculator(subject, calculatorContent, objectiveInput);
+        } else {
+            container.querySelector('#objective-label').textContent = 'Objectif global :';
+            setupInterEtapeCalculator(calculatorContent, etapeKey, objectiveInput);
+        }
+    }
+    
+    function setupIntraSubjectCalculator(subject, container, goalInput) {
+        container.innerHTML = `<p id="calc-info"></p><div id="goal-result" class="goal-result"></div>`;
+        const goalResult = container.querySelector('#goal-result');
+        const calcInfo = container.querySelector('#calc-info');
+        function calculate() {
+            let sumOfWeightedGrades = 0, sumOfCompletedWeights = 0, sumOfFutureWeights = 0, sumOfTotalWeights = 0;
+            subject.competencies.forEach(comp => comp.assignments.forEach(assign => {
+                const weight = parseFloat(assign.pond);
+                if (isNaN(weight) || weight <= 0) return;
+                sumOfTotalWeights += weight;
+                const grade = getNumericGrade(assign.result);
+                if (grade !== null) {
+                    sumOfWeightedGrades += grade * weight;
+                    sumOfCompletedWeights += weight;
+                } else { sumOfFutureWeights += weight; }
+            }));
+            if (sumOfTotalWeights <= 0) { calcInfo.textContent = 'Aucun travail avec une pondération valide n\'a été trouvé.'; return; }
+            const currentAverage = sumOfCompletedWeights > 0 ? (sumOfWeightedGrades / sumOfCompletedWeights) : 0;
+            const completedPercentage = (sumOfCompletedWeights / sumOfTotalWeights) * 100;
+            calcInfo.innerHTML = `Moyenne actuelle : <strong>${currentAverage.toFixed(2)}%</strong> (sur <strong>${completedPercentage.toFixed(1)}%</strong> de la matière complétée).`;
+            const targetAvg = parseFloat(goalInput.value);
+            if (isNaN(targetAvg) || targetAvg < 0 || targetAvg > 100) { goalResult.innerHTML = 'Veuillez entrer un objectif entre 0 et 100.'; goalResult.className = 'goal-result danger'; return; }
+            const totalPointsNeeded = targetAvg * sumOfTotalWeights;
+            const pointsNeededFromFuture = totalPointsNeeded - sumOfWeightedGrades;
+            const requiredAvgOnFuture = pointsNeededFromFuture / sumOfFutureWeights;
+            let message, resultClass;
+            if (requiredAvgOnFuture > 100.01) { message = `Il faudrait <strong>${requiredAvgOnFuture.toFixed(1)}%</strong> sur les travaux restants. Objectif impossible.`; resultClass = 'danger'; }
+            else if (requiredAvgOnFuture < 0) { message = `Félicitations ! Objectif déjà atteint.`; resultClass = 'success'; }
+            else { message = `Il vous faut une moyenne de <strong>${requiredAvgOnFuture.toFixed(1)}%</strong> sur les travaux restants.`; resultClass = 'warning'; }
+            goalResult.innerHTML = message; goalResult.className = `goal-result ${resultClass}`;
+        }
+        goalInput.addEventListener('input', calculate);
+        calculate();
+    }
 
-        // 3. Modal/Popup Animation Control
-        const unitesModal = document.getElementById('unites-modal');
-        const unitesBtn = document.getElementById('unites-btn');
-        const closeUnitesModal = document.getElementById('close-unites-modal');
+    function setupInterEtapeCalculator(container, currentEtapeKey, goalInput) {
+        container.innerHTML = `<p id="calc-info"></p><div id="goal-result" class="goal-result"></div>`;
+        const goalResult = container.querySelector('#goal-result');
+        const calcInfo = container.querySelector('#calc-info');
 
-        unitesBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            unitesModal.classList.add('active');
-        });
+        const etapeWeights = { etape1: 0.2, etape2: 0.2, etape3: 0.6 };
+        const etapeSequence = ['etape1', 'etape2', 'etape3'];
+        let nextEtape = null;
+        if(currentEtapeKey === 'etape1') nextEtape = 'etape2';
+        if(currentEtapeKey === 'etape2') nextEtape = 'etape3';
 
-        const closeModal = () => {
-            unitesModal.classList.remove('active');
-        };
+        if (!nextEtape || currentEtapeKey === 'generale') {
+            calcInfo.innerHTML = 'Toutes les étapes futures sont déjà planifiées ou le contexte est général.';
+            goalResult.style.display = 'none';
+            return;
+        }
 
-        closeUnitesModal.addEventListener('click', closeModal);
-        unitesModal.addEventListener('click', (e) => {
-            if (e.target === unitesModal) {
-                closeModal();
+        const etapeAverages = {};
+        let currentGlobalContribution = 0;
+        let pastAndPresentWeight = 0;
+        etapeSequence.forEach(etape => {
+            const subjects = mbsData[etape];
+            if(subjects) {
+                const avg = calculateSubjectAverage({competencies: subjects.flatMap(s => s.competencies)});
+                etapeAverages[etape] = avg;
+                if(avg !== null && etape !== nextEtape) { // Only count completed etapes
+                    currentGlobalContribution += avg * etapeWeights[etape];
+                    pastAndPresentWeight += etapeWeights[etape];
+                }
             }
         });
-
-    </script>
-    <script src="js/main-functions.js"></script>
-</body>
-</html>
+        
+        calcInfo.innerHTML = `Planifiez votre performance pour l'<b>Étape ${nextEtape.slice(-1)}</b>.`;
+        
+        function calculate() {
+            const targetGlobalAvg = parseFloat(goalInput.value);
+            if (isNaN(targetGlobalAvg) || targetGlobalAvg < 0 || targetGlobalAvg > 100) { goalResult.innerHTML = 'Veuillez entrer un objectif global valide.'; goalResult.className = 'goal-result danger'; return; }
+            const pointsNeededFromFuture = targetGlobalAvg - currentGlobalContribution;
+            const requiredAvgInNextEtape = pointsNeededFromFuture / etapeWeights[nextEtape];
+            let message, resultClass;
+            if (requiredAvgInNextEtape > 100.01) { message = `Pour atteindre <strong>${targetGlobalAvg}%</strong> global, il faudrait <strong>${requiredAvgInNextEtape.toFixed(1)}%</strong> à l'étape ${nextEtape.slice(-1)}. Objectif impossible.`; resultClass = 'danger'; }
+            else if (requiredAvgInNextEtape < 0) { message = `Félicitations ! Objectif global déjà atteint.`; resultClass = 'success'; }
+            else { message = `Pour atteindre <strong>${targetGlobalAvg}%</strong> global, il vous faut <strong>${requiredAvgInNextEtape.toFixed(1)}%</strong> à l'étape ${nextEtape.slice(-1)}.`; resultClass = 'warning'; }
+            goalResult.innerHTML = message; goalResult.className = `goal-result ${resultClass}`;
+        }
+        goalInput.addEventListener('input', calculate);
+        calculate();
+    }
+    
+    init();
+});
