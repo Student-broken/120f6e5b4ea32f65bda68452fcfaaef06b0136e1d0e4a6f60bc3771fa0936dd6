@@ -6,124 +6,25 @@
     <title>Tableau de Bord - Outil MBS</title>
     <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary-color: #2980b9;
-            --secondary-color: #2c3e50;
-            --side-panel-color: #ffffff;
-            --widget-darker-color: #f0f4f7;
-            --background-color: #f7f9fb;
-            --widget-background: #ffffff;
-            --text-color: #34495e;
-            --light-grey: #bdc3c7;
-            --footer-grey: #7f8c8d;
-            --success-color: #27ae60;
-            --danger-color: #e74c3c;
-            --warning-color: #f39c12;
-            --shadow-header: 0 2px 4px rgba(0, 0, 0, 0.05);
-            --shadow-widget: 0 8px 15px rgba(0, 0, 0, 0.08);
+    
+    <!-- NEW: Link to Global CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    
+    <!-- Script to prevent flash of wrong theme (runs before body renders) -->
+    <script>
+        const saved = localStorage.getItem('theme');
+        const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (saved === 'dark' || (!saved && sysDark)) {
+            document.documentElement.setAttribute('data-theme', 'dark');
         }
-        body {
-            margin: 0;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--background-color);
-            color: var(--text-color);
-        }
-        .site-header-container {
-            background-color: var(--widget-background);
-            box-shadow: var(--shadow-header);
-            border-bottom: 1px solid #e0e6eb;
-            padding: 15px 25px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: relative;
-            margin-bottom: 20px;
-        }
-        .header-left { display: flex; align-items: center; }
-        .header-center { position: absolute; left: 50%; transform: translateX(-50%); }
-        .header-right { display: flex; gap: 15px; }
-        .site-header {
-            padding: 0; margin: 0; color: var(--secondary-color);
-            font-size: 2.2em; font-weight: 700; font-family: 'Playfair Display', serif;
-        }
-        .nav-arrow {
-            font-size: 2em; color: var(--secondary-color); text-decoration: none;
-            transition: color 0.2s, transform 0.2s;
-        }
-        .nav-arrow:hover { color: var(--primary-color); transform: scale(1.05); }
-        .main-container {
-            display: flex; max-width: 1600px; margin: 0 auto;
-            padding: 0 20px; align-items: flex-start; gap: 30px;
-        }
-        .data-section { flex: 3; }
-        .side-panel {
-            flex: 1; position: sticky; top: 20px; background-color: var(--side-panel-color);
-            border-radius: 12px; padding: 25px; box-shadow: var(--shadow-widget);
-        }
-        .moyenne-widgets { display: flex; gap: 15px; margin-bottom: 25px; }
-        .moyenne-widget {
-            flex: 1; background-color: var(--widget-darker-color); border-radius: 10px;
-            padding: 15px; text-align: center; border: 1px solid #e0e6eb;
-        }
-        .moyenne-widget h4 { margin: 0 0 8px 0; font-size: 0.85em; color: var(--secondary-color); font-weight: 500; }
-        .moyenne-value { font-size: 2.2em; font-weight: bold; color: var(--primary-color); }
-        .moyenne-value.invalid { color: var(--danger-color); }
-        .control-group { margin-bottom: 20px; }
-        .control-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
-        select {
-            width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd;
-            background-color: white; -webkit-appearance: none; appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='5'%3E%3Cpath d='M0 0l5 5 5-5z' fill='%232c3e50'/%3E%3C/svg%3E");
-            background-repeat: no-repeat; background-position: right 15px center; background-size: 10px;
-        }
-        .subject-averages { margin-top: 25px; padding-top: 15px; border-top: 1px solid #e0e6eb; }
-        .subject-averages h4 { margin-top: 0; color: var(--secondary-color); font-size: 1.1em; margin-bottom: 15px; }
-        #subject-averages-list { list-style: none; padding: 0; margin: 0; font-size: 0.9em; }
-        #subject-averages-list li { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dotted #e0e0e0; }
-        .btn {
-            display: inline-block; padding: 12px 20px; border: none; border-radius: 8px;
-            font-size: 0.95em; font-weight: 600; cursor: pointer; text-decoration: none;
-            color: white; transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
-            text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
-        .btn-primary { background-color: var(--primary-color); }
-        .btn-primary:hover { background-color: #3498db; }
-        .btn-secondary { background-color: var(--secondary-color); }
-        .btn-secondary:hover { background-color: #3a536b; }
-        .btn-full-width { width: 100%; display: block; }
-        .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
-        .tab-btn { padding: 12px 20px; cursor: pointer; border: none; background: none; font-size: 1.05em; font-weight: 600; color: var(--light-grey); position: relative; }
-        .tab-btn.active { color: var(--primary-color); }
-        .tab-btn.active::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 3px; background-color: var(--primary-color); }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .subject-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 30px; background: var(--widget-background); box-shadow: var(--shadow-widget); border-radius: 12px; overflow: hidden; }
-        .subject-table th, .subject-table td { padding: 14px 18px; text-align: left; border-bottom: 1px solid #f0f0f0; }
-        .subject-table thead tr:first-child th { background-color: var(--secondary-color); color: white; font-size: 1.1em; }
-        .subject-table thead tr:last-child th { background-color: #f8f9fa; color: var(--text-color); font-size: 0.85em; text-transform: uppercase; }
-        .competency-row td { background-color: #eaf2f8; color: var(--secondary-color); font-weight: bold; font-style: italic; }
-        .no-data { color: var(--light-grey); font-style: italic; }
-        .grade-percentage { font-weight: 700; color: var(--success-color); }
-        footer { text-align: center; padding: 25px; font-size: 0.9em; color: var(--footer-grey); border-top: 1px solid #eee; margin-top: 40px; }
-        footer a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
-        footer a:hover { text-decoration: underline; }
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s; }
-        .modal-overlay.active { opacity: 1; visibility: visible; }
-        .modal-content { background-color: white; padding: 30px; border-radius: 12px; width: 450px; position: relative; }
-        .modal-close { position: absolute; top: 10px; right: 15px; font-size: 2em; cursor: pointer; color: var(--light-grey); }
-        .unite-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; }
-        .unite-item:nth-child(even) { background-color: #fcfdfe; }
-        .unite-item input { width: 70px; text-align: center; padding: 6px; border: 1px solid #ddd; border-radius: 6px; }
-        .hidden { display: none !important; }
-        .pond-input-field, .grade-input-field { text-align: center; border-radius: 6px; border: 1px solid #ccc; padding: 6px; width: 60px; }
-        .grade-input-field { width: 80px; }
-        .pond-input-field.modified-input, .grade-input-field.modified-input { border-color: var(--warning-color); background-color: #fff9f0; }
-        .grade-display { cursor: pointer; min-height: 30px; display: inline-block; padding: 4px; border-radius: 4px; }
-    </style>
+    </script>
 </head>
 <body>
+
+    <!-- NEW: Loading Spinner -->
+    <div id="page-loader">
+        <div class="spinner"></div>
+    </div>
 
     <header class="site-header-container">
         <div class="header-left">
@@ -133,8 +34,11 @@
             <h1 class="site-header">Outil MBS</h1>
         </div>
         <div class="header-right">
-            <a href="data.html" class="btn btn-secondary">Mettre à jour les données</a>
-            <a href="improve.html" class="btn btn-primary">Analyser ma performance</a>
+            <!-- NEW: Dark Mode Toggle -->
+            <button id="theme-toggle" class="btn-icon" title="Changer de thème">🌙</button>
+            
+            <a href="data.html" class="btn btn-secondary">Mettre à jour</a>
+            <a href="improve.html" class="btn btn-primary">Analyser</a>
         </div>
     </header>
 
@@ -146,7 +50,9 @@
                 <button class="tab-btn" data-tab="etape3">Étape 3</button>
             </div>
             <div id="tab-contents">
-                <div id="etape1" class="tab-content active"></div>
+                <div id="etape1" class="tab-content active">
+                    <!-- Content will be injected by JS -->
+                </div>
                 <div id="etape2" class="tab-content"></div>
                 <div id="etape3" class="tab-content"></div>
             </div>
@@ -154,8 +60,14 @@
 
         <aside class="side-panel">
             <div class="moyenne-widgets">
-                <div class="moyenne-widget"><h4>Moyenne générale</h4><div id="moyenne-generale" class="moyenne-value">--</div></div>
-                <div class="moyenne-widget"><h4>Moyenne de l'étape</h4><div id="moyenne-etape" class="moyenne-value">--</div></div>
+                <div class="moyenne-widget">
+                    <h4>Moyenne générale</h4>
+                    <div id="moyenne-generale" class="moyenne-value">--</div>
+                </div>
+                <div class="moyenne-widget">
+                    <h4>Moyenne de l'étape</h4>
+                    <div id="moyenne-etape" class="moyenne-value">--</div>
+                </div>
             </div>
             <div class="control-group">
                 <label for="niveau-secondaire">Niveau Secondaire</label>
@@ -169,17 +81,19 @@
                 <button id="unites-btn" class="btn btn-secondary btn-full-width">Configurer les unités</button>
             </div>
             
-            <div id="ponderation-controls" class="hidden" style="background-color: #fff9f0; padding: 15px; border-radius: 8px; border: 1px solid var(--warning-color); margin-bottom: 20px;">
+            <div id="ponderation-controls" class="hidden" style="background-color: var(--surface-color-alt); padding: 15px; border-radius: 8px; border: 1px solid var(--warning-color); margin-bottom: 20px;">
                 <p style="font-weight: bold; text-align: center; margin-top: 0;">Pondérations modifiées</p>
                 <div style="display: flex; gap: 10px;">
                     <button id="save-ponds-btn" class="btn btn-primary" style="flex:1;">Sauvegarder</button>
-                    <button id="revert-ponds-btn" class="btn btn-secondary" style="background-color: #95a5a6; flex:1;">Annuler</button>
+                    <button id="revert-ponds-btn" class="btn btn-secondary" style="flex:1;">Annuler</button>
                 </div>
             </div>
 
             <div class="subject-averages">
                 <h4>Moyennes par matière</h4>
-                <ul id="subject-averages-list"><li class="no-data">Aucune donnée</li></ul>
+                <ul id="subject-averages-list">
+                    <li class="no-data">Aucune donnée</li>
+                </ul>
             </div>
         </aside>
     </main>
@@ -205,5 +119,7 @@
     </footer>
 
     <script src="js/main-functions.js"></script>
+    <!-- NEW: Link to Theme JS -->
+    <script src="js/theme.js"></script>
 </body>
 </html>
