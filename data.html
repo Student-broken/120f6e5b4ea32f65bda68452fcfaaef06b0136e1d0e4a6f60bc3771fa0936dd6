@@ -40,20 +40,20 @@
             transition: background-color var(--transition-duration) ease, color var(--transition-duration) ease, border-color var(--transition-duration) ease, box-shadow var(--transition-duration) ease;
         }
 
-        /*
-        The following animation code was removed:
-        @keyframes fadeInSlideUp {
-            from { opacity: 0; transform: translateY(25px); }
-            to { opacity: 1; transform: translateY(0); }
+        /* --- NOUVELLES KEYFRAMES POUR L'ANIMATION DE LA FLÈCHE DE RETOUR --- */
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(41, 128, 185, 0.4); }
+            70% { box-shadow: 0 0 0 8px rgba(41, 128, 185, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(41, 128, 185, 0); }
         }
-        .site-header-container, .content, footer {
-            opacity: 0;
-            transform: translateY(25px);
-            animation: fadeInSlideUp 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        @keyframes arrow-move {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(-3px); }
         }
-        .content { animation-delay: 0.2s; }
-        footer { animation-delay: 0.4s; }
-        */
+        /* --- FIN NOUVELLES KEYFRAMES --- */
+        
+        /* ANCIENNES ANIMATIONS DE CHARGEMENT SUPPRIMÉES POUR LA VITESSE */
+        /* .site-header-container, .content, footer n'ont plus d'opacity: 0; ou de transform: translateY(25px); */
 
         body {
             margin: 0;
@@ -99,13 +99,23 @@
             width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
             display: flex; align-items: center; justify-content: center; font-size: 1.1em;
             text-decoration: none;
-            transition: all 0.2s ease, background-color var(--transition-duration);
+            transition: all 0.2s ease, background-color var(--transition-duration), box-shadow 0.2s; /* Ajout box-shadow à la transition */
         }
         .icon-btn:hover {
             border-color: var(--primary-color);
             color: var(--primary-color);
             transform: scale(1.1);
         }
+
+        /* --- ANIMATION SPÉCIFIQUE DU BOUTON RETOUR (CERCLE + FLÈCHE) --- */
+        .header-left .icon-btn:hover {
+            animation: pulse-border 1.5s infinite; /* Animation du cercle (ombre qui pulse) */
+        }
+        .header-left .icon-btn:hover i {
+            animation: arrow-move 0.5s ease-in-out infinite alternate; /* Animation de la flèche */
+        }
+        /* --- FIN ANIMATION SPÉCIFIQUE --- */
+
 
         .data-widget {
             background-color: var(--widget-background);
@@ -319,8 +329,7 @@
                         const max = parseFloat(scoreMatch[2].replace(',', '.'));
                         return (max > 0) ? (score / max) * 100 : null;
                     }
-                    return;
-                    return (max > 0) ? (score / max) * 100 : null;
+                    return null;
                 }
 
                 let currentTermAverage = 0;
