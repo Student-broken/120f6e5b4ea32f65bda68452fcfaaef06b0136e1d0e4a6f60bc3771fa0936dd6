@@ -3,12 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analyse-Outil MBS</title>
+    <title>Analyse - Outil MBS</title>
     <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
+    <!-- Font Awesome for icons (Updated & Reliable CDN Link) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
+            /* Animation & Transition */
+            --transition-duration: 0.35s;
+
+            /* Light Mode Variables */
             --primary-color: #2980b9;
             --secondary-color: #2c3e50;
             --background-color: #f7f9fb;
@@ -21,26 +27,77 @@
             --warning-color: #f39c12;
             --shadow-header: 0 2px 4px rgba(0, 0, 0, 0.05);
             --shadow-widget: 0 8px 15px rgba(0, 0, 0, 0.08);
+            --border-color: #e0e6eb;
+            --goal-success-bg: #eafaf1;
+            --goal-warning-bg: #fff9f0;
+            --goal-danger-bg: #fdf3f2;
         }
+
+        /* DARK MODE VARIABLES */
+        [data-theme="dark"] {
+            --background-color: #121212;
+            --widget-background: #1e1e1e;
+            --text-color: #e0e0e0;
+            --secondary-color: #bbbbbb;
+            --light-grey: #757575;
+            --footer-grey: #a0a0a0;
+            --shadow-header: 0 2px 5px rgba(255, 255, 255, 0.1);
+            --shadow-widget: 0 5px 10px rgba(0, 0, 0, 0.3);
+            --border-color: #333333;
+            --goal-success-bg: #1a3e2a;
+            --goal-warning-bg: #4d381c;
+            --goal-danger-bg: #4f2323;
+
+            /* Specific element adjustments for dark mode */
+            .site-header { color: var(--text-color); }
+            .nav-arrow { color: var(--text-color); }
+            .widget-title { color: var(--text-color); }
+            .comp-widget, .calculator-container {
+                background-color: #282828;
+                border-color: var(--border-color);
+            }
+            .modal-content { background-color: var(--background-color); }
+            .modal-header { background-color: #2c3e50; } /* Keep header dark */
+            .goal-input input {
+                background-color: #282828;
+                border-color: var(--light-grey);
+                color: var(--text-color);
+            }
+        }
+
+        /* GLOBAL TRANSITIONS for smooth theme change */
+        body, .site-header-container, .sticky-tabs, .subject-widget, .modal-content, .tab-btn, .comp-widget, .calculator-container, input {
+            transition: background-color var(--transition-duration) ease, color var(--transition-duration) ease, border-color var(--transition-duration) ease, box-shadow var(--transition-duration) ease;
+        }
+        
+        /* SMOOTHER Page Load Animation Keyframes */
+        @keyframes fadeInSlideUp {
+            from { opacity: 0; transform: translateY(25px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Animation application for main elements */
+        .site-header-container, .sticky-tabs, .widget-grid, footer {
+            opacity: 0;
+            transform: translateY(25px);
+            animation: fadeInSlideUp 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        .sticky-tabs { animation-delay: 0.1s; }
+        .widget-grid { animation-delay: 0.2s; }
+        footer { animation-delay: 0.4s; }
+
+        /* General Styles */
         body {
-            margin: 0;
-            font-family: 'Inter', sans-serif;
-            background-color: var(--background-color);
-            color: var(--text-color);
+            margin: 0; font-family: 'Inter', sans-serif;
+            background-color: var(--background-color); color: var(--text-color);
         }
         .site-header-container {
-            background-color: var(--widget-background);
-            box-shadow: var(--shadow-header);
-            border-bottom: 1px solid #e0e6eb;
-            padding: 15px 25px;
-            display: flex;
-            align-items: center;
-            position: relative;
-            margin-bottom: 20px;
+            background-color: var(--widget-background); box-shadow: var(--shadow-header);
+            border-bottom: 1px solid var(--border-color); padding: 15px 25px;
+            display: flex; align-items: center; position: relative; margin-bottom: 0; /* Margin removed for sticky tabs */
         }
         .header-left { flex: 1; display: flex; justify-content: flex-start; }
         .header-center { flex: 2; text-align: center; }
-        .header-right { flex: 1; }
+        .header-right { flex: 1; display: flex; justify-content: flex-end; }
         .site-header {
             padding: 0; margin: 0; color: var(--secondary-color);
             font-size: 2.2em; font-weight: 700; font-family: 'Playfair Display', serif;
@@ -48,10 +105,23 @@
         }
         .nav-arrow { font-size: 2em; color: var(--secondary-color); text-decoration: none; transition: all 0.2s; }
         .nav-arrow:hover { color: var(--primary-color); transform: scale(1.05); }
+
+        /* Dark Mode Toggle Button */
+        .icon-btn {
+            background: none; border: 2px solid var(--light-grey); color: var(--text-color);
+            width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; font-size: 1.1em;
+            transition: all 0.2s ease, background-color var(--transition-duration);
+        }
+        .icon-btn:hover {
+            border-color: var(--primary-color); color: var(--primary-color);
+            transform: scale(1.1);
+        }
+
         .sticky-tabs {
             position: sticky; top: 0; background-color: var(--background-color);
-            z-index: 100; padding: 15px 0; border-bottom: 1px solid #e0e6eb;
-            display: flex; justify-content: center; gap: 10px;
+            z-index: 100; padding: 15px 0; border-bottom: 1px solid var(--border-color);
+            display: flex; justify-content: center; gap: 10px; margin-bottom: 20px;
         }
         .tab-btn {
             padding: 10px 20px; border: 1px solid var(--light-grey); border-radius: 20px;
@@ -79,40 +149,50 @@
         .widget-trend.down { color: var(--danger-color); }
         .gauge-container { width: 120px; height: 70px; position: relative; }
         .histogram-container { margin-top: 15px; height: 120px; }
+        
+        /* Modal Animations */
         .modal-overlay {
             position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(5px); z-index: 1000; display: flex;
             justify-content: center; align-items: center; opacity: 0;
-            visibility: hidden; transition: opacity 0.3s;
+            visibility: hidden; transition: opacity 0.3s, visibility 0.3s;
         }
         .modal-overlay.active { opacity: 1; visibility: visible; }
         .modal-content {
             background-color: var(--background-color); border-radius: 16px; width: 90%;
             max-width: 800px; max-height: 90vh; overflow-y: auto;
-            transform: scale(0.95); transition: transform 0.3s;
+            transform: scale(0.9) translateY(-20px);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
+        .modal-overlay.active .modal-content { transform: scale(1) translateY(0); }
+
         .modal-header { padding: 20px 25px; background-color: var(--secondary-color); color: white; border-radius: 16px 16px 0 0; }
         .modal-title { font-family: 'Playfair Display', serif; font-size: 1.8em; margin: 0; }
         .modal-body { padding: 25px; }
         .competency-widgets { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
-        .comp-widget { flex: 1; min-width: 150px; background-color: var(--widget-background); border-radius: 8px; padding: 15px; text-align: center; border: 1px solid #e0e6eb; cursor: pointer; transition: all 0.2s; }
+        .comp-widget { flex: 1; min-width: 150px; background-color: var(--widget-background); border-radius: 8px; padding: 15px; text-align: center; border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s; }
         .comp-widget.active { border-color: var(--primary-color); box-shadow: 0 0 0 2px var(--primary-color); }
-        .calculator-container { background-color: var(--widget-background); border-radius: 8px; padding: 20px; border: 1px solid #e0e6eb; }
+        .calculator-container { background-color: var(--widget-background); border-radius: 8px; padding: 20px; border: 1px solid var(--border-color); }
         .goal-input { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
         .goal-input input { width: 80px; padding: 8px; border-radius: 6px; border: 1px solid var(--light-grey); text-align: center; font-size: 1.1em; }
-        .goal-result { padding: 15px; border-radius: 6px; text-align: center; font-size: 1.1em; font-weight: 600; }
-        .goal-result.success { background-color: #eafaf1; color: var(--success-color); }
-        .goal-result.warning { background-color: #fff9f0; color: var(--warning-color); }
-        .goal-result.danger { background-color: #fdf3f2; color: var(--danger-color); }
+        .goal-result { padding: 15px; border-radius: 6px; text-align: center; font-size: 1.1em; font-weight: 600; transition: background-color var(--transition-duration); }
+        .goal-result.success { background-color: var(--goal-success-bg); color: var(--success-color); }
+        .goal-result.warning { background-color: var(--goal-warning-bg); color: var(--warning-color); }
+        .goal-result.danger { background-color: var(--goal-danger-bg); color: var(--danger-color); }
         .btn-save { padding: 8px 12px; border: none; background-color: var(--primary-color); color: white; border-radius: 6px; cursor: pointer; }
-        footer { text-align: center; padding: 25px; font-size: 0.9em; color: var(--footer-grey); border-top: 1px solid #eee; margin-top: 40px; }
+        footer { text-align: center; padding: 25px; font-size: 0.9em; color: var(--footer-grey); border-top: 1px solid var(--border-color); margin-top: 40px; }
     </style>
 </head>
 <body>
     <header class="site-header-container">
         <div class="header-left"><a href="main.html" class="nav-arrow" title="Retour au tableau de bord">←</a></div>
         <div class="header-center"><h1 class="site-header">Outil MBS</h1></div>
-        <div class="header-right"></div>
+        <div class="header-right">
+            <!-- Theme Toggle Button -->
+            <button id="theme-toggle" class="icon-btn" aria-label="Changer de thème (Mode Clair/Sombre)">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+        </div>
     </header>
 
     <div class="sticky-tabs">
@@ -122,376 +202,49 @@
         <button class="tab-btn" data-etape="etape3">Étape 3</button>
     </div>
 
-    <main id="widget-grid" class="widget-grid"></main>
+    <main id="widget-grid" class="widget-grid">
+        <!-- Widgets will be populated by JavaScript -->
+    </main>
     
     <div id="details-modal" class="modal-overlay">
-        <div id="modal-content" class="modal-content"></div>
+        <div id="modal-content" class="modal-content">
+            <!-- Modal content will be populated by JavaScript -->
+        </div>
     </div>
 
     <footer><p>Outil MBS - Moyenne, Bilan, Stratégie</p></footer>
 
+    <!-- Theme and animation control script -->
     <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const gradeMap = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 85, 'B': 80, 'B-': 75, 'C+': 70, 'C': 65, 'C-': 60, 'D+': 55, 'D': 50, 'E': 45 };
-        let mbsData = {};
-        let activeChart = null;
-        let activeGauges = {};
+        const themeToggle = document.getElementById('theme-toggle');
+        const html = document.documentElement;
+        const toggleIcon = themeToggle.querySelector('i');
+        const THEME_KEY = 'mbs-theme';
 
-        const widgetGrid = document.getElementById('widget-grid');
-        const detailsModal = document.getElementById('details-modal');
-
-        function init() {
-            mbsData = JSON.parse(localStorage.getItem('mbsData')) || {};
-            if (!mbsData.settings) mbsData.settings = {};
-            if (!mbsData.settings.objectives) mbsData.settings.objectives = {};
-            if (!mbsData.valid) {
-                widgetGrid.innerHTML = `<p style="text-align:center; width:100%;">Aucune donnée à analyser. Veuillez d'abord <a href="data.html">importer vos données</a>.</p>`;
-                return;
-            }
-            setupEventListeners();
-            renderWidgets('generale');
-        }
-
-        function setupEventListeners() {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => {
-                document.querySelector('.tab-btn.active').classList.remove('active');
-                btn.classList.add('active');
-                renderWidgets(btn.dataset.etape);
-            }));
-            detailsModal.addEventListener('click', e => { if (e.target === detailsModal) closeDetailsModal(); });
-        }
-
-        function getNumericGrade(result) {
-            if (!result) return null;
-            const trimmed = result.trim();
-            if (gradeMap[trimmed]) return gradeMap[trimmed];
-            const scoreMatch = trimmed.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/);
-            if (scoreMatch) {
-                const score = parseFloat(scoreMatch[1].replace(',', '.'));
-                const max = parseFloat(scoreMatch[2].replace(',', '.'));
-                return max > 0 ? (score / max) * 100 : null;
-            }
-            return null;
-        }
-
-        function calculateAverage(assignments) {
-            let totalWeightedGrade = 0;
-            let totalWeight = 0;
-            assignments.forEach(assign => {
-                const grade = getNumericGrade(assign.result);
-                const weight = parseFloat(assign.pond);
-                if (grade !== null && !isNaN(weight) && weight > 0) {
-                    totalWeightedGrade += grade * weight;
-                    totalWeight += weight;
-                }
-            });
-            return totalWeight > 0 ? { average: totalWeightedGrade / totalWeight, weight: totalWeight } : null;
-        }
-        
-        function calculateSubjectAverage(subject) {
-            let totalWeightedCompetencyScore = 0;
-            let totalCompetencyWeight = 0;
-            subject.competencies.forEach(comp => {
-                const compWeightMatch = comp.name.match(/\((\d+)%\)/);
-                if (!compWeightMatch) return;
-                const competencyWeight = parseFloat(compWeightMatch[1]);
-                const competencyResult = calculateAverage(comp.assignments);
-                if (competencyResult) {
-                    totalWeightedCompetencyScore += competencyResult.average * competencyWeight;
-                    totalCompetencyWeight += competencyWeight;
-                }
-            });
-            return totalCompetencyWeight > 0 ? totalWeightedCompetencyScore / totalCompetencyWeight : null;
-        }
-        
-        function renderWidgets(etapeKey) {
-            widgetGrid.innerHTML = '';
-            Object.values(activeGauges).forEach(chart => chart.destroy());
-            activeGauges = {};
-            let subjectsToRender = [];
-            if (etapeKey === 'generale') {
-                const allSubjects = new Map();
-                ['etape1', 'etape2', 'etape3'].forEach(etape => {
-                    (mbsData[etape] || []).forEach(subject => {
-                        if (!allSubjects.has(subject.code)) {
-                            allSubjects.set(subject.code, { name: subject.name, competencies: [] });
-                        }
-                        allSubjects.get(subject.code).competencies.push(...subject.competencies);
-                    });
-                });
-                subjectsToRender = Array.from(allSubjects.entries()).map(([code, data]) => ({
-                    code, name: data.name, competencies: data.competencies,
-                    average: calculateSubjectAverage({ competencies: data.competencies })
-                }));
+        const updateTheme = (theme) => {
+            html.setAttribute('data-theme', theme);
+            localStorage.setItem(THEME_KEY, theme);
+            if (theme === 'dark') {
+                toggleIcon.classList.remove('fa-moon');
+                toggleIcon.classList.add('fa-sun');
             } else {
-                subjectsToRender = (mbsData[etapeKey] || []).map(subject => ({
-                    ...subject, average: calculateSubjectAverage(subject)
-                }));
+                toggleIcon.classList.remove('fa-sun');
+                toggleIcon.classList.add('fa-moon');
             }
-            subjectsToRender.forEach(subject => {
-                if (subject.average === null) return;
-                let trend = { direction: '▲', change: 'Nouveau', class: 'up' };
-                if (etapeKey !== 'generale' && mbsData.historique?.[etapeKey]?.moyennes?.length > 1) {
-                    const moyennes = mbsData.historique[etapeKey].moyennes;
-                    const change = moyennes[moyennes.length - 1] - moyennes[moyennes.length - 2];
-                    trend.change = `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`;
-                    trend.direction = change < 0 ? '▼' : '▲';
-                    trend.class = change < 0 ? 'down' : 'up';
-                }
-                const widget = document.createElement('div');
-                widget.className = 'subject-widget';
-                const canvasId = `gauge-${subject.code.replace(/\s+/g, '')}-${etapeKey}`;
-                widget.innerHTML = `
-                    <div class="widget-top-section">
-                        <div class="widget-info">
-                            <h3 class="widget-title">${subject.name}</h3>
-                            <p class="widget-average">${subject.average.toFixed(2)}%</p>
-                            <div class="widget-trend ${trend.class}">
-                                <span>${trend.direction}</span>
-                                <span>${trend.change}</span>
-                            </div>
-                        </div>
-                        <div class="gauge-container"><canvas id="${canvasId}"></canvas></div>
-                    </div>
-                    <div class="histogram-container"><canvas id="hist-${canvasId}"></canvas></div>`;
-                widget.addEventListener('click', () => openDetailsModal(subject, etapeKey));
-                widgetGrid.appendChild(widget);
-                renderGauge(canvasId, subject.average, mbsData.settings.objectives[subject.code]);
-                renderHistogram(`hist-${canvasId}`, subject);
-            });
-            if (!widgetGrid.children.length) {
-                widgetGrid.innerHTML = `<p style="grid-column: 1 / -1; text-align:center;">Aucune donnée pour cette période.</p>`;
-            }
-        }
+        };
 
-        function renderGauge(canvasId, value, goal) {
-            const ctx = document.getElementById(canvasId).getContext('2d');
-            const gradient = ctx.createLinearGradient(0, 0, 120, 0);
-            gradient.addColorStop(0, '#e74c3c');
-            gradient.addColorStop(0.6, '#f39c12');
-            gradient.addColorStop(1, '#27ae60');
-            const gaugeChart = new Chart(ctx, {
-                type: 'doughnut', data: { datasets: [{ data: [100], backgroundColor: [gradient], borderWidth: 0 }] },
-                options: { responsive: true, maintainAspectRatio: false, circumference: 180, rotation: -90, cutout: '60%', plugins: { tooltip: { enabled: false } } },
-                plugins: [{
-                    id: 'gaugeNeedleAndLine',
-                    afterDraw: chart => {
-                        const { ctx, chartArea } = chart;
-                        const angle = Math.PI + (value / 100) * Math.PI;
-                        const cx = chartArea.left + chartArea.width / 2;
-                        const cy = chartArea.top + chartArea.height;
-                        const needleRadius = chart.getDatasetMeta(0).data[0].outerRadius;
-                        ctx.save();
-                        ctx.translate(cx, cy); ctx.rotate(angle); ctx.beginPath();
-                        ctx.moveTo(0, -5); ctx.lineTo(needleRadius - 10, 0); ctx.lineTo(0, 5);
-                        ctx.fillStyle = 'var(--secondary-color)'; ctx.fill();
-                        ctx.restore();
-                        if (goal) {
-                            const goalAngle = Math.PI + (goal / 100) * Math.PI;
-                            const innerRadius = chart.getDatasetMeta(0).data[0].innerRadius;
-                            ctx.save();
-                            ctx.translate(cx, cy); ctx.rotate(goalAngle); ctx.beginPath();
-                            ctx.moveTo(innerRadius, 0); ctx.lineTo(needleRadius, 0); // Correct radial line
-                            ctx.strokeStyle = 'var(--danger-color)'; ctx.lineWidth = 3; ctx.stroke();
-                            ctx.restore();
-                        }
-                    }
-                }]
-            });
-            activeGauges[canvasId] = gaugeChart;
-        }
+        const storedTheme = localStorage.getItem(THEME_KEY);
+        const initialTheme = storedTheme || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        updateTheme(initialTheme);
 
-        function renderHistogram(canvasId, subject) {
-            const grades = [];
-            subject.competencies.forEach(comp => comp.assignments.forEach(assign => {
-                const grade = getNumericGrade(assign.result);
-                if (grade !== null) grades.push(grade);
-            }));
-            const bins = { 'Echec (<60)': 0, 'C (60-69)': 0, 'B (70-89)': 0, 'A (90+)': 0 };
-            grades.forEach(g => {
-                if (g < 60) bins['Echec (<60)']++; else if (g < 70) bins['C (60-69)']++;
-                else if (g < 90) bins['B (70-89)']++; else bins['A (90+)']++;
-            });
-            new Chart(document.getElementById(canvasId).getContext('2d'), {
-                type: 'bar', data: { labels: Object.keys(bins), datasets: [{ data: Object.values(bins), backgroundColor: ['#e74c3c', '#f39c12', '#a0c800', '#27ae60'] }] },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false }, title: { display: true, text: 'Distribution des notes' } } }
-            });
-        }
-        
-        function openDetailsModal(subject, etapeKey) {
-            const modalContent = document.getElementById('modal-content');
-            modalContent.innerHTML = `
-                <div class="modal-header"><h2 class="modal-title">${subject.name} (${subject.code})</h2></div>
-                <div class="modal-body">
-                    <div class="competency-widgets"></div>
-                    <div class="graph-container" style="display:none;"><canvas id="assignmentsChart"></canvas></div>
-                    <div class="calculator-container"></div>
-                </div>`;
-            const competencyContainer = modalContent.querySelector('.competency-widgets');
-            const graphContainer = modalContent.querySelector('.graph-container');
-            const uniqueCompetencies = new Map();
-            subject.competencies.forEach(comp => {
-                if (!uniqueCompetencies.has(comp.name)) uniqueCompetencies.set(comp.name, { name: comp.name, assignments: [] });
-                uniqueCompetencies.get(comp.name).assignments.push(...comp.assignments);
-            });
-            const compsForChart = Array.from(uniqueCompetencies.values());
-            compsForChart.forEach((comp, index) => {
-                const compResult = calculateAverage(comp.assignments);
-                if (!compResult) return;
-                const compWidget = document.createElement('div');
-                compWidget.className = 'comp-widget'; compWidget.dataset.index = index;
-                compWidget.innerHTML = `<h4>${comp.name}</h4><div class="avg">${compResult.average.toFixed(1)}%</div>`;
-                competencyContainer.appendChild(compWidget);
-            });
-            if (competencyContainer.children.length > 0) {
-                graphContainer.style.display = 'block';
-                createOrUpdateChart(compsForChart[0]);
-                competencyContainer.children[0].classList.add('active');
-            }
-            competencyContainer.querySelectorAll('.comp-widget').forEach(widget => {
-                widget.addEventListener('click', () => {
-                    competencyContainer.querySelector('.active')?.classList.remove('active');
-                    widget.classList.add('active');
-                    createOrUpdateChart(compsForChart[widget.dataset.index]);
-                });
-            });
-            setupGoalFramework(subject, modalContent.querySelector('.calculator-container'), etapeKey);
-            detailsModal.classList.add('active');
-        }
-
-        function closeDetailsModal() { detailsModal.classList.remove('active'); }
-
-        function createOrUpdateChart(competency) {
-            if(activeChart) activeChart.destroy();
-            const ctx = document.getElementById('assignmentsChart').getContext('2d');
-            const gradedAssignments = competency.assignments.filter(a => getNumericGrade(a.result) !== null);
-            activeChart = new Chart(ctx, {
-                type: 'bar', data: { labels: gradedAssignments.map(a => a.work.replace('<br>', ' ')), datasets: [{ data: gradedAssignments.map(a => getNumericGrade(a.result)), backgroundColor: 'rgba(41, 128, 185, 0.6)' }] },
-                options: { scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } }
-            });
-        }
-
-        function setupGoalFramework(subject, container, etapeKey) {
-            const currentObjective = mbsData.settings.objectives[subject.code] || '';
-            container.innerHTML = `
-                <h3>Planificateur d'Objectifs</h3>
-                <div class="goal-input">
-                    <label for="objective-input" id="objective-label">Objectif :</label>
-                    <input type="number" id="objective-input" min="0" max="100" value="${currentObjective}">%
-                    <button id="save-objective-btn" class="btn-save">Sauvegarder</button>
-                </div>
-                <div id="calculator-content"></div>`;
-            const objectiveInput = container.querySelector('#objective-input');
-            const saveObjectiveBtn = container.querySelector('#save-objective-btn');
-            saveObjectiveBtn.addEventListener('click', () => {
-                const newObjective = parseFloat(objectiveInput.value);
-                if (!isNaN(newObjective) && newObjective >= 0 && newObjective <= 100) {
-                    mbsData.settings.objectives[subject.code] = newObjective;
-                } else {
-                    delete mbsData.settings.objectives[subject.code];
-                }
-                localStorage.setItem('mbsData', JSON.stringify(mbsData));
-                saveObjectiveBtn.textContent = 'Sauvé!';
-                setTimeout(() => { saveObjectiveBtn.textContent = 'Sauvegarder'; }, 1500);
-                renderWidgets(document.querySelector('.tab-btn.active').dataset.etape);
-            });
-            const calculatorContent = container.querySelector('#calculator-content');
-            const hasFutureWork = subject.competencies.some(comp => comp.assignments.some(a => getNumericGrade(a.result) === null && parseFloat(a.pond) > 0));
-            if (hasFutureWork) {
-                container.querySelector('#objective-label').textContent = 'Objectif pour cette matière :';
-                setupIntraSubjectCalculator(subject, calculatorContent, objectiveInput);
-            } else {
-                container.querySelector('#objective-label').textContent = 'Objectif global :';
-                setupInterEtapeCalculator(calculatorContent, etapeKey, objectiveInput);
-            }
-        }
-        
-        function setupIntraSubjectCalculator(subject, container, goalInput) {
-            container.innerHTML = `<p id="calc-info"></p><div id="goal-result" class="goal-result"></div>`;
-            const goalResult = container.querySelector('#goal-result');
-            const calcInfo = container.querySelector('#calc-info');
-            function calculate() {
-                let sumOfWeightedGrades = 0, sumOfCompletedWeights = 0, sumOfFutureWeights = 0, sumOfTotalWeights = 0;
-                subject.competencies.forEach(comp => comp.assignments.forEach(assign => {
-                    const weight = parseFloat(assign.pond);
-                    if (isNaN(weight) || weight <= 0) return;
-                    sumOfTotalWeights += weight;
-                    const grade = getNumericGrade(assign.result);
-                    if (grade !== null) {
-                        sumOfWeightedGrades += grade * weight;
-                        sumOfCompletedWeights += weight;
-                    } else { sumOfFutureWeights += weight; }
-                }));
-                if (sumOfTotalWeights <= 0) { calcInfo.textContent = 'Aucun travail avec une pondération valide n\'a été trouvé.'; return; }
-                const currentAverage = sumOfCompletedWeights > 0 ? (sumOfWeightedGrades / sumOfCompletedWeights) : 0;
-                const completedPercentage = (sumOfCompletedWeights / sumOfTotalWeights) * 100;
-                calcInfo.innerHTML = `Moyenne actuelle : <strong>${currentAverage.toFixed(2)}%</strong> (sur <strong>${completedPercentage.toFixed(1)}%</strong> de la matière complétée).`;
-                const targetAvg = parseFloat(goalInput.value);
-                if (isNaN(targetAvg) || targetAvg < 0 || targetAvg > 100) { goalResult.innerHTML = 'Veuillez entrer un objectif entre 0 et 100.'; goalResult.className = 'goal-result danger'; return; }
-                const totalPointsNeeded = targetAvg * sumOfTotalWeights;
-                const pointsNeededFromFuture = totalPointsNeeded - sumOfWeightedGrades;
-                const requiredAvgOnFuture = pointsNeededFromFuture / sumOfFutureWeights;
-                let message, resultClass;
-                if (requiredAvgOnFuture > 100.01) { message = `Il faudrait <strong>${requiredAvgOnFuture.toFixed(1)}%</strong> sur les travaux restants. Objectif impossible.`; resultClass = 'danger'; }
-                else if (requiredAvgOnFuture < 0) { message = `Félicitations ! Objectif déjà atteint.`; resultClass = 'success'; }
-                else { message = `Il vous faut une moyenne de <strong>${requiredAvgOnFuture.toFixed(1)}%</strong> sur les travaux restants.`; resultClass = 'warning'; }
-                goalResult.innerHTML = message; goalResult.className = `goal-result ${resultClass}`;
-            }
-            goalInput.addEventListener('input', calculate);
-            calculate();
-        }
-
-        function setupInterEtapeCalculator(container, currentEtapeKey, goalInput) {
-            container.innerHTML = `<p id="calc-info"></p><div id="goal-result" class="goal-result"></div>`;
-            const goalResult = container.querySelector('#goal-result');
-            const calcInfo = container.querySelector('#calc-info');
-
-            const etapeWeights = { etape1: 0.2, etape2: 0.2, etape3: 0.6 };
-            const etapeSequence = ['etape1', 'etape2', 'etape3'];
-            let nextEtape = null;
-            if(currentEtapeKey === 'etape1') nextEtape = 'etape2';
-            if(currentEtapeKey === 'etape2') nextEtape = 'etape3';
-
-            if (!nextEtape || currentEtapeKey === 'generale') {
-                calcInfo.innerHTML = 'Toutes les étapes futures sont déjà planifiées ou le contexte est général.';
-                goalResult.style.display = 'none';
-                return;
-            }
-
-            const etapeAverages = {};
-            let currentGlobalContribution = 0;
-            let pastAndPresentWeight = 0;
-            etapeSequence.forEach(etape => {
-                const subjects = mbsData[etape];
-                if(subjects) {
-                    const avg = calculateSubjectAverage({competencies: subjects.flatMap(s => s.competencies)});
-                    etapeAverages[etape] = avg;
-                    if(avg !== null && etape !== nextEtape) { // Only count completed etapes
-                        currentGlobalContribution += avg * etapeWeights[etape];
-                        pastAndPresentWeight += etapeWeights[etape];
-                    }
-                }
-            });
-            
-            calcInfo.innerHTML = `Planifiez votre performance pour l'<b>Étape ${nextEtape.slice(-1)}</b>.`;
-            
-            function calculate() {
-                const targetGlobalAvg = parseFloat(goalInput.value);
-                if (isNaN(targetGlobalAvg) || targetGlobalAvg < 0 || targetGlobalAvg > 100) { goalResult.innerHTML = 'Veuillez entrer un objectif global valide.'; goalResult.className = 'goal-result danger'; return; }
-                const pointsNeededFromFuture = targetGlobalAvg - currentGlobalContribution;
-                const requiredAvgInNextEtape = pointsNeededFromFuture / etapeWeights[nextEtape];
-                let message, resultClass;
-                if (requiredAvgInNextEtape > 100.01) { message = `Pour atteindre <strong>${targetGlobalAvg}%</strong> global, il faudrait <strong>${requiredAvgInNextEtape.toFixed(1)}%</strong> à l'étape ${nextEtape.slice(-1)}. Objectif impossible.`; resultClass = 'danger'; }
-                else if (requiredAvgInNextEtape < 0) { message = `Félicitations ! Objectif global déjà atteint.`; resultClass = 'success'; }
-                else { message = `Pour atteindre <strong>${targetGlobalAvg}%</strong> global, il vous faut <strong>${requiredAvgInNextEtape.toFixed(1)}%</strong> à l'étape ${nextEtape.slice(-1)}.`; resultClass = 'warning'; }
-                goalResult.innerHTML = message; goalResult.className = `goal-result ${resultClass}`;
-            }
-            goalInput.addEventListener('input', calculate);
-            calculate();
-        }
-        
-        init();
-    });
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            updateTheme(newTheme);
+        });
     </script>
+
+    <!-- Link to the external JavaScript file for page functionality -->
+    <script src="js/improve-functions.js"></script>
 </body>
 </html>
