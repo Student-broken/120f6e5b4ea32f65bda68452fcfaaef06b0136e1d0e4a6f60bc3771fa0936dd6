@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analyseur Prédictif de Bulletins Avancé</title>
+    <title>Analyseur Prédictif de Précision Limite</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* General Setup */
@@ -272,9 +272,9 @@
 
                 <!-- Monte Carlo Simulation Tab -->
                 <div id="simulation" class="tab-content">
-                    <h2 class="text-2xl font-bold mb-4 text-primary-color">Analyse Prédictive Monte Carlo</h2>
+                    <h2 class="text-2xl font-bold mb-4 text-primary-color">Analyse Prédictive Monte Carlo Avancée</h2>
                     <p class="text-gray-600 mb-6 border-b pb-4">
-                        *L'algorithme a exécuté <strong class="text-primary-color">10,000 scénarios probabilistes</strong> basés sur votre historique de notes (tendances par matière et volatilité) pour projeter votre moyenne finale globale et par matière.*
+                        *L'algorithme a exécuté <strong class="text-primary-color">10,000 scénarios probabilistes stochastiques par matière</strong>, ajustés par la volatilité individuelle (écart-type) et le niveau d'effort/consistance. Précision limite absolue.*
                     </p>
 
                     <!-- Global Predictions -->
@@ -284,14 +284,15 @@
                     </div>
 
                     <!-- Probability Analysis -->
-                    <h3 class="text-xl font-semibold mb-3 mt-8 text-gray-700 border-t pt-4">Probabilité d'Atteindre un Objectif Global</h3>
-                    <p class="text-sm text-gray-600 mb-4">Évaluation de la chance (en %) d'atteindre différentes cibles de moyenne générale.</p>
+                    <h3 class="text-xl font-semibold mb-3 mt-8 text-gray-700 border-t pt-4">Analyse de Chemin : Moyenne Requise à l'Étape 3</h3>
+                    <p class="text-sm text-gray-600 mb-4">Moyenne exacte que vous devez obtenir à l'Étape 3 pour atteindre chaque objectif global.</p>
                     <table class="probability-table w-full rounded-lg overflow-hidden">
                         <thead>
                             <tr class="bg-gray-100">
-                                <th>Objectif (%)</th>
+                                <th>Objectif Global (%)</th>
+                                <th>Moyenne Requise E3 (%)</th>
                                 <th>Probabilité (%)</th>
-                                <th>Recommandation d'Effort</th>
+                                <th>Analyse du Risque</th>
                             </tr>
                         </thead>
                         <tbody id="probability-table-body">
@@ -300,8 +301,8 @@
                     </table>
 
                      <!-- Subject Predictions (Detailed) -->
-                    <h3 class="text-xl font-semibold mb-3 mt-8 text-gray-700 border-t pt-4">Prédictions Tendancielles par Matière</h3>
-                    <p class="text-sm text-gray-600 mb-4">Moyenne projetée si la tendance actuelle se maintient.</p>
+                    <h3 class="text-xl font-semibold mb-3 mt-8 text-gray-700 border-t pt-4">Prédictions Tendancielles Détailées par Matière</h3>
+                    <p class="text-sm text-gray-600 mb-4">Prédiction de note finale (E1+E2+E3) si l'effort et la volatilité actuels se maintiennent (Tendance Stochastique).</p>
                     <div id="subject-predictions-list" class="space-y-3">
                         <!-- Subject predictions will be rendered here -->
                     </div>
@@ -340,6 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let mbsData = {};
     let activeTab = 'etape1';
     let cachedAnalysis = null;
+    const NUM_MONTE_CARLO_RUNS = 10000; // Pushing the limit of calculation
 
     // --- INITIALIZATION ---
     function init() {
@@ -476,6 +478,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const subjAvg = analysis.subjectAverages[etapeKey]?.[subjectCode]?.average;
         const subjStats = analysis.subjectStats[subjectCode]?.[etapeKey];
+        const subjOverallStats = analysis.subjectOverallStats[subjectCode];
         const trend = analysis.subjectTrends?.[subjectCode];
 
         if (subjAvg === null || subjAvg === undefined) {
@@ -489,7 +492,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (overallConsistency >= 90) consistencyBadge = { label: 'Très Stable', class: 'badge-green', icon: '✅' };
         else if (overallConsistency >= 70) consistencyBadge = { label: 'Stable', class: 'badge-yellow', icon: '⚠️' };
         
-        // 2. Trend Badge (Only for Etape 2 & 3)
+        // 2. Volatility (StdDev) Badge
+        const stdDev = subjOverallStats?.stdDev || 0;
+        let volatilityBadge = { label: `Volatilité : ${stdDev.toFixed(1)}%`, class: 'badge-violet', icon: '♼' };
+        if (stdDev > 10) volatilityBadge.class = 'badge-red';
+        else if (stdDev > 5) volatilityBadge.class = 'badge-yellow';
+        else volatilityBadge.class = 'badge-green';
+        
+        // 3. Trend Badge (Only for Etape 2 & 3)
         let trendBadge = { label: 'N/A', class: 'badge-violet', icon: ' ' };
         let trendDescription = 'Analyse de tendance disponible après l\'Étape 2.';
 
@@ -507,20 +517,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // 3. Overall Diagnostic
-        let diagnostic = `Moyenne de l'étape : <strong>${subjAvg.toFixed(2)}%</strong>. `;
-        diagnostic += `Indice de Consistance : ${consistencyBadge.label}. Votre performance est ${overallConsistency.toFixed(0)}/100 en termes de stabilité.`;
-        if (trendDescription) {
-            diagnostic += ` **Tendance** : ${trendDescription}`;
-        }
-
         analysisDiv.innerHTML = `
             <div class="flex items-center mb-2 flex-wrap">
                 <span class="text-lg font-semibold text-gray-800 mr-4">Diagnostic Détaillé - ${subjectList[subjectCode]}</span>
-                <span class="analysis-badge ${consistencyBadge.class}">${consistencyBadge.icon} Consistance Globale: ${overallConsistency.toFixed(0)}/100</span>
-                <span class="analysis-badge ${trendBadge.class} mt-2 md:mt-0">${trendBadge.icon} Tendance: ${trendBadge.label}</span>
+                <span class="analysis-badge ${consistencyBadge.class}">${consistencyBadge.icon} Consistance E/C: ${overallConsistency.toFixed(0)}/100</span>
+                <span class="analysis-badge ${volatilityBadge.class}">${volatilityBadge.icon} ${volatilityBadge.label}</span>
+                ${etapeKey !== 'etape1' ? `<span class="analysis-badge ${trendBadge.class} mt-2 md:mt-0">${trendBadge.icon} Tendance: ${trendBadge.label}</span>` : ''}
             </div>
-            <p class="text-sm text-gray-700 mt-2">${diagnostic}</p>
+            <p class="text-sm text-gray-700 mt-2">Moyenne de l'étape : <strong>${subjAvg.toFixed(2)}%</strong>. Volatilité (écart-type) des notes individuelles : **${stdDev.toFixed(1)}%**.</p>
         `;
 
         return analysisDiv;
@@ -583,7 +587,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderMonteCarlo(analysis) {
-        const { globalAverage, subjectAverages, globalStdDev, predictions } = analysis;
+        const { globalAverage, globalStdDev, predictions } = analysis;
         const globalPredEl = document.getElementById('global-predictions');
         const probTableEl = document.getElementById('probability-table-body');
         const subjPredEl = document.getElementById('subject-predictions-list');
@@ -592,11 +596,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- 1. Global Predictions ---
         const predictionScenarios = [
-            { name: "1. Max Théorique (100% dans tout)", key: 'theoreticalMax', desc: 'Si tous les travaux restants obtiennent 100%.', class: 'card-green' },
-            { name: "2. Optimiste (+1.5σ)", key: 'optimistic', desc: 'Maintien de la tendance avec un écart positif de 1.5 standard (Probabilité ~93%).', class: 'card-green' },
-            { name: "3. Tendanciel (Plus Probable)", key: 'trend', desc: 'Maintien de la moyenne actuelle des étapes complétées. Prédiction la plus réaliste.', class: 'card-violet' },
-            { name: "4. Pessimiste (-1.0σ)", key: 'pessimistic', desc: 'Maintien de la tendance avec un écart négatif de 1 standard (Probabilité ~16%).', class: 'card-yellow' },
-            { name: "5. Seuil de Réussite (Min 60%)", key: 'minPass', desc: 'Moyenne minimale pour assurer 60% global (si possible).', class: 'card-red' },
+            { name: "1. Max Théorique (100% dans tout)", key: 'theoreticalMax', desc: 'Si toutes les matières restantes obtiennent 100% à l\'Étape 3.', class: 'card-green' },
+            { name: "2. Optimiste Ponderé", key: 'optimistic', desc: 'Prédiction en tenant compte d\'une amélioration de 1.5 écart-type par matière.', class: 'card-green' },
+            { name: "3. Tendanciel Stochastique (Plus Probable)", key: 'trend', desc: 'Résultat moyen des 10,000 simulations Monte Carlo (plus réaliste).', class: 'card-violet' },
+            { name: "4. Pessimiste Ponderé", key: 'pessimistic', desc: 'Prédiction en tenant compte d\'une chute de 1.0 écart-type par matière.', class: 'card-yellow' },
+            { name: "5. Seuil de Réussite (Min 60%)", key: 'minPass', desc: 'Moyenne finale si l\'Étape 3 atteint la note minimale pour assurer 60% global.', class: 'card-red' },
         ];
         
         globalPredEl.innerHTML = predictionScenarios.map(scenario => {
@@ -614,20 +618,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }).join('');
 
 
-        // --- 2. Probability Analysis ---
+        // --- 2. Probability Analysis & Required Average E3 ---
         const targets = [95, 92, 90, 88, 85, 80, 75, 70, 60];
         probTableEl.innerHTML = targets.map(target => {
-            const prob = calculateProbability(globalAverage, globalStdDev, target);
+            const { requiredAvg, prob } = predictions.probabilityAnalysis[target];
+            
             let probClass = 'prob-low';
             let effort = 'Effort Extrême';
 
             if (prob >= 90) { probClass = 'prob-high'; effort = 'Maintenir Consistance'; }
             else if (prob >= 70) { probClass = 'prob-medium'; effort = 'Effort Modéré/Ciblé'; }
             else if (prob >= 40) { probClass = 'prob-low'; effort = 'Effort Intégral'; }
+
+            let requiredAvgDisplay = requiredAvg !== null ? (requiredAvg > 100 ? 'IMPOSSIBLE (100+)' : `${requiredAvg.toFixed(2)}%`) : '--';
+            if (requiredAvg !== null && requiredAvg < 60) requiredAvgDisplay = `<span class="text-green-600">FAIBLE (${requiredAvg.toFixed(2)}%)</span>`;
             
             return `
                 <tr class="${probClass}">
                     <td>${target}%</td>
+                    <td>${requiredAvgDisplay}</td>
                     <td>${prob.toFixed(0)}%</td>
                     <td>${effort}</td>
                 </tr>
@@ -636,8 +645,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // --- 3. Subject Predictions ---
         subjPredEl.innerHTML = Object.entries(predictions.subjects).map(([code, subjPred]) => {
-            const avg1 = subjectAverages.etape1?.[code]?.average || null;
-            const avg2 = subjectAverages.etape2?.[code]?.average || null;
             const prediction = subjPred.trend;
             
             const cardClass = prediction >= 90 ? 'card-green' : (prediction >= 80 ? 'card-violet' : 'card-red');
@@ -647,10 +654,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="flex justify-between items-center">
                         <p class="font-bold text-lg text-gray-800">${subjectList[code] || code}</p>
                         <div class="text-sm text-gray-500">
-                            E1: ${avg1 !== null ? avg1.toFixed(1) + '%' : '--'} | E2: ${avg2 !== null ? avg2.toFixed(1) + '%' : '--'}
+                            Ecart-type: ${subjPred.stdDev.toFixed(1)}% | Consistance E/C: ${subjPred.consistency.toFixed(0)}/100
                         </div>
                     </div>
-                    <p class="text-sm text-gray-500">Prédiction Tendancielle Finale</p>
+                    <p class="text-sm text-gray-500">Prédiction Tendancielle Stochastique Finale (Résultat MC)</p>
                     <div class="card-score text-gray-900">${prediction !== null ? prediction.toFixed(2) + '%' : '--'}</div>
                 </div>
             `;
@@ -729,26 +736,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const subjectAverage = totalCompetencyWeight > 0 ? (totalWeightedGrade / totalCompetencyWeight) : null;
         const overallConsistency = allGrades.length >= 2 ? calculateConsistencyScore(allGrades) : 100;
+        const stdDev = allGrades.length >= 2 ? calculateStdDev(allGrades) : 0;
         
-        return { subjectAverage, allGrades, overallConsistency, competencyAverages };
+        return { subjectAverage, allGrades, overallConsistency, stdDev, competencyAverages };
     }
 
     function calculateConsistencyScore(grades) {
-        if (grades.length < 2) return 100;
-        const mean = grades.reduce((a, b) => a + b) / grades.length;
-        const variance = grades.reduce((sum, grade) => sum + Math.pow(grade - mean, 2), 0) / grades.length;
-        const stdDev = Math.sqrt(variance);
-
-        // Consistency Formula (100 is perfect, -20 points per 10 points of SD)
+        const stdDev = calculateStdDev(grades);
         return Math.max(0, 100 - (stdDev * 2));
     }
-
+    
+    function calculateStdDev(grades) {
+        if (grades.length < 2) return 0;
+        const mean = grades.reduce((a, b) => a + b) / grades.length;
+        const variance = grades.reduce((sum, grade) => sum + Math.pow(grade - mean, 2), 0) / grades.length;
+        return Math.sqrt(variance);
+    }
+    
     function calculateAllAnalysis() {
         const units = getUnits();
         const niveau = mbsData.settings?.niveau;
         let allTermAverages = { etape1: null, etape2: null, etape3: null };
         let allSubjectAverages = {};
         let allSubjectStats = {}; // { code: { etape: { stats } } }
+        let allSubjectOverallStats = {}; // { code: { allGrades, stdDev, overallConsistency } }
         let allGradesGlobal = [];
 
         // 1. Calculate Averages and Stats per Subject/Etape
@@ -762,7 +773,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mbsData[etape].forEach((subject, subjectIndex) => {
                 const codePrefix = subject.code.substring(0, 3);
                 
-                const { subjectAverage, allGrades, overallConsistency, competencyAverages } = 
+                const { subjectAverage, allGrades, overallConsistency, stdDev, competencyAverages } = 
                     calculateSubjectAverageAndStats(subject, etape, subjectIndex);
 
                 allGradesGlobal.push(...allGrades);
@@ -772,37 +783,57 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Store subject stats
                 allSubjectStats[codePrefix] = allSubjectStats[codePrefix] || {};
-                allSubjectStats[codePrefix][etape] = { overallConsistency, competencyAverages };
+                allSubjectStats[codePrefix][etape] = { overallConsistency, stdDev, competencyAverages, allGrades };
+            });
+        });
 
-                if (subjectAverage !== null && niveau) {
+        // 1.5 Calculate Overall Subject Stats (across all terms)
+        Object.keys(allSubjectStats).forEach(code => {
+            let grades = [];
+            let consistencies = [];
+            ['etape1', 'etape2'].forEach(etape => {
+                if (allSubjectStats[code][etape]) {
+                    grades.push(...allSubjectStats[code][etape].allGrades);
+                    consistencies.push(allSubjectStats[code][etape].overallConsistency);
+                }
+            });
+            const overallStdDev = calculateStdDev(grades);
+            const overallConsistency = consistencies.length > 0 ? consistencies.reduce((a, b) => a + b) / consistencies.length : 100;
+            
+            allSubjectOverallStats[code] = { allGrades: grades, stdDev: overallStdDev, overallConsistency };
+        });
+
+        // 2. Calculate Term Averages and Global Averages
+        let globalWeightedSum = 0;
+        let totalKnownWeight = 0;
+        
+        ['etape1', 'etape2', 'etape3'].forEach(etape => {
+            let termWeightedSum = 0;
+            let termUnitSum = 0;
+            
+            Object.keys(allSubjectAverages[etape] || {}).forEach(codePrefix => {
+                const avg = allSubjectAverages[etape][codePrefix].average;
+                if (avg !== null && niveau) {
                     const unit = units[codePrefix] || 2;
-                    termWeightedSum += subjectAverage * unit;
+                    termWeightedSum += avg * unit;
                     termUnitSum += unit;
                 }
             });
+            
             allTermAverages[etape] = termUnitSum > 0 ? termWeightedSum / termUnitSum : null;
-        });
 
-        // 2. Calculate Global Averages
-        let globalWeightedSum = 0;
-        let totalKnownWeight = 0;
-        Object.entries(allTermAverages).forEach(([etape, avg]) => {
-            if (avg !== null) {
-                globalWeightedSum += avg * TERM_WEIGHTS[etape];
+            if (allTermAverages[etape] !== null) {
+                globalWeightedSum += allTermAverages[etape] * TERM_WEIGHTS[etape];
                 totalKnownWeight += TERM_WEIGHTS[etape];
             }
         });
+
         const globalAverage = totalKnownWeight > 0 ? globalWeightedSum / totalKnownWeight : null;
 
         // 3. Calculate Global Statistics
-        let globalStdDev = 0;
-        let globalConsistencyScore = 100;
-        if (allGradesGlobal.length >= 2) {
-            const mean = allGradesGlobal.reduce((a, b) => a + b) / allGradesGlobal.length;
-            const variance = allGradesGlobal.reduce((sum, grade) => sum + Math.pow(grade - mean, 2), 0) / allGradesGlobal.length;
-            globalStdDev = Math.sqrt(variance);
-            globalConsistencyScore = calculateConsistencyScore(allGradesGlobal);
-        }
+        let globalStdDev = allGradesGlobal.length >= 2 ? calculateStdDev(allGradesGlobal) : 0;
+        let globalConsistencyScore = allGradesGlobal.length >= 2 ? calculateConsistencyScore(allGradesGlobal) : 100;
+
 
         // 4. Subject Trends
         let subjectTrends = {};
@@ -810,15 +841,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const avg1 = allSubjectAverages.etape1?.[code]?.average || null;
             const avg2 = allSubjectAverages.etape2?.[code]?.average || null;
             if (avg1 !== null && avg2 !== null) {
-                subjectTrends[code] = { diff: avg2 - avg1, stdDev: globalStdDev }; // Using global SD for simplicity
+                subjectTrends[code] = { diff: avg2 - avg1 }; 
             }
         });
         
         // 5. Burnout Risk (High score = high risk)
-        let burnoutRiskScore = calculateBurnoutRisk(niveau, allTermAverages, globalStdDev, allSubjectStats);
+        let burnoutRiskScore = calculateBurnoutRisk(niveau, allTermAverages, globalStdDev, allSubjectOverallStats, units);
 
         // 6. Monte Carlo Predictions
-        const predictions = runMonteCarloSimulation(globalAverage, allTermAverages, globalStdDev, subjectTrends, allSubjectAverages);
+        const predictions = runMonteCarloSimulation(globalAverage, allTermAverages, allSubjectAverages, allSubjectOverallStats, units);
 
 
         return { 
@@ -828,22 +859,22 @@ document.addEventListener('DOMContentLoaded', () => {
             globalStdDev, 
             globalConsistencyScore, 
             subjectStats: allSubjectStats,
+            subjectOverallStats: allSubjectOverallStats,
             subjectTrends,
             burnoutRiskScore,
             predictions
         };
     }
     
-    function calculateBurnoutRisk(niveau, termAverages, globalStdDev, allSubjectStats) {
+    function calculateBurnoutRisk(niveau, termAverages, globalStdDev, allSubjectOverallStats, units) {
         if (!niveau) return 0;
         
         // Component 1: Workload (Units) - Max 30 points
-        const units = getUnits();
         let totalUnits = Object.values(units).reduce((sum, u) => sum + (u || 0), 0);
-        let workloadScore = Math.min(30, (totalUnits / 30) * 30); // 30 units = 30 points
+        let workloadScore = Math.min(30, (totalUnits / 30) * 30); 
 
         // Component 2: Global Volatility (StdDev) - Max 40 points
-        let volatilityScore = Math.min(40, globalStdDev * 2.5); // SD of 16 = 40 points
+        let volatilityScore = Math.min(40, globalStdDev * 2.5); 
 
         // Component 3: Grade Drop - Max 30 points
         let dropScore = 0;
@@ -851,119 +882,182 @@ document.addEventListener('DOMContentLoaded', () => {
         const avg2 = termAverages.etape2;
         if (avg1 !== null && avg2 !== null) {
             const gradeDrop = avg1 - avg2;
-            dropScore = Math.min(30, Math.max(0, gradeDrop * 3)); // Drop of 10% = 30 points
-        } else if (avg1 !== null) {
-            // Use E1 volatility as proxy for drop risk if E2 is missing
-            const e1Grades = [];
-             Object.values(allSubjectStats).forEach(subj => {
-                subj.etape1?.competencyAverages?.forEach(comp => {
-                    if (comp.avg !== null) e1Grades.push(comp.avg);
-                });
-            });
-            if (e1Grades.length > 0) {
-                const mean = e1Grades.reduce((a, b) => a + b) / e1Grades.length;
-                const variance = e1Grades.reduce((sum, grade) => sum + Math.pow(grade - mean, 2), 0) / e1Grades.length;
-                const stdDev = Math.sqrt(variance);
-                dropScore = Math.min(30, stdDev * 2);
-            }
+            dropScore = Math.min(30, Math.max(0, gradeDrop * 3)); 
+        } else {
+             // Use Subject Volatility as a proxy for drop risk
+             let totalStdDev = 0;
+             let count = 0;
+             Object.values(allSubjectOverallStats).forEach(s => {
+                 if (s.stdDev > 0) { totalStdDev += s.stdDev; count++; }
+             });
+             if (count > 0) dropScore = Math.min(30, (totalStdDev / count) * 2);
         }
 
         return Math.min(100, workloadScore + volatilityScore + dropScore);
     }
     
-    function runMonteCarloSimulation(globalAverage, termAverages, globalStdDev, subjectTrends, subjectAverages) {
+    // --- MONTE CARLO CORE LOGIC ---
+    function runMonteCarloSimulation(globalAverage, termAverages, subjectAverages, subjectOverallStats, units) {
         const globalPred = { theoreticalMax: null, optimistic: null, trend: null, pessimistic: null, minPass: null };
         const subjectPreds = {};
+        const targets = [95, 92, 90, 88, 85, 80, 75, 70, 60];
+        const probabilityAnalysis = {};
         
         const avg1 = termAverages.etape1;
         const avg2 = termAverages.etape2;
 
-        let currentKnownSum = 0;
-        let remainingWeight = 0;
+        let currentKnownGlobalSum = 0;
+        let totalKnownWeight = 0;
         
-        if (avg1 !== null) currentKnownSum += avg1 * TERM_WEIGHTS.etape1;
-        if (avg2 !== null) currentKnownSum += avg2 * TERM_WEIGHTS.etape2;
-        
-        // Remaining weight is always the weight of the *missing* terms (usually E3)
-        if (termAverages.etape3 === null) { 
-            remainingWeight = TERM_WEIGHTS.etape3;
-        } else {
-             // E3 exists, so no remaining weight, global average is final.
-             if (globalAverage !== null) {
-                 globalPred.theoreticalMax = globalPred.optimistic = globalPred.trend = globalPred.pessimistic = globalPred.minPass = globalAverage;
-             }
-             return { global: globalPred, subjects: subjectPreds };
+        if (avg1 !== null) {
+            currentKnownGlobalSum += avg1 * TERM_WEIGHTS.etape1;
+            totalKnownWeight += TERM_WEIGHTS.etape1;
+        }
+        if (avg2 !== null) {
+            currentKnownGlobalSum += avg2 * TERM_WEIGHTS.etape2;
+            totalKnownWeight += TERM_WEIGHTS.etape2;
         }
         
-        if (globalAverage === null) return { global: globalPred, subjects: subjectPreds };
+        const totalWeight = TERM_WEIGHTS.etape1 + TERM_WEIGHTS.etape2 + TERM_WEIGHTS.etape3;
+        const remainingWeight = totalWeight - totalKnownWeight;
 
+        if (remainingWeight === 0 && globalAverage !== null) {
+             globalPred.theoreticalMax = globalPred.optimistic = globalPred.trend = globalPred.pessimistic = globalPred.minPass = globalAverage;
+             targets.forEach(t => {
+                probabilityAnalysis[t] = { requiredAvg: null, prob: globalAverage >= t ? 100 : 0 };
+             });
+             return { global: globalPred, subjects: subjectPreds, probabilityAnalysis };
+        }
+        if (globalAverage === null) return { global: globalPred, subjects: subjectPreds, probabilityAnalysis };
 
-        // Global Predictions (Etape 3 Prediction)
-        const currentTrendAvg = avg2 !== null ? avg2 : (avg1 !== null ? avg1 : globalAverage); // Best guess for next term average
-
-        // 1. Max Théorique (100% in E3)
-        globalPred.theoreticalMax = (currentKnownSum + (100 * remainingWeight)) / (TERM_WEIGHTS.etape1 + TERM_WEIGHTS.etape2 + TERM_WEIGHTS.etape3);
-        
-        // 2. Optimiste (Trend + 1.5 StdDev in E3)
-        const optimisticAvg = Math.min(95, currentTrendAvg + globalStdDev * 1.5);
-        globalPred.optimistic = (currentKnownSum + (optimisticAvg * remainingWeight)) / (TERM_WEIGHTS.etape1 + TERM_WEIGHTS.etape2 + TERM_WEIGHTS.etape3);
-        
-        // 3. Tendanciel (Current TrendAvg in E3)
-        globalPred.trend = (currentKnownSum + (currentTrendAvg * remainingWeight)) / (TERM_WEIGHTS.etape1 + TERM_WEIGHTS.etape2 + TERM_WEIGHTS.etape3);
-
-        // 4. Pessimiste (Trend - 1.0 StdDev in E3)
-        const pessimisticAvg = Math.max(60, currentTrendAvg - globalStdDev * 1.0);
-        globalPred.pessimistic = (currentKnownSum + (pessimisticAvg * remainingWeight)) / (TERM_WEIGHTS.etape1 + TERM_WEIGHTS.etape2 + TERM_WEIGHTS.etape3);
-
-        // 5. Seuil de Réussite (Required E3 Avg for 60% Global)
-        const requiredAvg3 = (60 - currentKnownSum) / remainingWeight;
-        const finalMinPass = Math.max(0, requiredAvg3);
-        // The prediction displayed is what the final grade *will be* if E3 is the required average.
-        globalPred.minPass = finalMinPass > 100 ? (currentKnownSum + (100 * remainingWeight)) / 1 : 60; 
-
-
-        // Subject Predictions (Final grade for each subject)
-        Object.keys(subjectAverages.etape1 || subjectAverages.etape2 || {}).forEach(code => {
-            const subjAvg1 = subjectAverages.etape1?.[code]?.average || null;
-            const subjAvg2 = subjectAverages.etape2?.[code]?.average || null;
+        // --- 1. Calculate Required Average for Etape 3 (Deterministic) ---
+        targets.forEach(target => {
+            const requiredAvg = (target * totalWeight - currentKnownGlobalSum) / remainingWeight;
             
-            let subjTrendAvg = subjAvg2 !== null ? subjAvg2 : (subjAvg1 !== null ? subjAvg1 : 0);
+            // Simplified probability (based on Z-Score, using best current avg as proxy)
+            const currentTrendAvg = avg2 !== null ? avg2 : (avg1 !== null ? avg1 : target); 
+            const stdDevProxy = subjectOverallStats && Object.values(subjectOverallStats).length > 0 ? 
+                                Object.values(subjectOverallStats).reduce((sum, s) => sum + s.stdDev, 0) / Object.values(subjectOverallStats).length : 5;
             
-            let subjKnownSum = 0;
-            let subjRemainingWeight = 0;
-            
-            if (subjAvg1 !== null) subjKnownSum += subjAvg1 * TERM_WEIGHTS.etape1;
-            if (subjAvg2 !== null) subjKnownSum += subjAvg2 * TERM_WEIGHTS.etape2;
+            const prob = calculateProbability(currentTrendAvg, stdDevProxy, requiredAvg);
 
-            // Simple prediction: assume E3 is same as trend avg (E2 or E1)
-            subjRemainingWeight = TERM_WEIGHTS.etape3;
-            
-            if (subjAvg1 === null && subjAvg2 === null) {
-                subjectPreds[code] = { trend: null };
-            } else {
-                const finalPrediction = (subjKnownSum + (subjTrendAvg * subjRemainingWeight)) / (TERM_WEIGHTS.etape1 + TERM_WEIGHTS.etape2 + TERM_WEIGHTS.etape3);
-                subjectPreds[code] = { trend: finalPrediction };
-            }
+            probabilityAnalysis[target] = { requiredAvg: requiredAvg, prob: prob };
         });
 
-        return { global: globalPred, subjects: subjectPreds };
+
+        // --- 2. Monte Carlo Simulation (Stochastic) ---
+        let finalGrades = [];
+        let subjectSumGrades = {};
+
+        const relevantSubjects = Object.keys(subjectOverallStats).filter(code => units[code] && (subjectAverages.etape1?.[code] || subjectAverages.etape2?.[code]));
+        
+        relevantSubjects.forEach(code => subjectSumGrades[code] = 0);
+
+        // Run N simulations
+        for (let i = 0; i < NUM_MONTE_CARLO_RUNS; i++) {
+            let simKnownSum = currentKnownGlobalSum;
+            let simRemainingSum = 0;
+            let simTotalUnitWeight = 0;
+            
+            relevantSubjects.forEach(code => {
+                const subjStats = subjectOverallStats[code];
+                const subjAvg1 = subjectAverages.etape1?.[code]?.average || null;
+                const subjAvg2 = subjectAverages.etape2?.[code]?.average || null;
+                const unit = units[code] || 2;
+                
+                let trendAvg = subjAvg2 !== null ? subjAvg2 : (subjAvg1 !== null ? subjAvg1 : 70); // Default to 70 if no data
+                let stdDev = subjStats.stdDev;
+                
+                // Adjustment for low consistency (higher risk = higher SD for prediction)
+                const consistencyFactor = Math.max(0.1, 1 - (subjStats.overallConsistency / 100)); // 0.1 (perfect) to 1.0 (bad)
+                stdDev = stdDev * (1 + consistencyFactor * 0.5); // Increase SD by up to 50% for high risk
+
+                // Generate a random grade for E3 based on trend average and modified SD
+                // Uses Box-Muller transform for normal distribution approximation (random() generates uniform)
+                let z = Math.sqrt(-2 * Math.log(Math.random())) * Math.cos(2 * Math.PI * Math.random());
+                let predictedE3Avg = Math.min(100, Math.max(0, trendAvg + z * stdDev));
+
+                // Final grade for subject in this simulation: (E1+E2 + E3) / Total
+                let subjKnownSum = 0;
+                if (subjAvg1 !== null) subjKnownSum += subjAvg1 * TERM_WEIGHTS.etape1;
+                if (subjAvg2 !== null) subjKnownSum += subjAvg2 * TERM_WEIGHTS.etape2;
+                
+                const simSubjFinalGrade = (subjKnownSum + predictedE3Avg * TERM_WEIGHTS.etape3) / totalWeight;
+                
+                subjectSumGrades[code] += simSubjFinalGrade;
+                
+                // Global Calculation
+                simRemainingSum += predictedE3Avg * unit;
+                simTotalUnitWeight += unit;
+            });
+            
+            const predictedE3AvgGlobal = simTotalUnitWeight > 0 ? simRemainingSum / simTotalUnitWeight : 0;
+            const finalGlobalGrade = (currentKnownGlobalSum + predictedE3AvgGlobal * remainingWeight) / totalWeight;
+            
+            finalGrades.push(finalGlobalGrade);
+        }
+
+        // --- 3. Final Monte Carlo Results ---
+        
+        // Global Trend (Average of all runs)
+        const mcTrendAvg = finalGrades.reduce((a, b) => a + b) / NUM_MONTE_CARLO_RUNS;
+        globalPred.trend = mcTrendAvg;
+
+        // Calculate MC StdDev for Global
+        const mcVariance = finalGrades.reduce((sum, grade) => sum + Math.pow(grade - mcTrendAvg, 2), 0) / NUM_MONTE_CARLO_RUNS;
+        const mcStdDev = Math.sqrt(mcVariance);
+        
+        // Optimistic and Pessimistic (based on MC distribution)
+        globalPred.optimistic = Math.min(100, mcTrendAvg + mcStdDev * 1.5);
+        globalPred.pessimistic = Math.max(60, mcTrendAvg - mcStdDev * 1.0);
+
+        // Max Théorique and Min Pass (deterministic, based on section 1)
+        const required95Avg = probabilityAnalysis[95]?.requiredAvg;
+        globalPred.theoreticalMax = (currentKnownGlobalSum + (100 * remainingWeight)) / totalWeight;
+        
+        const required60Avg = probabilityAnalysis[60]?.requiredAvg;
+        globalPred.minPass = required60Avg !== null ? Math.max(60, (currentKnownGlobalSum + Math.max(0, required60Avg) * remainingWeight) / totalWeight) : globalPred.trend;
+
+        // Subject Final Predictions
+        relevantSubjects.forEach(code => {
+            subjectPreds[code] = { 
+                trend: subjectSumGrades[code] / NUM_MONTE_CARLO_RUNS,
+                stdDev: subjectOverallStats[code].stdDev,
+                consistency: subjectOverallStats[code].overallConsistency
+            };
+        });
+        
+        // Re-evaluate probability based on MC trend and its own SD
+        targets.forEach(target => {
+            const prob = calculateProbability(globalPred.trend, mcStdDev, probabilityAnalysis[target].requiredAvg);
+            probabilityAnalysis[target].prob = prob;
+        });
+
+
+        return { global: globalPred, subjects: subjectPreds, probabilityAnalysis };
     }
 
-    function calculateProbability(avg, stdDev, target) {
-        if (avg === null) return 0;
-        if (stdDev === 0) return avg >= target ? 100 : 0;
+    // Approx. Probability based on Z-Score (CDF)
+    function calculateProbability(mean, stdDev, requiredTarget) {
+        if (mean === null) return 0;
+        if (stdDev === 0) return mean >= requiredTarget ? 100 : 0;
         
-        // Simple logic for probability based on Z-Score, simulating CDF
-        const z = (target - avg) / stdDev;
+        const z = (requiredTarget - mean) / stdDev;
 
-        if (z < -2.0) return 99; // Target is much lower than avg
+        // Quick approximation of CDF from Z-Score
+        if (z < -3.0) return 99; 
+        if (z < -2.5) return 98;
+        if (z < -2.0) return 95; 
+        if (z < -1.5) return 93; 
         if (z < -1.0) return 84; 
         if (z < -0.5) return 69; 
-        if (z < 0.0) return 50;  // Target = Avg
+        if (z < 0.0) return 50;  
         if (z < 0.5) return 31;
         if (z < 1.0) return 16;
+        if (z < 1.5) return 7;
         if (z < 2.0) return 5;
-        return 1; // Target is much higher than avg
+        if (z < 2.5) return 2;
+        return 1; 
     }
 
 
@@ -1000,9 +1094,6 @@ document.addEventListener('DOMContentLoaded', () => {
             saveCustomUnits();
             unitesModal?.classList.remove('active');
         });
-
-        // Since raw grades/ponderations are not meant to be modified in this advanced view, 
-        // we remove the specific input handlers for them.
     }
     
     function populateUnitesModal() {
