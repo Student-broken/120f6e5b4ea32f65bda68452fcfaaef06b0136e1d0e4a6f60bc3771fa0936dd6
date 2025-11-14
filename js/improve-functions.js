@@ -1,11 +1,27 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- START: VITAL CHANGES FOR PAGE LIFECYCLE ---
+    let listenersAttached = false; // Flag to prevent attaching listeners multiple times
+    
+    // This event fires EVERY time the page is shown, including from the back-forward cache.
+    window.addEventListener('pageshow', function (event) {
+        // event.persisted is true if the page was loaded from the cache.
+        // We reload the data regardless to ensure it's always fresh.
+        console.log("Page shown. Reloading widgets to get fresh data.");
+        init(); 
+    });
+    // --- END: VITAL CHANGES ---
+
     const gradeMap = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 85, 'B': 80, 'B-': 75, 'C+': 70, 'C': 65, 'C-': 60, 'D+': 55, 'D': 50, 'E': 45 };
     let mbsData = {};
     let activeChart = null;
     let activeGauges = {};
     const activeWidgetCharts = {};
 
+    const widgetGrid = document.getElementById('widget-grid');
+    const detailsModal = document.getElementById('details-modal');
+
     function init() {
+        // Load the freshest data from localStorage every time init is called.
         mbsData = JSON.parse(localStorage.getItem('mbsData')) || {};
         mbsData.settings = mbsData.settings || {};
         mbsData.settings.objectives = mbsData.settings.objectives || {};
@@ -16,7 +32,14 @@ document.addEventListener('DOMContentLoaded', () => {
             widgetGrid.innerHTML = `<p style="text-align:center; width:100%;">Aucune donnée à analyser. Veuillez d'abord <a href="data.html">importer vos données</a>.</p>`;
             return;
         }
-        setupEventListeners();
+
+        // Only attach event listeners once to avoid duplication.
+        if (!listenersAttached) {
+            setupEventListeners();
+            listenersAttached = true;
+        }
+        
+        // Always re-render the widgets with the fresh data.
         renderWidgets('generale');
     }
 
@@ -31,7 +54,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateHistory(historyArray, newValue) {
         if (!Array.isArray(historyArray)) historyArray = [];
-        if (newValue === null) return { updated: false, history: historyArray };
         if (historyArray.length > 0 && historyArray[historyArray.length - 1]?.toFixed(2) === newValue.toFixed(2)) {
             return { updated: false, history: historyArray };
         }
@@ -68,7 +90,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function calculateSubjectAverage(subject) {
-        if (!subject || !subject.competencies) return null;
         let totalWeightedCompetencyScore = 0;
         let totalCompetencyWeight = 0;
         subject.competencies.forEach(comp => {
@@ -113,38 +134,29 @@ document.addEventListener('DOMContentLoaded', () => {
         subjectsToRender.forEach(subject => {
             if (subject.average === null) return;
 
-            const allCompetenciesForSubject = ['etape1', 'etape2', 'etape3'].flatMap(
-                ek => (mbsData[ek] || []).find(s => s.code === subject.code)?.competencies || []
-            );
-            const overallAverage = calculateSubjectAverage({ competencies: allCompetenciesForSubject });
-
-            const historyResult = updateHistory(mbsData.historique[subject.code], overallAverage);
-            if (historyResult.updated) {
-                mbsData.historique[subject.code] = historyResult.history;
-                needsDataSave = true;
+            if (etapeKey !== 'generale') {
+                const historyResult = updateHistory(mbsData.historique[subject.code], subject.average);
+                if (historyResult.updated) {
+                    mbsData.historique[subject.code] = historyResult.history;
+                    needsDataSave = true;
+                }
             }
-            
+
             const subjectHistory = (mbsData.historique[subject.code] || []).filter(h => h !== null);
             let trend;
 
-            // --- CRITICAL FIX: Trend Calculation Logic ---
             if (subjectHistory.length < 2) {
                 trend = { direction: '▲', change: 'Nouveau', class: 'up' };
             } else {
                 const currentAvg = subjectHistory[subjectHistory.length - 1];
                 const previousPoints = subjectHistory.slice(0, subjectHistory.length - 1);
-                
-                // If there's only one previous point, compare directly. Otherwise, use the average of all previous points.
-                const baselineAverage = previousPoints.length === 1 
-                    ? previousPoints[0] 
-                    : previousPoints.reduce((sum, val) => sum + val, 0) / previousPoints.length;
-
+                const baselineAverage = previousPoints.reduce((sum, val) => sum + val, 0) / previousPoints.length;
                 const change = currentAvg - baselineAverage;
+
                 trend = change < 0 
                     ? { direction: '▼', change: `${change.toFixed(2)}%`, class: 'down' }
                     : { direction: '▲', change: `+${change.toFixed(2)}%`, class: 'up' };
             }
-            // --- END FIX ---
 
             const widget = document.createElement('div');
             widget.className = 'subject-widget';
@@ -186,13 +198,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 const subjectCode = button.dataset.subjectCode;
                 const canvasId = button.dataset.canvasId;
                 const subject = subjectsToRender.find(s => s.code === subjectCode);
+
                 const currentView = mbsData.settings.chartViewPrefs[subjectCode] || 'histogram';
                 const newView = currentView === 'histogram' ? 'line' : 'histogram';
                 mbsData.settings.chartViewPrefs[subjectCode] = newView;
                 needsDataSave = true;
+
                 if (activeWidgetCharts[canvasId]) activeWidgetCharts[canvasId].destroy();
-                if (newView === 'line') renderLineGraph(canvasId, subject);
-                else renderHistogram(canvasId, subject);
+                if (newView === 'line') {
+                    renderLineGraph(canvasId, subject);
+                } else {
+                    renderHistogram(canvasId, subject);
+                }
             });
         });
 
@@ -205,6 +222,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // --- All other functions (renderGauge, renderHistogram, etc.) remain unchanged ---
+    
     function renderGauge(canvasId, value, goal) {
         const ctx = document.getElementById(canvasId).getContext('2d');
         const gradient = ctx.createLinearGradient(0, 0, 120, 0);
@@ -243,7 +262,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderHistogram(canvasId, subject) {
         const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-        const colors = isDarkMode ? ['#ff5252', '#ff9800', '#cddc39', '#4caf50'] : ['#e74c3c', '#f39c12', '#a0c800', '#27ae60'];
+        const colors = isDarkMode
+            ? ['#ff5252', '#ff9800', '#cddc39', '#4caf50']
+            : ['#e74c3c', '#f39c12', '#a0c800', '#27ae60'];
         const grades = subject.competencies.flatMap(comp => comp.assignments.map(a => getNumericGrade(a.result)).filter(g => g !== null));
         const bins = { 'Echec (<60)': 0, 'C (60-69)': 0, 'B (70-89)': 0, 'A (90+)': 0 };
         grades.forEach(g => {
@@ -313,10 +334,12 @@ document.addEventListener('DOMContentLoaded', () => {
             stepButtons.forEach(btn => btn.classList.remove('active'));
             stepButtons[stepIndex].classList.add('active');
             
-            const selectionsForThisStep = new Set();
+            let selectionsForThisStep = new Set();
             for(let i = 0; i <= stepIndex; i++) {
                 selectionsForThisStep.add(gradedAssignments[i].uniqueId);
-                if (tempSelections[i]) tempSelections[i].forEach(id => selectionsForThisStep.add(id));
+                if (tempSelections[i]) {
+                    tempSelections[i].forEach(id => selectionsForThisStep.add(id));
+                }
             }
 
             assignmentsContainer.innerHTML = gradedAssignments.map(assign => {
@@ -331,16 +354,17 @@ document.addEventListener('DOMContentLoaded', () => {
             assignmentsContainer.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
                 checkbox.addEventListener('change', () => {
                     const id = checkbox.dataset.id;
+                    const isChecked = checkbox.checked;
                     const assignmentForId = gradedAssignments.find(a => a.uniqueId === id);
                     const assignmentIndex = gradedAssignments.indexOf(assignmentForId);
                     
-                    if(checkbox.checked) {
-                       if(!tempSelections[assignmentIndex]) tempSelections[assignmentIndex] = [];
-                       tempSelections[assignmentIndex].push(id);
+                    if (isChecked) {
+                        if(!tempSelections[assignmentIndex]) tempSelections[assignmentIndex] = [];
+                        tempSelections[assignmentIndex].push(id);
                     } else {
-                       if(tempSelections[assignmentIndex]) {
-                          tempSelections[assignmentIndex] = tempSelections[assignmentIndex].filter(selectedId => selectedId !== id);
-                       }
+                        if(tempSelections[assignmentIndex]) {
+                           tempSelections[assignmentIndex] = tempSelections[assignmentIndex].filter(selectedId => selectedId !== id);
+                        }
                     }
                     loadStep(activeStep); 
                 });
@@ -385,7 +409,6 @@ document.addEventListener('DOMContentLoaded', () => {
         loadStep(0);
     }
     
-    // --- Unchanged Functions ---
     function openDetailsModal(subject, etapeKey) {
         const modalContent = document.getElementById('modal-content');
         modalContent.innerHTML = `
@@ -548,6 +571,4 @@ document.addEventListener('DOMContentLoaded', () => {
         goalInput.addEventListener('input', calculate);
         calculate();
     }
-    
-    init();
 });
