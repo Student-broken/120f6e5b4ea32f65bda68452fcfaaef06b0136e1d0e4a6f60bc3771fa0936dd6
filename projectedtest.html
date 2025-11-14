@@ -87,6 +87,355 @@
         </p>
     </div>
 
-    <script src="projected-averages.js"></script>
+    <script >
+
+        // projected-averages.js
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    // --- CONSTANTS (Copied from main script for independence) ---
+    const gradeMap = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 85, 'B': 80, 'B-': 75, 'C+': 70, 'C': 65, 'C-': 60, 'D+': 55, 'D': 50, 'E': 45 };
+    const defaultUnits = {
+        sec4: { 'ART': 2, 'MUS': 2, 'DRM': 2, 'FRA': 6, 'ELA': 4, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 6, 'ST': 4, 'STE': 4, 'HQC': 4, 'CCQ': 2, 'EPS': 2, 'ENT': 2, 'INF': 2, 'PSY': 2 },
+        sec5: { 'ART': 2, 'MUS': 2, 'DRM': 2, 'CAT': 4, 'FRA': 6, 'ELA': 6, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 4, 'MED': 4, 'PSY': 4, 'ENT': 4, 'FIN': 4, 'CHI': 4, 'PHY': 4, 'MON': 2, 'HQC': 4, 'CCQ': 2, 'EPS': 2, 'FIN': 2 }
+    };
+    const subjectList = { 'ART': "Arts Plastiques", 'MUS': "Musique", 'DRM': "Art Dramatique", 'CAT': "Conception et Application Technologique", 'FRA': "Français", 'ELA': "English Language Arts", 'EESL': "Enriched English", 'ESL': "English Second Language", 'SN': "Math SN", 'CST': "Math CST", 'ST': "Science et Technologie", 'STE': "Science et Tech. Env.", 'HQC': "Histoire", 'CCQ': "Culture et Citoyenneté", 'EPS': "Éducation Physique", 'CHI': "Chimie", 'PHY': "Physique", 'MON': "Monde Contemporain", 'MED': "Média", 'ENT': "Entrepreneuriat", 'INF': "Informatique", 'PSY': "Psychologie", 'FIN': "Éducation Financière" };
+    const termWeights = { etape1: 0.20, etape2: 0.20, etape3: 0.60 };
+
+    let mbsData = {};
+
+    // --- UTILITY FUNCTIONS ---
+
+    function getNumericGrade(result) {
+        if (!result) return null;
+        const trimmed = result.trim();
+        if (gradeMap[trimmed]) return gradeMap[trimmed];
+        const percentageMatch = trimmed.match(/(\d+[,.]?\d*)\s*%/);
+        if (percentageMatch) return parseFloat(percentageMatch[1].replace(',', '.'));
+        const scoreMatch = trimmed.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/);
+        if (scoreMatch) {
+            const score = parseFloat(scoreMatch[1].replace(',', '.'));
+            const max = parseFloat(scoreMatch[2].replace(',', '.'));
+            return (max > 0) ? (score / max) * 100 : null;
+        }
+        return null;
+    }
+    
+    function getUnits() {
+        const { niveau, unitesMode, customUnites } = mbsData.settings || {};
+        if (unitesMode === 'sans') return new Proxy({}, { get: () => 1 });
+        if (unitesMode === 'perso') return customUnites || {};
+        const niveauKey = mbsData.settings?.niveau;
+        return (niveauKey && defaultUnits[niveauKey]) ? defaultUnits[niveauKey] : {};
+    }
+
+    /**
+     * Calculates the subject average using only stored data (not DOM inputs).
+     * @param {Object} subject - The subject object from mbsData.
+     * @param {Function} [projectionGradeFunc=null] - Optional function to get a projection grade for uncalculated assignments.
+     */
+    function calculateSubjectAverage(subject, projectionGradeFunc = null) {
+        let totalWeightedGrade = 0;
+        let totalCompetencyWeight = 0;
+
+        subject.competencies.forEach(comp => {
+            const compWeightMatch = comp.name.match(/\((\d+)%\)/);
+            if (!compWeightMatch) return;
+            const compWeight = parseFloat(compWeightMatch[1]);
+
+            let totalAssignmentGrade = 0;
+            let totalAssignmentWeight = 0;
+            let assignmentsCount = 0;
+
+            comp.assignments.forEach(assign => {
+                let grade = getNumericGrade(assign.result);
+                // Use stored pond/weight or default to 1 if missing for calculation stability
+                let weight = parseFloat(assign.pond) || 1; 
+
+                if (grade !== null && !isNaN(weight) && weight > 0) {
+                    // Assignment is completed
+                    totalAssignmentGrade += grade * weight;
+                    totalAssignmentWeight += weight;
+                    assignmentsCount++;
+                } else if (projectionGradeFunc) {
+                    // Assignment is uncalculated, use projection grade
+                    let projectedGrade = projectionGradeFunc(subject, comp, assign);
+                    
+                    if (projectedGrade !== null && !isNaN(projectedGrade)) {
+                        totalAssignmentGrade += projectedGrade * weight;
+                        totalAssignmentWeight += weight;
+                    }
+                }
+            });
+
+            if (totalAssignmentWeight > 0) {
+                const competencyAverage = totalAssignmentGrade / totalAssignmentWeight;
+                totalWeightedGrade += competencyAverage * compWeight;
+                totalCompetencyWeight += compWeight;
+            }
+        });
+
+        return totalCompetencyWeight > 0 ? totalWeightedGrade / totalCompetencyWeight : null;
+    }
+
+    /**
+     * Calculates the term average using only stored data (not DOM inputs).
+     */
+    function calculateTermAverage(termData, units, projectionGradeFunc = null) {
+        if (!termData) return { average: null, subjects: {} };
+        let termWeightedSum = 0;
+        let termUnitSum = 0;
+        let subjectAverages = {};
+
+        termData.forEach(subject => {
+            const average = calculateSubjectAverage(subject, projectionGradeFunc);
+            const codePrefix = subject.code.substring(0, 3);
+            
+            if (average !== null) {
+                const unit = units[codePrefix] || 2;
+                termWeightedSum += average * unit;
+                termUnitSum += unit;
+            }
+            subjectAverages[codePrefix] = { name: subjectList[codePrefix] || subject.name, average };
+        });
+
+        const termAverage = termUnitSum > 0 ? termWeightedSum / termUnitSum : null;
+        return { average: termAverage, subjects: subjectAverages };
+    }
+    
+    // --- STEP 1: TREND AND STABILITY ANALYSIS ---
+
+    /**
+     * Analyzes historical performance for all assignments across all terms for a given subject code.
+     * @param {string} codePrefix - The three-letter subject code (e.g., 'FRA').
+     * @param {Object} data - The mbsData object.
+     * @returns {{mean: number|null, stdDev: number, competencyMeans: Object}}
+     */
+    function analyzeSubjectTrend(codePrefix, data) {
+        let grades = [];
+        let competencyGrades = {};
+
+        ['etape1', 'etape2', 'etape3'].forEach(etape => {
+            if (data[etape]) {
+                data[etape].filter(s => s.code.startsWith(codePrefix)).forEach(subject => {
+                    subject.competencies.forEach(comp => {
+                        const compName = comp.name.split('(')[0].trim();
+                        if (!competencyGrades[compName]) competencyGrades[compName] = [];
+
+                        comp.assignments.forEach(assign => {
+                            const grade = getNumericGrade(assign.result);
+                            if (grade !== null) {
+                                grades.push(grade);
+                                competencyGrades[compName].push(grade);
+                            }
+                        });
+                    });
+                });
+            }
+        });
+
+        if (grades.length === 0) return { mean: null, stdDev: 0, competencyMeans: {} };
+
+        // 1. Calculate Mean (Simple Average)
+        const mean = grades.reduce((sum, g) => sum + g, 0) / grades.length;
+        
+        // 2. Calculate Standard Deviation (Instability)
+        const variance = grades.reduce((sum, g) => sum + Math.pow(g - mean, 2), 0) / grades.length;
+        const stdDev = Math.sqrt(variance);
+
+        // 3. Calculate Competency Means
+        const competencyMeans = Object.entries(competencyGrades).reduce((acc, [name, g]) => {
+            acc[name] = g.length > 0 ? g.reduce((sum, gr) => sum + gr, 0) / g.length : mean;
+            return acc;
+        }, {});
+
+        return { mean, stdDev, competencyMeans };
+    }
+    
+    // --- STEP 2: SCENARIO DEFINITION ---
+    
+    /**
+     * Defines the projection scenarios based on the global student performance index (GPI) and stability.
+     */
+    function getScenarioParameters(gpi, allSubjectTrends) {
+        const globalStdDev = Object.values(allSubjectTrends).filter(t => t.stdDev > 0).map(t => t.stdDev).reduce((a, b) => a + b, 0) / Object.keys(allSubjectTrends).length;
+        
+        // Define adjustment factors based on global GPI
+        const baseAdj = (gpi > 90) ? 0 : (gpi > 80) ? 1 : (gpi > 70) ? 3 : 5; // Reward stability for high grades
+        
+        // Scenarios determine the factor applied to the base trend grade
+        return {
+            'Theoretical Limit': { description: "100% sur tous les travaux futurs. Limite absolue.", factor: 1.0, gradeFloor: 100 },
+            'Optimistic Trend': { 
+                description: "Amélioration légère et stabilisation. Projeté à votre meilleure compétence.", 
+                factor: 1.0 + (globalStdDev > 5 ? 0.05 : 0.02), // +5% for unstable students, +2% for stable ones
+                gradeFloor: gpi + 2 + baseAdj 
+            },
+            'Realistic Trend': { 
+                description: "Maintien de la performance actuelle en tenant compte de la volatilité.", 
+                factor: 1.0, 
+                gradeFloor: gpi + (globalStdDev > 10 ? 0 : baseAdj) // Penalty for extreme instability
+            },
+            'Pessimistic Trend': { 
+                description: "Légère baisse de performance et instabilité accrue.", 
+                factor: 0.95, // 5% decline
+                gradeFloor: gpi - 5 - baseAdj 
+            }
+        };
+    }
+
+    // --- STEP 3: PROJECTION FUNCTION ---
+    
+    /**
+     * Generates a projection grade for an UNCALCULATED assignment based on trend analysis and scenario.
+     */
+    function generateProjectionGrade(subject, comp, scenario, allSubjectTrends) {
+        const codePrefix = subject.code.substring(0, 3);
+        const trend = allSubjectTrends[codePrefix];
+        const compName = comp.name.split('(')[0].trim();
+        
+        let baseGrade = scenario.gradeFloor; // Start with the scenario floor (e.g., 85%)
+
+        if (trend && trend.mean !== null) {
+            // 1. Subject-Specific Trend: Use the subject's mean as the starting point.
+            baseGrade = trend.mean; 
+            
+            // 2. Competency Adjustment: If we have historical data for this specific competency, use it.
+            if (trend.competencyMeans[compName]) {
+                 baseGrade = trend.competencyMeans[compName];
+            }
+        }
+        
+        // 3. Apply Scenario Factor
+        let projectedGrade = baseGrade * scenario.factor;
+        
+        // 4. Apply Limits
+        if (scenario.gradeFloor === 100) return 100; // Theoretical Limit
+        
+        projectedGrade = Math.min(100, Math.max(50, projectedGrade)); 
+
+        return projectedGrade;
+    }
+
+    // --- MAIN ORCHESTRATOR ---
+
+    function calculateAllProjections(data) {
+        const units = getUnits();
+        
+        // 1. Calculate BASE AVERAGES and gather all Subject Codes
+        const { allTermAverages, allSubjects } = ['etape1', 'etape2', 'etape3'].reduce((acc, etape) => {
+            const result = calculateTermAverage(data[etape], units);
+            acc.allTermAverages[etape] = result.average;
+            if (data[etape]) data[etape].forEach(s => acc.allSubjects[s.code.substring(0, 3)] = true);
+            return acc;
+        }, { allTermAverages: {}, allSubjects: {} });
+
+        let currentGlobalWeightedSum = 0;
+        let totalWeight = 0;
+        Object.entries(allTermAverages).forEach(([etape, avg]) => {
+            if (avg !== null) {
+                currentGlobalWeightedSum += avg * termWeights[etape];
+                totalWeight += termWeights[etape];
+            }
+        });
+        const gpi = totalWeight > 0 ? currentGlobalWeightedSum / totalWeight : null;
+
+
+        // 2. Trend Analysis for all subjects
+        const allSubjectTrends = Object.keys(allSubjects).reduce((acc, code) => {
+            acc[code] = analyzeSubjectTrend(code, data);
+            return acc;
+        }, {});
+        
+        // 3. Define Scenarios based on GPI
+        const scenarios = getScenarioParameters(gpi, allSubjectTrends);
+        const projectedFinalAverages = {};
+        
+        // 4. Run Projections for each Scenario
+        Object.entries(scenarios).forEach(([scenarioName, scenarioParams]) => {
+            let scenarioWeightedSum = 0;
+            let scenarioTotalWeight = 0;
+            
+            ['etape1', 'etape2', 'etape3'].forEach(etape => {
+                let termAvg = allTermAverages[etape];
+
+                // If the term is incomplete (or we are projecting for a new term), run the projection
+                if (termAvg === null || etape !== 'etape1') {
+                     // Create a projection function that closes over the scenario parameters
+                    const projectionFunc = (subject, comp, assign) => generateProjectionGrade(subject, comp, scenarioParams, allSubjectTrends);
+                    
+                    const projectedTermResult = calculateTermAverage(data[etape], units, projectionFunc);
+                    termAvg = projectedTermResult.average;
+                }
+
+                if (termAvg !== null) {
+                    scenarioWeightedSum += termAvg * termWeights[etape];
+                    scenarioTotalWeight += termWeights[etape];
+                }
+            });
+
+            projectedFinalAverages[scenarioName] = scenarioTotalWeight > 0 ? scenarioWeightedSum / scenarioTotalWeight : null;
+        });
+
+        return { gpi, projectedFinalAverages, allSubjectTrends };
+    }
+
+    // --- RENDERING (for display) ---
+
+    function renderProjections(results) {
+        const container = document.getElementById('projection-results');
+        if (!container) return; 
+        
+        const formatAvg = (avg) => avg !== null ? `<span class="grade-percentage">${avg.toFixed(2)}%</span>` : '<span class="no-data">N/A</span>';
+        
+        let html = '<h2>🧠 Projections Dynamiques</h2>';
+        
+        html += `<div class="current-average-box">
+            <h3>Indice de Performance Global (GPI):</h3>
+            <strong>${formatAvg(results.gpi)}</strong>
+        </div>`;
+        
+        html += '<h3>Moyennes Annuelles Projetées:</h3>';
+        html += '<ul class="projection-list">';
+        
+        const emojiMap = {
+            'Theoretical Limit': '🌟',
+            'Optimistic Trend': '⬆️',
+            'Realistic Trend': '⚖️',
+            'Pessimistic Trend': '⬇️'
+        };
+
+        Object.entries(results.projectedFinalAverages).forEach(([category, avg]) => {
+            const desc = getScenarioParameters(results.gpi, results.allSubjectTrends)[category].description;
+            html += `<li>
+                <span class="category-name">${emojiMap[category]} **${category}**:</span>
+                <span class="projected-avg">${formatAvg(avg)}</span>
+                <p class="projection-desc">${desc}</p>
+            </li>`;
+        });
+        
+        html += '</ul>';
+
+        container.innerHTML = html;
+    }
+
+    // --- INITIALIZATION ---
+
+    function initProjectionScript() {
+        const dataString = localStorage.getItem('mbsData');
+        mbsData = dataString ? JSON.parse(dataString) : {};
+
+        if (!mbsData.valid || !mbsData.nom) {
+            // Do not fail silently, but rely on the main script's error message
+            return;
+        }
+
+        const projections = calculateAllProjections(mbsData);
+        renderProjections(projections);
+    }
+
+    initProjectionScript();
+});
+    </script>
 </body>
 </html>
