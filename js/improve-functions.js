@@ -32,19 +32,13 @@ document.addEventListener('DOMContentLoaded', () => {
         detailsModal.addEventListener('click', e => { if (e.target === detailsModal) closeDetailsModal(); });
     }
 
-    // KEY CHANGE: Simplified and more robust history update function.
-    // It simply appends a new, different average to the history.
     function updateHistory(historyArray, newValue) {
         if (!Array.isArray(historyArray)) historyArray = [];
-        // Only add the new value if it's meaningfully different from the last one.
         if (historyArray.length > 0 && historyArray[historyArray.length - 1]?.toFixed(2) === newValue.toFixed(2)) {
             return { updated: false, history: historyArray };
         }
         historyArray.push(newValue);
-        // Optional: Add a cap to prevent infinitely long histories, e.g., 50 points.
-        while (historyArray.length > 50) {
-            historyArray.shift();
-        }
+        while (historyArray.length > 50) { historyArray.shift(); }
         return { updated: true, history: historyArray };
     }
 
@@ -120,27 +114,31 @@ document.addEventListener('DOMContentLoaded', () => {
         subjectsToRender.forEach(subject => {
             if (subject.average === null) return;
 
-            // KEY CHANGE: Automatic history update is now the default behavior.
-            // Any change in the overall average will be recorded.
             if (etapeKey !== 'generale') {
                 const historyResult = updateHistory(mbsData.historique[subject.code], subject.average);
-                mbsData.historique[subject.code] = historyResult.history;
                 if (historyResult.updated) {
+                    mbsData.historique[subject.code] = historyResult.history;
                     needsDataSave = true;
                 }
             }
 
             const subjectHistory = (mbsData.historique[subject.code] || []).filter(h => h !== null);
             let trend;
+
+            // --- KEY FIX: New Trend Calculation Logic ---
             if (subjectHistory.length < 2) {
                 trend = { direction: '▲', change: 'Nouveau', class: 'up' };
             } else {
-                const [previousAvg, currentAvg] = subjectHistory.slice(-2);
-                const change = currentAvg - previousAvg;
+                const currentAvg = subjectHistory[subjectHistory.length - 1];
+                const previousPoints = subjectHistory.slice(0, subjectHistory.length - 1);
+                const baselineAverage = previousPoints.reduce((sum, val) => sum + val, 0) / previousPoints.length;
+                const change = currentAvg - baselineAverage;
+
                 trend = change < 0 
                     ? { direction: '▼', change: `${change.toFixed(2)}%`, class: 'down' }
                     : { direction: '▲', change: `+${change.toFixed(2)}%`, class: 'up' };
             }
+            // --- END FIX ---
 
             const widget = document.createElement('div');
             widget.className = 'subject-widget';
@@ -272,7 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 labels,
                 datasets: [{ label: 'Moyenne', data: history, borderColor: lineGraphColor, pointBackgroundColor: lineGraphColor, pointRadius: 5 }]
             },
-            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: false, min: Math.min(...history) > 50 ? 50 : 0, max: 100 } }, plugins: { legend: { display: false }, title: { display: true, text: 'Historique des moyennes' } }, onClick: () => openHistoryEditor(subject) }
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: false, min: history.length > 0 ? Math.min(...history) > 50 ? 50 : 0 : 0, max: 100 } }, plugins: { legend: { display: false }, title: { display: true, text: 'Historique des moyennes' } }, onClick: () => openHistoryEditor(subject) }
         });
     }
 
@@ -316,11 +314,9 @@ document.addEventListener('DOMContentLoaded', () => {
             stepButtons.forEach(btn => btn.classList.remove('active'));
             stepButtons[stepIndex].classList.add('active');
             
-            // Auto-select previous steps' selections plus the current step's assignment
             let selectionsForThisStep = new Set();
             for(let i = 0; i <= stepIndex; i++) {
                 selectionsForThisStep.add(gradedAssignments[i].uniqueId);
-                // Also add any selections the user may have already made for this step
                 if (tempSelections[i]) {
                     tempSelections[i].forEach(id => selectionsForThisStep.add(id));
                 }
@@ -338,11 +334,19 @@ document.addEventListener('DOMContentLoaded', () => {
             assignmentsContainer.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
                 checkbox.addEventListener('change', () => {
                     const id = checkbox.dataset.id;
-                    if (checkbox.checked) {
-                        tempSelections[activeStep].push(id);
+                    const isChecked = checkbox.checked;
+                    const assignmentForId = gradedAssignments.find(a => a.uniqueId === id);
+                    const assignmentIndex = gradedAssignments.indexOf(assignmentForId);
+                    
+                    if (isChecked) {
+                        if(!tempSelections[assignmentIndex]) tempSelections[assignmentIndex] = [];
+                        tempSelections[assignmentIndex].push(id);
                     } else {
-                        tempSelections[activeStep] = tempSelections[activeStep].filter(selectedId => selectedId !== id);
+                        if(tempSelections[assignmentIndex]) {
+                           tempSelections[assignmentIndex] = tempSelections[assignmentIndex].filter(selectedId => selectedId !== id);
+                        }
                     }
+                    loadStep(activeStep); 
                 });
             });
         };
@@ -369,7 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 assignmentsForStep.forEach(assign => {
                     if (!competenciesForCalc.has(assign.compName)) competenciesForCalc.set(assign.compName, { name: assign.compName, assignments: [] });
                     competenciesForCalc.get(assign.compName).assignments.push(assign);
-                });
+});
                 const newAverage = calculateSubjectAverage({ competencies: Array.from(competenciesForCalc.values()) });
                 newHistory.push(newAverage);
             }
