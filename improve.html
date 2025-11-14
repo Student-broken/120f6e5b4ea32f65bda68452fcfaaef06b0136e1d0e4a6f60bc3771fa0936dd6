@@ -189,27 +189,38 @@
             return totalWeight > 0 ? { average: totalWeightedGrade / totalWeight, weight: totalWeight } : null;
         }
         
+        // --- !! ROBUST AVERAGE CALCULATION !! ---
         function calculateSubjectAverage(subject) {
+            // Method 1: Try calculating based on weighted competencies first.
             let totalWeightedCompetencyScore = 0;
             let totalCompetencyWeight = 0;
+            let competenciesHaveWeights = false;
             subject.competencies.forEach(comp => {
                 const compWeightMatch = comp.name.match(/\((\d+)%\)/);
-                if (!compWeightMatch) return;
-                const competencyWeight = parseFloat(compWeightMatch[1]);
-                const competencyResult = calculateAverage(comp.assignments);
-                if (competencyResult) {
-                    totalWeightedCompetencyScore += competencyResult.average * competencyWeight;
-                    totalCompetencyWeight += competencyWeight;
+                if (compWeightMatch) {
+                    competenciesHaveWeights = true;
+                    const competencyWeight = parseFloat(compWeightMatch[1]);
+                    const competencyResult = calculateAverage(comp.assignments);
+                    if (competencyResult) {
+                        totalWeightedCompetencyScore += competencyResult.average * competencyWeight;
+                        totalCompetencyWeight += competencyWeight;
+                    }
                 }
             });
-            return totalCompetencyWeight > 0 ? totalWeightedCompetencyScore / totalCompetencyWeight : null;
+            if (competenciesHaveWeights) {
+                return totalCompetencyWeight > 0 ? totalWeightedCompetencyScore / totalCompetencyWeight : null;
+            }
+
+            // Method 2 (Fallback): If no weighted competencies, calculate a flat average of all assignments.
+            const allAssignments = subject.competencies.flatMap(comp => comp.assignments);
+            const flatResult = calculateAverage(allAssignments);
+            return flatResult ? flatResult.average : null;
         }
         
         function renderWidgets(etapeKey) {
             widgetGrid.innerHTML = '';
             Object.values(activeGauges).forEach(chart => chart.destroy());
             activeGauges = {};
-
             let subjectsToRender = [];
             if (etapeKey === 'generale') {
                 const allSubjects = new Map();
@@ -272,17 +283,10 @@
             gradient.addColorStop(0, '#e74c3c');
             gradient.addColorStop(0.6, '#f39c12');
             gradient.addColorStop(1, '#27ae60');
-
             const gaugeChart = new Chart(ctx, {
                 type: 'doughnut',
-                data: {
-                    datasets: [{ data: [100], backgroundColor: [gradient], borderWidth: 0 }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    circumference: 180, rotation: -90, cutout: '60%',
-                    plugins: { tooltip: { enabled: false } }
-                },
+                data: { datasets: [{ data: [100], backgroundColor: [gradient], borderWidth: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, circumference: 180, rotation: -90, cutout: '60%', plugins: { tooltip: { enabled: false } } },
                 plugins: [{
                     id: 'gaugeNeedleAndLine',
                     afterDraw: chart => {
@@ -292,28 +296,18 @@
                         const cy = chartArea.top + chartArea.height;
                         ctx.save();
                         // Needle
-                        ctx.translate(cx, cy);
-                        ctx.rotate(angle);
-                        ctx.beginPath();
-                        ctx.moveTo(0, -5);
-                        ctx.lineTo(chartArea.height - 10, 0);
-                        ctx.lineTo(0, 5);
-                        ctx.fillStyle = 'var(--secondary-color)';
-                        ctx.fill();
+                        ctx.translate(cx, cy); ctx.rotate(angle); ctx.beginPath();
+                        ctx.moveTo(0, -5); ctx.lineTo(chartArea.height - 10, 0); ctx.lineTo(0, 5);
+                        ctx.fillStyle = 'var(--secondary-color)'; ctx.fill();
                         ctx.restore();
                         // Goal Line
                         if (goal) {
                             const goalAngle = Math.PI + (goal / 100) * Math.PI;
                             ctx.save();
-                            ctx.translate(cx, cy);
-                            ctx.rotate(goalAngle);
-                            ctx.beginPath();
-                            // --- CORRECTED: Draw along the new X-axis (radially) ---
-                            ctx.moveTo(chartArea.height * 0.6, 0);
-                            ctx.lineTo(chartArea.height, 0);
-                            ctx.strokeStyle = 'var(--danger-color)';
-                            ctx.lineWidth = 3;
-                            ctx.stroke();
+                            ctx.translate(cx, cy); ctx.rotate(goalAngle); ctx.beginPath();
+                            ctx.moveTo(chartArea.height - 18, 0); // Start from inside
+                            ctx.lineTo(chartArea.height - 8, 0);  // End just at the edge
+                            ctx.strokeStyle = 'var(--danger-color)'; ctx.lineWidth = 3; ctx.stroke();
                             ctx.restore();
                         }
                     }
@@ -392,7 +386,6 @@
                     createOrUpdateChart(compsForChart[widget.dataset.index]);
                 });
             });
-
             const objectiveInput = modalContent.querySelector('#objective-input');
             const saveObjectiveBtn = modalContent.querySelector('#save-objective-btn');
             saveObjectiveBtn.addEventListener('click', () => {
@@ -407,7 +400,6 @@
                 setTimeout(() => { saveObjectiveBtn.textContent = 'Sauvegarder'; }, 1500);
                 renderWidgets(document.querySelector('.tab-btn.active').dataset.etape);
             });
-            
             setupGoalCalculator(subject, modalContent.querySelector('.calculator-container'));
             detailsModal.classList.add('active');
         }
@@ -433,10 +425,7 @@
             const goalResult = container.querySelector('#goal-result');
             
             function calculate() {
-                let sumOfWeightedGrades = 0;
-                let sumOfCompletedWeights = 0;
-                let sumOfFutureWeights = 0;
-                let sumOfTotalWeights = 0;
+                let sumOfWeightedGrades = 0, sumOfCompletedWeights = 0, sumOfFutureWeights = 0, sumOfTotalWeights = 0;
                 subject.competencies.forEach(comp => {
                     comp.assignments.forEach(assign => {
                         const weight = parseFloat(assign.pond);
@@ -459,7 +448,13 @@
                 }
                 const currentAverage = sumOfCompletedWeights > 0 ? (sumOfWeightedGrades / sumOfCompletedWeights) : 0;
                 const completedPercentage = (sumOfCompletedWeights / sumOfTotalWeights) * 100;
-                container.querySelector('h3').nextElementSibling.innerHTML = `Moyenne actuelle : <strong>${currentAverage.toFixed(2)}%</strong> (sur <strong>${completedPercentage.toFixed(1)}%</strong> de la matière complétée).`;
+                const pTag = container.querySelector('h3').nextElementSibling;
+                if(pTag) pTag.innerHTML = `Moyenne actuelle : <strong>${currentAverage.toFixed(2)}%</strong> (sur <strong>${completedPercentage.toFixed(1)}%</strong> de la matière complétée).`;
+                else {
+                    const newPTag = document.createElement('p');
+                    newPTag.innerHTML = `Moyenne actuelle : <strong>${currentAverage.toFixed(2)}%</strong> (sur <strong>${completedPercentage.toFixed(1)}%</strong> de la matière complétée).`;
+                    container.insertBefore(newPTag, goalInput.parentElement);
+                }
 
                 const targetAvg = parseFloat(goalInput.value);
                 if (isNaN(targetAvg) || targetAvg < 0 || targetAvg > 100) {
@@ -470,7 +465,7 @@
                 const pointsNeededFromFuture = totalPointsNeeded - sumOfWeightedGrades;
                 const requiredAvgOnFuture = pointsNeededFromFuture / sumOfFutureWeights;
                 let message, resultClass;
-                if (requiredAvgOnFuture > 100.01) { // Add a small tolerance
+                if (requiredAvgOnFuture > 100.01) {
                     message = `Pour atteindre <strong>${targetAvg}%</strong>, il faudrait <strong>${requiredAvgOnFuture.toFixed(1)}%</strong> sur les travaux restants. Cet objectif est impossible.`;
                     resultClass = 'danger';
                 } else if (requiredAvgOnFuture < 0) {
