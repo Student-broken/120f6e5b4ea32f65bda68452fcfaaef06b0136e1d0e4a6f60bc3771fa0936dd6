@@ -209,6 +209,7 @@
             widgetGrid.innerHTML = '';
             Object.values(activeGauges).forEach(chart => chart.destroy());
             activeGauges = {};
+
             let subjectsToRender = [];
             if (etapeKey === 'generale') {
                 const allSubjects = new Map();
@@ -257,6 +258,7 @@
                     <div class="histogram-container"><canvas id="hist-${canvasId}"></canvas></div>`;
                 widget.addEventListener('click', () => openDetailsModal(subject));
                 widgetGrid.appendChild(widget);
+                
                 renderGauge(canvasId, subject.average, mbsData.settings.objectives[subject.code]);
                 renderHistogram(`hist-${canvasId}`, subject);
             });
@@ -268,25 +270,29 @@
         function renderGauge(canvasId, value, goal) {
             const ctx = document.getElementById(canvasId).getContext('2d');
             const gradient = ctx.createLinearGradient(0, 0, 120, 0);
-            gradient.addColorStop(0, "var(--danger-color)");
-            gradient.addColorStop(0.7, "var(--warning-color)");
-            gradient.addColorStop(1, "var(--success-color)");
+            gradient.addColorStop(0, '#e74c3c');
+            gradient.addColorStop(0.6, '#f39c12');
+            gradient.addColorStop(1, '#27ae60');
 
             const gaugeChart = new Chart(ctx, {
                 type: 'doughnut',
-                data: { datasets: [{ data: [value, 100 - value], backgroundColor: [gradient, '#e0e6eb'], borderWidth: 0 }] },
+                data: {
+                    datasets: [{ data: [100], backgroundColor: [gradient], borderWidth: 0 }]
+                },
                 options: {
-                    responsive: true, maintainAspectRatio: false, circumference: 180, rotation: -90, cutout: '60%',
+                    responsive: true, maintainAspectRatio: false,
+                    circumference: 180, rotation: -90, cutout: '60%',
                     plugins: { tooltip: { enabled: false } }
                 },
                 plugins: [{
-                    id: 'gaugeNeedle',
+                    id: 'gaugeNeedleAndLine',
                     afterDraw: chart => {
                         const { ctx, chartArea } = chart;
                         const angle = Math.PI + (value / 100) * Math.PI;
                         const cx = chartArea.left + chartArea.width / 2;
                         const cy = chartArea.top + chartArea.height;
                         ctx.save();
+                        // Needle
                         ctx.translate(cx, cy);
                         ctx.rotate(angle);
                         ctx.beginPath();
@@ -296,6 +302,7 @@
                         ctx.fillStyle = 'var(--secondary-color)';
                         ctx.fill();
                         ctx.restore();
+                        // Goal Line
                         if (goal) {
                             const goalAngle = Math.PI + (goal / 100) * Math.PI;
                             ctx.save();
@@ -303,7 +310,7 @@
                             ctx.rotate(goalAngle);
                             ctx.beginPath();
                             ctx.moveTo(0, -(chartArea.height - 5));
-                            ctx.lineTo(0, -(chartArea.height - 15));
+                            ctx.lineTo(0, -(chartArea.height - 20));
                             ctx.strokeStyle = 'var(--danger-color)';
                             ctx.lineWidth = 3;
                             ctx.stroke();
@@ -330,7 +337,10 @@
             });
             new Chart(document.getElementById(canvasId).getContext('2d'), {
                 type: 'bar',
-                data: { labels: Object.keys(bins), datasets: [{ data: Object.values(bins), backgroundColor: ['#e74c3c', '#f39c12', '#a0c800', '#27ae60'] }] },
+                data: {
+                    labels: Object.keys(bins),
+                    datasets: [{ data: Object.values(bins), backgroundColor: ['#e74c3c', '#f39c12', '#a0c800', '#27ae60'] }]
+                },
                 options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false }, title: { display: true, text: 'Distribution des notes' } } }
             });
         }
@@ -392,7 +402,7 @@
                     delete mbsData.settings.objectives[subject.code];
                 }
                 localStorage.setItem('mbsData', JSON.stringify(mbsData));
-                saveObjectiveBtn.textContent = 'Sauvegardé!';
+                saveObjectiveBtn.textContent = 'Sauvé!';
                 setTimeout(() => { saveObjectiveBtn.textContent = 'Sauvegarder'; }, 1500);
                 renderWidgets(document.querySelector('.tab-btn.active').dataset.etape);
             });
@@ -419,60 +429,44 @@
         function setupGoalCalculator(subject, container) {
             const goalInput = container.querySelector('#objective-input');
             const goalResult = container.querySelector('#goal-result');
+            
             function calculate() {
-                let sumOfWeightedGrades = 0; // ∑(w * x) for completed assignments
-                let sumOfCompletedWeights = 0; // ∑w for completed assignments
-                let sumOfFutureWeights = 0; // ∑w for future assignments
-                let totalCompetencyWeightSum = 0; // Ensures total doesn't exceed 100%
-
+                let sumOfWeightedGrades = 0;
+                let sumOfCompletedWeights = 0;
+                let sumOfFutureWeights = 0;
+                let sumOfTotalWeights = 0;
                 subject.competencies.forEach(comp => {
-                    const compWeightMatch = comp.name.match(/\((\d+)%\)/);
-                    if (!compWeightMatch) return;
-                    const competencyWeight = parseFloat(compWeightMatch[1]);
-                    totalCompetencyWeightSum += competencyWeight;
-                    
-                    let pointsEarnedInComp = 0;
-                    let completedWeightInComp = 0;
-                    let futureWeightInComp = 0;
-
                     comp.assignments.forEach(assign => {
                         const weight = parseFloat(assign.pond);
                         if (isNaN(weight) || weight <= 0) return;
+                        sumOfTotalWeights += weight;
                         const grade = getNumericGrade(assign.result);
                         if (grade !== null) {
-                            pointsEarnedInComp += grade * weight;
-                            completedWeightInComp += weight;
+                            sumOfWeightedGrades += grade * weight;
+                            sumOfCompletedWeights += weight;
                         } else {
-                            futureWeightInComp += weight;
+                            sumOfFutureWeights += weight;
                         }
                     });
-                    
-                    if (completedWeightInComp > 0) {
-                        const avgOfCompletedInComp = pointsEarnedInComp / completedWeightInComp;
-                        sumOfWeightedGrades += avgOfCompletedInComp * competencyWeight;
-                        sumOfCompletedWeights += competencyWeight;
-                    }
-                    if (futureWeightInComp > 0) {
-                        sumOfFutureWeights += competencyWeight;
-                    }
                 });
-
-                if (sumOfFutureWeights < 0.01) {
-                    goalResult.innerHTML = 'Tous les travaux pour cette matière semblent notés.';
-                    goalResult.className = 'goal-result';
-                    return;
+                if (sumOfTotalWeights <= 0) {
+                    goalResult.innerHTML = 'Aucun travail avec une pondération valide n\'a été trouvé.'; return;
                 }
+                if (sumOfFutureWeights < 0.01) {
+                    goalResult.innerHTML = 'Tous les travaux pour cette matière semblent notés.'; return;
+                }
+                const currentAverage = sumOfCompletedWeights > 0 ? (sumOfWeightedGrades / sumOfCompletedWeights) : 0;
+                const completedPercentage = (sumOfCompletedWeights / sumOfTotalWeights) * 100;
+                goalResult.previousElementSibling.previousElementSibling.innerHTML = `Moyenne actuelle : <strong>${currentAverage.toFixed(2)}%</strong> (sur <strong>${completedPercentage.toFixed(1)}%</strong> de la matière complétée).`;
+
                 const targetAvg = parseFloat(goalInput.value);
                 if (isNaN(targetAvg) || targetAvg < 0 || targetAvg > 100) {
                     goalResult.innerHTML = 'Veuillez entrer un objectif entre 0 et 100.';
-                    goalResult.className = 'goal-result danger';
-                    return;
+                    goalResult.className = 'goal-result danger'; return;
                 }
-                
-                const totalPointsNeeded = targetAvg * totalCompetencyWeightSum;
+                const totalPointsNeeded = targetAvg * sumOfTotalWeights;
                 const pointsNeededFromFuture = totalPointsNeeded - sumOfWeightedGrades;
                 const requiredAvgOnFuture = pointsNeededFromFuture / sumOfFutureWeights;
-                
                 let message, resultClass;
                 if (requiredAvgOnFuture > 100) {
                     message = `Pour atteindre <strong>${targetAvg}%</strong>, il faudrait <strong>${requiredAvgOnFuture.toFixed(1)}%</strong> sur les travaux restants. Cet objectif est impossible.`;
