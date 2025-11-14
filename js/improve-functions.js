@@ -4,8 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // This event fires EVERY time the page is shown, including from the back-forward cache.
     window.addEventListener('pageshow', function (event) {
-        // event.persisted is true if the page was loaded from the cache.
-        // We reload the data regardless to ensure it's always fresh.
+        // Reload the data and re-initialize the page to ensure all data is fresh.
         console.log("Page shown. Reloading widgets to get fresh data.");
         init(); 
     });
@@ -21,25 +20,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const detailsModal = document.getElementById('details-modal');
 
     function init() {
-        // Load the freshest data from localStorage every time init is called.
+        // Load the freshest data from localStorage every time.
         mbsData = JSON.parse(localStorage.getItem('mbsData')) || {};
+        // --- NEW: Initialize new data structures if they don't exist ---
         mbsData.settings = mbsData.settings || {};
         mbsData.settings.objectives = mbsData.settings.objectives || {};
         mbsData.settings.chartViewPrefs = mbsData.settings.chartViewPrefs || {};
         mbsData.historique = mbsData.historique || {};
-        
+        mbsData.memory = mbsData.memory || { generalAverage: [null, null] }; // NEW: 2-slot memory for general average
+        mbsData.historyStates = mbsData.historyStates || {}; // NEW: Stores checkbox states for history editor
+
         if (!mbsData.valid) {
             widgetGrid.innerHTML = `<p style="text-align:center; width:100%;">Aucune donnée à analyser. Veuillez d'abord <a href="data.html">importer vos données</a>.</p>`;
             return;
         }
 
-        // Only attach event listeners once to avoid duplication.
         if (!listenersAttached) {
             setupEventListeners();
             listenersAttached = true;
         }
         
-        // Always re-render the widgets with the fresh data.
+        // NEW: Process general average memory before rendering widgets.
+        updateGeneralAverageMemory();
+        
         renderWidgets('generale');
     }
 
@@ -52,15 +55,70 @@ document.addEventListener('DOMContentLoaded', () => {
         detailsModal.addEventListener('click', e => { if (e.target === detailsModal) closeDetailsModal(); });
     }
 
-    function updateHistory(historyArray, newValue) {
-        if (!Array.isArray(historyArray)) historyArray = [];
-        if (historyArray.length > 0 && historyArray[historyArray.length - 1]?.toFixed(2) === newValue.toFixed(2)) {
-            return { updated: false, history: historyArray };
-        }
-        historyArray.push(newValue);
-        while (historyArray.length > 50) { historyArray.shift(); }
-        return { updated: true, history: historyArray };
+    // --- NEW: General Average Memory Management ---
+    function calculateGeneralAverage() {
+        const allAssignments = ['etape1', 'etape2', 'etape3']
+            .flatMap(etapeKey => mbsData[etapeKey] || [])
+            .flatMap(subject => 
+                subject.competencies.flatMap(comp => 
+                    comp.assignments.map(a => ({...a, subjectCode: subject.code}))
+                )
+            );
+        
+        const calculation = calculateAverage(allAssignments);
+        return { 
+            average: calculation ? calculation.average : null,
+            assignments: allAssignments 
+        };
     }
+
+    function findChangedAssignments(oldAssignments, newAssignments) {
+        const changes = [];
+        const oldAssignmentsMap = new Map(oldAssignments.map(a => [`${a.subjectCode}-${a.work}-${a.pond}`, a.result]));
+
+        for (const newAssign of newAssignments) {
+            const key = `${newAssign.subjectCode}-${newAssign.work}-${newAssign.pond}`;
+            const oldResult = oldAssignmentsMap.get(key);
+            if (oldResult !== undefined && oldResult !== newAssign.result) {
+                changes.push(`Note changée pour "${newAssign.work}" : de ${oldResult || 'N/A'} à ${newAssign.result || 'N/A'}`);
+            }
+        }
+        return changes;
+    }
+
+    function updateGeneralAverageMemory() {
+        const currentData = calculateGeneralAverage();
+        if (currentData.average === null) return; // Can't do anything if there's no average
+
+        const memory = mbsData.memory.generalAverage;
+        const latestStoredData = memory[0];
+
+        // If slot 1 is empty, just store the current data.
+        if (!latestStoredData) {
+            memory[0] = currentData;
+            localStorage.setItem('mbsData', JSON.stringify(mbsData));
+            return;
+        }
+
+        // Compare current average with the latest stored one.
+        if (currentData.average.toFixed(2) !== latestStoredData.average.toFixed(2)) {
+            console.log("General average has changed. Updating memory.");
+            
+            // Detect which assignments changed
+            const changes = findChangedAssignments(latestStoredData.assignments, currentData.assignments);
+            if(changes.length > 0) {
+                console.log("Detected grade changes:", changes.join(', '));
+                // Here you could trigger a notification for the user
+                // For example: alert("Changements de notes détectés:\n- " + changes.join('\n- '));
+            }
+
+            // Shift old data to slot 2 and place new data in slot 1
+            memory[1] = latestStoredData;
+            memory[0] = currentData;
+            localStorage.setItem('mbsData', JSON.stringify(mbsData));
+        }
+    }
+    // --- END: General Average Memory Management ---
 
     function getNumericGrade(result) {
         if (!result) return null;
@@ -111,6 +169,11 @@ document.addEventListener('DOMContentLoaded', () => {
         Object.values(activeWidgetCharts).forEach(chart => chart.destroy());
         activeGauges = {};
         
+        // NEW: Render the General Average widget if we are on the 'generale' tab
+        if (etapeKey === 'generale') {
+            renderGeneralWidget();
+        }
+
         let subjectsToRender = [];
         if (etapeKey === 'generale') {
             const allSubjects = new Map();
@@ -130,39 +193,34 @@ document.addEventListener('DOMContentLoaded', () => {
             }));
         }
 
-        let needsDataSave = false;
         subjectsToRender.forEach(subject => {
             if (subject.average === null) return;
 
-            if (etapeKey !== 'generale') {
-                const historyResult = updateHistory(mbsData.historique[subject.code], subject.average);
-                if (historyResult.updated) {
-                    mbsData.historique[subject.code] = historyResult.history;
-                    needsDataSave = true;
-                }
-            }
-
-            const subjectHistory = (mbsData.historique[subject.code] || []).filter(h => h !== null);
+            // REVISED: Trend calculation now uses the 2-point history
+            const subjectHistory = (mbsData.historique[subject.code] || []); // [latest, previous]
             let trend;
 
-            if (subjectHistory.length < 2) {
-                // If there's one or zero points, show 0.00% change
-                trend = { direction: '▲', change: '0.00%', class: 'up' };
+            if (subjectHistory.length < 2 || subjectHistory[1] === null) {
+                trend = { direction: '', change: 'N/A', class: 'neutral' };
             } else {
-                // Calculate change between the last two points
-                const currentAvg = subjectHistory[subjectHistory.length - 1];
-                const previousAvg = subjectHistory[subjectHistory.length - 2];
+                const currentAvg = subjectHistory[0];
+                const previousAvg = subjectHistory[1];
                 const change = currentAvg - previousAvg;
 
-                trend = change < 0 
-                    ? { direction: '▼', change: `${change.toFixed(2)}%`, class: 'down' }
-                    : { direction: '▲', change: `+${change.toFixed(2)}%`, class: 'up' };
+                if (change.toFixed(2) == 0.00) {
+                   trend = { direction: '', change: '0.00%', class: 'neutral' };
+                } else {
+                    trend = change < 0 
+                        ? { direction: '▼', change: `${change.toFixed(2)}%`, class: 'down' }
+                        : { direction: '▲', change: `+${change.toFixed(2)}%`, class: 'up' };
+                }
             }
 
             const widget = document.createElement('div');
             widget.className = 'subject-widget';
             const chartCanvasId = `dist-chart-${subject.code.replace(/\s+/g, '')}-${etapeKey}`;
             
+            // REVISED: Histogram container is now hidden by default
             widget.innerHTML = `
                 <div class="widget-top-section">
                     <div class="widget-info">
@@ -178,49 +236,87 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="widget-chart-controls">
                     <button class="chart-toggle-btn" data-subject-code="${subject.code}" data-canvas-id="${chartCanvasId}"><i class="fa-solid fa-chart-simple"></i> Changer</button>
                 </div>
-                <div class="histogram-container"><canvas id="${chartCanvasId}"></canvas></div>`;
+                <div class="histogram-container" style="display:none;"><canvas id="${chartCanvasId}"></canvas></div>`;
             
             widget.querySelector('.widget-top-section').addEventListener('click', () => openDetailsModal(subject, etapeKey));
             widgetGrid.appendChild(widget);
             
             renderGauge(`gauge-${chartCanvasId}`, subject.average, mbsData.settings.objectives[subject.code]);
-            
-            const preferredView = mbsData.settings.chartViewPrefs[subject.code] || 'histogram';
-            if (preferredView === 'line') {
-                renderLineGraph(chartCanvasId, subject);
-            } else {
-                renderHistogram(chartCanvasId, subject);
-            }
         });
         
+        // REVISED: Event listener for graph toggling and rendering on demand
         document.querySelectorAll('.chart-toggle-btn').forEach(button => {
             button.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const subjectCode = button.dataset.subjectCode;
                 const canvasId = button.dataset.canvasId;
                 const subject = subjectsToRender.find(s => s.code === subjectCode);
+                const container = button.closest('.subject-widget').querySelector('.histogram-container');
 
-                const currentView = mbsData.settings.chartViewPrefs[subjectCode] || 'histogram';
-                const newView = currentView === 'histogram' ? 'line' : 'histogram';
-                mbsData.settings.chartViewPrefs[subjectCode] = newView;
-                needsDataSave = true;
+                // Toggle visibility
+                const isHidden = container.style.display === 'none';
+                container.style.display = isHidden ? 'block' : 'none';
 
-                if (activeWidgetCharts[canvasId]) activeWidgetCharts[canvasId].destroy();
-                if (newView === 'line') {
-                    renderLineGraph(canvasId, subject);
-                } else {
-                    renderHistogram(canvasId, subject);
+                if (isHidden) { // Only render if we are making it visible
+                    const currentView = mbsData.settings.chartViewPrefs[subjectCode] || 'histogram';
+                    const newView = currentView === 'histogram' ? 'line' : 'histogram';
+                    mbsData.settings.chartViewPrefs[subjectCode] = newView;
+                    localStorage.setItem('mbsData', JSON.stringify(mbsData));
+
+                    if (activeWidgetCharts[canvasId]) activeWidgetCharts[canvasId].destroy();
+                    
+                    if (newView === 'line') {
+                        renderLineGraph(canvasId, subject);
+                    } else {
+                        renderHistogram(canvasId, subject);
+                    }
                 }
             });
         });
 
-        if (needsDataSave) {
-            localStorage.setItem('mbsData', JSON.stringify(mbsData));
-        }
-
         if (!widgetGrid.children.length) {
             widgetGrid.innerHTML = `<p style="grid-column: 1 / -1; text-align:center;">Aucune donnée pour cette période.</p>`;
         }
+    }
+
+    // --- NEW: Renders the General Average Widget ---
+    function renderGeneralWidget() {
+        const memory = mbsData.memory.generalAverage;
+        const currentData = memory[0];
+        if (!currentData) return;
+
+        let trend;
+        const previousData = memory[1];
+
+        if (!previousData) {
+            trend = { direction: '', change: 'N/A', class: 'neutral' };
+        } else {
+            const change = currentData.average - previousData.average;
+            if (change.toFixed(2) == 0.00) {
+               trend = { direction: '', change: '0.00%', class: 'neutral' };
+            } else {
+                trend = change < 0 
+                    ? { direction: '▼', change: `${change.toFixed(2)}%`, class: 'down' }
+                    : { direction: '▲', change: `+${change.toFixed(2)}%`, class: 'up' };
+            }
+        }
+        
+        const widget = document.createElement('div');
+        widget.className = 'subject-widget general-average-widget'; // Special class for styling
+        widget.innerHTML = `
+            <div class="widget-top-section">
+                <div class="widget-info">
+                    <h3 class="widget-title">Moyenne Générale Pondérée</h3>
+                    <p class="widget-average">${currentData.average.toFixed(2)}%</p>
+                    <div class="widget-trend ${trend.class}">
+                        <span>${trend.direction}</span>
+                        <span>${trend.change}</span>
+                    </div>
+                </div>
+                <div class="gauge-container"><canvas id="gauge-general-average"></canvas></div>
+            </div>`;
+        widgetGrid.appendChild(widget);
+        renderGauge('gauge-general-average', currentData.average);
     }
 
     function renderGauge(canvasId, value, goal) {
@@ -279,8 +375,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderLineGraph(canvasId, subject) {
-        const history = (mbsData.historique[subject.code] || []).filter(h => h !== null);
-        const labels = history.map((_, i) => `Point ${i + 1}`);
+        const history = (mbsData.historique[subject.code] || []).filter(h => h !== null).slice(0, 2).reverse(); // Use [previous, latest] for chart order
+        const labels = history.length === 2 ? ['Précédent', 'Récent'] : ['Récent'];
         const lineGraphColor = '#3498db';
         const ctx = document.getElementById(canvasId).getContext('2d');
         activeWidgetCharts[canvasId] = new Chart(ctx, {
@@ -294,123 +390,106 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * --- REWRITTEN AND FIXED HISTORY EDITOR ---
-     * This function opens a modal to allow step-by-step editing of a subject's grade history.
-     * Each "step" corresponds to a graded assignment, in chronological order.
-     * The user can select which other assignments were completed at that point in time.
+     * --- REWRITTEN AND SIMPLIFIED HISTORY EDITOR ---
+     * This function opens a modal to manage two data points (snapshots) for a subject's history.
+     * The user can select which assignments contribute to each data point.
      */
     function openHistoryEditor(subject) {
-        // 1. GATHER DATA: Collect all assignments for the subject from all etapes.
+        // 1. GATHER DATA
         const allAssignments = ['etape1', 'etape2', 'etape3'].flatMap(etapeKey => 
             (mbsData[etapeKey] || []).filter(s => s.code === subject.code)
             .flatMap(s => s.competencies.flatMap(c => c.assignments.map(a => ({...a, compName: c.name}))))
         ).map((a, index) => ({...a, uniqueId: `${subject.code}-${index}`}));
-
-        // A "step" in history is defined by a graded assignment.
-        const gradedAssignments = allAssignments.filter(a => getNumericGrade(a.result) !== null);
-        const numSteps = gradedAssignments.length;
-
-        if (numSteps < 1) {
-            alert("L'éditeur d'historique ne peut être utilisé que pour les matières avec au moins un travail noté.");
-            return;
-        }
 
         // 2. CREATE MODAL UI
         const modal = document.createElement('div');
         modal.id = 'history-editor-modal';
         modal.className = 'modal-overlay active';
         
-        let stepButtonsHTML = '';
-        for (let i = 0; i < numSteps; i++) {
-            stepButtonsHTML += `<button class="step-btn" data-step="${i}">${i + 1}</button>${i < numSteps - 1 ? '<span class="arrow">→</span>' : ''}`;
-        }
-
         modal.innerHTML = `
             <div class="history-editor-content">
                 <div class="history-editor-header">
                     <h3>Éditeur d'historique pour ${subject.name}</h3>
-                    <p>Chaque point représente un travail noté. Sélectionnez les travaux qui étaient complétés à ce moment pour recalculer la moyenne.</p>
+                    <p>Configurez deux points de données pour suivre la progression. Sélectionnez les travaux complétés pour chaque point.</p>
                 </div>
-                <div class="history-steps-container"><span class="arrow">Ancien</span>${stepButtonsHTML}<span class="arrow">Récent</span></div>
-                <div class="assignments-list"></div>
+                <div class="history-editor-body">
+                    <div class="data-point-editor">
+                        <h4>Point de Données 1 (Le plus récent)</h4>
+                        <div class="assignments-list" id="assignments-list-1"></div>
+                    </div>
+                    <div class="data-point-editor">
+                        <h4>Point de Données 2 (Précédent)</h4>
+                        <div class="assignments-list" id="assignments-list-2"></div>
+                    </div>
+                </div>
                 <div class="history-editor-footer">
                     <button id="close-history-editor" class="btn-secondary">Annuler</button>
-                    <button id="save-history-all" class="btn-primary">Sauvegarder l'Historique</button>
+                    <button id="save-history" class="btn-primary">Sauvegarder l'Historique</button>
                 </div>
             </div>`;
         document.body.appendChild(modal);
 
-        const assignmentsContainer = modal.querySelector('.assignments-list');
-        const stepButtons = modal.querySelectorAll('.step-btn');
-        let activeStep = 0;
+        // 3. STATE AND RENDERING LOGIC
+        const historyStates = mbsData.historyStates[subject.code] || {};
+        let selections1 = new Set(historyStates.slot1 || []);
+        let selections2 = new Set(historyStates.slot2 || []);
 
-        // 3. STATE MANAGEMENT: Use an array of Sets. Each Set holds the unique IDs of assignments for that step.
-        let historyStepSelections = [];
-        const existingHistory = mbsData.historique[subject.code] || [];
-        
-        // Initialize state: default to a chronological progression.
-        for (let i = 0; i < numSteps; i++) {
-            const selectionsForStep = new Set();
-            // By default, step 'i' includes all graded assignments up to and including 'i'.
-            for (let j = 0; j <= i; j++) {
-                selectionsForStep.add(gradedAssignments[j].uniqueId);
-            }
-            historyStepSelections.push(selectionsForStep);
+        // First time use: populate slot 1 with all graded assignments
+        if (!historyStates.slot1 && !historyStates.slot2) {
+            allAssignments.forEach(a => {
+                if (getNumericGrade(a.result) !== null) {
+                    selections1.add(a.uniqueId);
+                }
+            });
         }
-
-        // 4. RENDER AND EVENT HANDLING LOGIC
-        const loadStep = (stepIndex) => {
-            activeStep = stepIndex;
-            stepButtons.forEach(btn => btn.classList.remove('active'));
-            stepButtons[stepIndex].classList.add('active');
-            
-            const currentSelections = historyStepSelections[activeStep];
-            
-            assignmentsContainer.innerHTML = allAssignments.map(assign => {
-                const isChecked = currentSelections.has(assign.uniqueId);
-                // The assignment that defines the current step cannot be unchecked.
-                const definingAssignmentId = gradedAssignments[activeStep].uniqueId;
-                const isDisabled = (assign.uniqueId === definingAssignmentId);
+        
+        const renderCheckboxes = (containerId, selectionSet) => {
+            const container = modal.querySelector(`#${containerId}`);
+            container.innerHTML = allAssignments.map(assign => {
+                const isChecked = selectionSet.has(assign.uniqueId);
                 const isGraded = getNumericGrade(assign.result) !== null;
-                
                 return `
                 <div class="assignment-item ${isGraded ? '' : 'ungraded'}">
-                    <input type="checkbox" id="${assign.uniqueId}-${stepIndex}" data-id="${assign.uniqueId}" ${isChecked ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}>
-                    <label for="${assign.uniqueId}-${stepIndex}">
+                    <input type="checkbox" id="${assign.uniqueId}-${containerId}" data-id="${assign.uniqueId}" ${isChecked ? 'checked' : ''}>
+                    <label for="${assign.uniqueId}-${containerId}">
                         ${assign.work.replace('<br>', ' ')}
-                        <small>Note: ${assign.result || 'N/A'} | Pondération: ${assign.pond}%</small>
+                        <small>Note: ${assign.result || 'N/A'} | Pond: ${assign.pond}%</small>
                     </label>
                 </div>`;
             }).join('');
-
-            // Attach event listeners to checkboxes for the current step
-            assignmentsContainer.querySelectorAll('input[type="checkbox"]:not([disabled])').forEach(checkbox => {
+            
+            container.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
                 checkbox.addEventListener('change', () => {
                     const id = checkbox.dataset.id;
                     if (checkbox.checked) {
-                        historyStepSelections[activeStep].add(id);
+                        selectionSet.add(id);
                     } else {
-                        historyStepSelections[activeStep].delete(id);
+                        selectionSet.delete(id);
                     }
                 });
             });
         };
 
-        stepButtons.forEach(btn => btn.addEventListener('click', () => loadStep(parseInt(btn.dataset.step))));
-        
+        renderCheckboxes('assignments-list-1', selections1);
+        renderCheckboxes('assignments-list-2', selections2);
+
+        // 4. SAVE AND CLOSE LOGIC
         const closeModal = () => {
             modal.remove();
-            // Re-render widgets to reflect any potential changes
             renderWidgets(document.querySelector('.tab-btn.active').dataset.etape);
         };
         
-        // 5. SAVE LOGIC
-        modal.querySelector('#save-history-all').addEventListener('click', () => {
-            const newHistory = [];
-            for (let i = 0; i < numSteps; i++) {
-                const stepSelections = historyStepSelections[i];
-                const assignmentsForStep = allAssignments.filter(a => stepSelections.has(a.uniqueId));
-                
+        modal.querySelector('#save-history').addEventListener('click', () => {
+            // Save the checkbox states
+            mbsData.historyStates[subject.code] = {
+                slot1: Array.from(selections1),
+                slot2: Array.from(selections2)
+            };
+            
+            // Calculate averages based on selections
+            const calculateForSelection = (selectionSet) => {
+                if (selectionSet.size === 0) return null;
+                const assignmentsForStep = allAssignments.filter(a => selectionSet.has(a.uniqueId));
                 const competenciesForCalc = new Map();
                 assignmentsForStep.forEach(assign => {
                     if (!competenciesForCalc.has(assign.compName)) {
@@ -418,23 +497,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     competenciesForCalc.get(assign.compName).assignments.push(assign);
                 });
+                return calculateSubjectAverage({ competencies: Array.from(competenciesForCalc.values()) });
+            };
 
-                const newAverage = calculateSubjectAverage({ competencies: Array.from(competenciesForCalc.values()) });
-                newHistory.push(newAverage);
-            }
-            
-            mbsData.historique[subject.code] = newHistory.filter(h => h !== null); // Ensure no nulls are saved
+            const newAvg1 = calculateForSelection(selections1);
+            const newAvg2 = calculateForSelection(selections2);
+
+            mbsData.historique[subject.code] = [newAvg1, newAvg2];
             localStorage.setItem('mbsData', JSON.stringify(mbsData));
             closeModal();
         });
 
         modal.querySelector('#close-history-editor').addEventListener('click', closeModal);
         modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
-
-        // Load the last step by default, as it's the most current one.
-        loadStep(numSteps - 1);
     }
     
+    // --- The following functions (openDetailsModal, closeDetailsModal, createOrUpdateChart, goal frameworks) remain unchanged from the original logic ---
     function openDetailsModal(subject, etapeKey) {
         const modalContent = document.getElementById('modal-content');
         modalContent.innerHTML = `
