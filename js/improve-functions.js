@@ -5,9 +5,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeGauges = {};
     const activeWidgetCharts = {};
 
-    const widgetGrid = document.getElementById('widget-grid');
-    const detailsModal = document.getElementById('details-modal');
-
     function init() {
         mbsData = JSON.parse(localStorage.getItem('mbsData')) || {};
         mbsData.settings = mbsData.settings || {};
@@ -114,18 +111,23 @@ document.addEventListener('DOMContentLoaded', () => {
         subjectsToRender.forEach(subject => {
             if (subject.average === null) return;
 
-            if (etapeKey !== 'generale') {
-                const historyResult = updateHistory(mbsData.historique[subject.code], subject.average);
+            // --- KEY FIX: ALWAYS use the OVERALL average for history updates ---
+            const allCompetenciesForSubject = ['etape1', 'etape2', 'etape3'].flatMap(
+                ek => (mbsData[ek] || []).find(s => s.code === subject.code)?.competencies || []
+            );
+            const overallAverage = calculateSubjectAverage({ competencies: allCompetenciesForSubject });
+
+            if (overallAverage !== null) {
+                const historyResult = updateHistory(mbsData.historique[subject.code], overallAverage);
                 if (historyResult.updated) {
                     mbsData.historique[subject.code] = historyResult.history;
                     needsDataSave = true;
                 }
             }
+            // --- END FIX ---
 
             const subjectHistory = (mbsData.historique[subject.code] || []).filter(h => h !== null);
             let trend;
-
-            // --- KEY FIX: New Trend Calculation Logic ---
             if (subjectHistory.length < 2) {
                 trend = { direction: '▲', change: 'Nouveau', class: 'up' };
             } else {
@@ -133,12 +135,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const previousPoints = subjectHistory.slice(0, subjectHistory.length - 1);
                 const baselineAverage = previousPoints.reduce((sum, val) => sum + val, 0) / previousPoints.length;
                 const change = currentAvg - baselineAverage;
-
                 trend = change < 0 
                     ? { direction: '▼', change: `${change.toFixed(2)}%`, class: 'down' }
                     : { direction: '▲', change: `+${change.toFixed(2)}%`, class: 'up' };
             }
-            // --- END FIX ---
 
             const widget = document.createElement('div');
             widget.className = 'subject-widget';
@@ -180,18 +180,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const subjectCode = button.dataset.subjectCode;
                 const canvasId = button.dataset.canvasId;
                 const subject = subjectsToRender.find(s => s.code === subjectCode);
-
                 const currentView = mbsData.settings.chartViewPrefs[subjectCode] || 'histogram';
                 const newView = currentView === 'histogram' ? 'line' : 'histogram';
                 mbsData.settings.chartViewPrefs[subjectCode] = newView;
                 needsDataSave = true;
-
                 if (activeWidgetCharts[canvasId]) activeWidgetCharts[canvasId].destroy();
-                if (newView === 'line') {
-                    renderLineGraph(canvasId, subject);
-                } else {
-                    renderHistogram(canvasId, subject);
-                }
+                if (newView === 'line') renderLineGraph(canvasId, subject);
+                else renderHistogram(canvasId, subject);
             });
         });
 
@@ -334,17 +329,16 @@ document.addEventListener('DOMContentLoaded', () => {
             assignmentsContainer.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
                 checkbox.addEventListener('change', () => {
                     const id = checkbox.dataset.id;
-                    const isChecked = checkbox.checked;
                     const assignmentForId = gradedAssignments.find(a => a.uniqueId === id);
                     const assignmentIndex = gradedAssignments.indexOf(assignmentForId);
                     
-                    if (isChecked) {
-                        if(!tempSelections[assignmentIndex]) tempSelections[assignmentIndex] = [];
-                        tempSelections[assignmentIndex].push(id);
+                    if(checkbox.checked) {
+                       if(!tempSelections[assignmentIndex]) tempSelections[assignmentIndex] = [];
+                       tempSelections[assignmentIndex].push(id);
                     } else {
-                        if(tempSelections[assignmentIndex]) {
-                           tempSelections[assignmentIndex] = tempSelections[assignmentIndex].filter(selectedId => selectedId !== id);
-                        }
+                       if(tempSelections[assignmentIndex]) {
+                          tempSelections[assignmentIndex] = tempSelections[assignmentIndex].filter(selectedId => selectedId !== id);
+                       }
                     }
                     loadStep(activeStep); 
                 });
@@ -373,7 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 assignmentsForStep.forEach(assign => {
                     if (!competenciesForCalc.has(assign.compName)) competenciesForCalc.set(assign.compName, { name: assign.compName, assignments: [] });
                     competenciesForCalc.get(assign.compName).assignments.push(assign);
-});
+                });
                 const newAverage = calculateSubjectAverage({ competencies: Array.from(competenciesForCalc.values()) });
                 newHistory.push(newAverage);
             }
