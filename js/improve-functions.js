@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateHistory(historyArray, newValue, maxLength) {
         if (!Array.isArray(historyArray)) historyArray = [];
-        if (historyArray.length > 0 && historyArray[historyArray.length - 1].toFixed(2) === newValue.toFixed(2)) {
+        if (historyArray.length > 0 && historyArray[historyArray.length - 1]?.toFixed(2) === newValue.toFixed(2)) {
             return historyArray;
         }
         historyArray.push(newValue);
@@ -120,15 +120,22 @@ document.addEventListener('DOMContentLoaded', () => {
         subjectsToRender.forEach(subject => {
             if (subject.average === null) return;
 
+            // Automatic history update (for live tracking)
             if (etapeKey !== 'generale') {
+                const allGradedAssignments = ['etape1', 'etape2', 'etape3'].flatMap(ek => 
+                    (mbsData[ek] || []).filter(s => s.code === subject.code)
+                    .flatMap(s => s.competencies.flatMap(c => c.assignments))
+                ).filter(a => getNumericGrade(a.result) !== null);
+                const maxHistoryLength = allGradedAssignments.length || 6;
+
                 const initialHistory = mbsData.historique[subject.code] ? [...mbsData.historique[subject.code]] : [];
-                mbsData.historique[subject.code] = updateHistory(initialHistory, subject.average, 6);
+                mbsData.historique[subject.code] = updateHistory(initialHistory, subject.average, maxHistoryLength);
                 if (initialHistory.length !== mbsData.historique[subject.code].length) {
                     hasHistoryChanges = true;
                 }
             }
 
-            const subjectHistory = mbsData.historique[subject.code] || [];
+            const subjectHistory = (mbsData.historique[subject.code] || []).filter(h => h !== null);
             let trend;
             if (subjectHistory.length < 2) {
                 trend = { direction: '▲', change: 'Nouveau', class: 'up' };
@@ -166,7 +173,6 @@ document.addEventListener('DOMContentLoaded', () => {
             
             renderGauge(`gauge-${chartCanvasId}`, subject.average, mbsData.settings.objectives[subject.code]);
             
-            // Render initial chart based on preference or default to histogram
             const preferredView = mbsData.settings.chartViewPrefs[subject.code] || 'histogram';
             if (preferredView === 'line') {
                 renderLineGraph(chartCanvasId, subject);
@@ -175,21 +181,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
-        // Add event listeners for new toggle buttons
         document.querySelectorAll('.chart-toggle-btn').forEach(button => {
             button.addEventListener('click', (e) => {
-                e.stopPropagation(); // Prevent modal from opening
+                e.stopPropagation();
                 const subjectCode = button.dataset.subjectCode;
                 const canvasId = button.dataset.canvasId;
                 const subject = subjectsToRender.find(s => s.code === subjectCode);
 
-                // Toggle preference
                 const currentView = mbsData.settings.chartViewPrefs[subjectCode] || 'histogram';
                 const newView = currentView === 'histogram' ? 'line' : 'histogram';
                 mbsData.settings.chartViewPrefs[subjectCode] = newView;
-                localStorage.setItem('mbsData', JSON.stringify(mbsData));
+                localStorage.setItem('mbsData', JSON.stringify(mbsData)); // Save preference
 
-                // Re-render chart
                 if (activeWidgetCharts[canvasId]) activeWidgetCharts[canvasId].destroy();
                 if (newView === 'line') {
                     renderLineGraph(canvasId, subject);
@@ -249,14 +252,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const colors = isDarkMode
             ? ['#ff5252', '#ff9800', '#cddc39', '#4caf50']
             : ['#e74c3c', '#f39c12', '#a0c800', '#27ae60'];
-
         const grades = subject.competencies.flatMap(comp => comp.assignments.map(a => getNumericGrade(a.result)).filter(g => g !== null));
         const bins = { 'Echec (<60)': 0, 'C (60-69)': 0, 'B (70-89)': 0, 'A (90+)': 0 };
         grades.forEach(g => {
             if (g < 60) bins['Echec (<60)']++; else if (g < 70) bins['C (60-69)']++;
             else if (g < 90) bins['B (70-89)']++; else bins['A (90+)']++;
         });
-
         const ctx = document.getElementById(canvasId).getContext('2d');
         activeWidgetCharts[canvasId] = new Chart(ctx, {
             type: 'bar',
@@ -270,13 +271,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderLineGraph(canvasId, subject) {
-        const history = mbsData.historique[subject.code] || [];
-        const data = Array(6).fill(null);
-        history.slice(-6).forEach((val, i) => data[i] = val); // Use last 6 values
-
-        const labels = Array.from({ length: 6 }, (_, i) => `Point ${i + 1}`);
+        const history = (mbsData.historique[subject.code] || []).filter(h => h !== null);
+        const labels = history.map((_, i) => `Point ${i + 1}`);
         const lineGraphColor = '#3498db';
-
         const ctx = document.getElementById(canvasId).getContext('2d');
         activeWidgetCharts[canvasId] = new Chart(ctx, {
             type: 'line',
@@ -284,133 +281,133 @@ document.addEventListener('DOMContentLoaded', () => {
                 labels,
                 datasets: [{
                     label: 'Moyenne',
-                    data: data,
-                    fill: false,
+                    data: history,
                     borderColor: lineGraphColor,
-                    tension: 0.1,
                     pointBackgroundColor: lineGraphColor,
                     pointRadius: 5,
-                    pointHoverRadius: 7
                 }]
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
                 scales: { y: { beginAtZero: false, min: Math.min(...history) > 50 ? 50 : 0, max: 100 } },
                 plugins: { legend: { display: false }, title: { display: true, text: 'Historique des moyennes' } },
-                onClick: (evt) => {
-                    const chart = evt.chart;
-                    if (chart.getElementsAtEventForMode(evt, 'point', { intersect: true }, true).length > 0) return;
-                    openHistoryEditor(subject); // Open editor if clicking on empty space
-                }
+                onClick: () => openHistoryEditor(subject)
             }
         });
     }
 
     function openHistoryEditor(subject) {
-        // Find all assignments for this subject across all etapes
         const allAssignments = ['etape1', 'etape2', 'etape3'].flatMap(etapeKey => 
             (mbsData[etapeKey] || [])
                 .filter(s => s.code === subject.code)
                 .flatMap(s => s.competencies.flatMap(c => c.assignments.map(a => ({...a, compName: c.name}))))
-        ).map((a, index) => ({...a, uniqueId: `${subject.code}-${index}`})); // Assign a truly unique ID
+        ).map((a, index) => ({...a, uniqueId: `${subject.code}-${index}`}));
 
-        // Create modal element
+        const gradedAssignments = allAssignments.filter(a => getNumericGrade(a.result) !== null);
+        const numSteps = gradedAssignments.length;
+
+        if (numSteps < 1) {
+            alert("L'éditeur d'historique ne peut être utilisé que pour les matières avec au moins un travail noté.");
+            return;
+        }
+
         const modal = document.createElement('div');
         modal.id = 'history-editor-modal';
         modal.className = 'modal-overlay active';
+        let stepButtonsHTML = '';
+        for (let i = 0; i < numSteps; i++) {
+            stepButtonsHTML += `<button class="step-btn" data-step="${i}">${i + 1}</button>${i < numSteps - 1 ? '<span class="arrow">→</span>' : ''}`;
+        }
         modal.innerHTML = `
             <div class="history-editor-content">
                 <div class="history-editor-header">
                     <h3>Éditeur d'historique pour ${subject.name}</h3>
-                    <p>Cochez les travaux qui étaient complétés à chaque point de sauvegarde pour reconstruire votre historique.</p>
+                    <p>Pour chaque point, cochez les travaux qui étaient complétés. L'historique sera basé sur ${numSteps} points.</p>
                 </div>
                 <div class="history-steps-container">
-                    <span class="arrow">Ancien</span>
-                    <button class="step-btn" data-step="0">1</button><span class="arrow">→</span>
-                    <button class="step-btn" data-step="1">2</button><span class="arrow">→</span>
-                    <button class="step-btn" data-step="2">3</button><span class="arrow">→</span>
-                    <button class="step-btn" data-step="3">4</button><span class="arrow">→</span>
-                    <button class="step-btn" data-step="4">5</button><span class="arrow">→</span>
-                    <button class="step-btn" data-step="5">6</button>
-                    <span class="arrow">Récent</span>
+                    <span class="arrow">Ancien</span>${stepButtonsHTML}<span class="arrow">Récent</span>
                 </div>
                 <div class="assignments-list"></div>
                 <div class="history-editor-footer">
-                    <button id="close-history-editor" class="btn-secondary">Fermer</button>
-                    <button id="save-history-step" class="btn-primary">Calculer et Sauvegarder ce Point</button>
+                    <button id="close-history-editor" class="btn-secondary">Annuler</button>
+                    <button id="save-history-all" class="btn-primary">Sauvegarder tout l'historique</button>
                 </div>
-            </div>
-        `;
+            </div>`;
         document.body.appendChild(modal);
 
         const assignmentsContainer = modal.querySelector('.assignments-list');
         const stepButtons = modal.querySelectorAll('.step-btn');
         let activeStep = 0;
+        let tempSelections = JSON.parse(JSON.stringify(mbsData.historiqueSelections?.[subject.code]?.slice(0, numSteps) || Array(numSteps).fill([])));
 
         const loadStep = (stepIndex) => {
             activeStep = stepIndex;
             stepButtons.forEach(btn => btn.classList.remove('active'));
             stepButtons[stepIndex].classList.add('active');
 
-            const savedSelections = mbsData.historiqueSelections?.[subject.code]?.[stepIndex] || [];
-            assignmentsContainer.innerHTML = allAssignments.map(assign => `
+            const currentStepSelections = new Set(tempSelections[stepIndex] || []);
+            assignmentsContainer.innerHTML = allAssignments.map(assign => {
+                const isGraded = getNumericGrade(assign.result) !== null;
+                return `
                 <div class="assignment-item">
-                    <input type="checkbox" id="${assign.uniqueId}" data-id="${assign.uniqueId}" ${savedSelections.includes(assign.uniqueId) ? 'checked' : ''}>
+                    <input type="checkbox" id="${assign.uniqueId}" data-id="${assign.uniqueId}" ${currentStepSelections.has(assign.uniqueId) ? 'checked' : ''} ${!isGraded ? 'disabled' : ''}>
                     <label for="${assign.uniqueId}">
                         ${assign.work.replace('<br>', ' ')}
-                        <small>(${assign.compName}) - Pondération: ${assign.pond}%</small>
+                        <small>(${assign.compName}) - ${isGraded ? `Note: ${assign.result}` : 'Non noté'} | Pondération: ${assign.pond}%</small>
                     </label>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
+
+            assignmentsContainer.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.addEventListener('change', () => {
+                    const id = checkbox.dataset.id;
+                    if (checkbox.checked) {
+                        if (!tempSelections[activeStep]) tempSelections[activeStep] = [];
+                        tempSelections[activeStep].push(id);
+                    } else {
+                        tempSelections[activeStep] = tempSelections[activeStep].filter(selectedId => selectedId !== id);
+                    }
+                });
+            });
         };
 
         stepButtons.forEach(btn => btn.addEventListener('click', () => loadStep(parseInt(btn.dataset.step))));
-
-        modal.querySelector('#save-history-step').addEventListener('click', () => {
-            const selectedIds = Array.from(assignmentsContainer.querySelectorAll('input:checked')).map(input => input.dataset.id);
-            const selectedAssignments = allAssignments.filter(a => selectedIds.includes(a.uniqueId));
-
-            // Group assignments by competency to calculate subject average correctly
-            const competenciesForCalc = [];
-            const competencyMap = new Map();
-            selectedAssignments.forEach(assign => {
-                if (!competencyMap.has(assign.compName)) {
-                    competencyMap.set(assign.compName, { name: assign.compName, assignments: [] });
-                    competenciesForCalc.push(competencyMap.get(assign.compName));
-                }
-                competencyMap.get(assign.compName).assignments.push(assign);
-            });
-
-            const newAverage = calculateSubjectAverage({ competencies: competenciesForCalc });
-
-            // Initialize structures if they don't exist
-            if (!mbsData.historique[subject.code]) mbsData.historique[subject.code] = Array(6).fill(null);
-            if (!mbsData.historiqueSelections[subject.code]) mbsData.historiqueSelections[subject.code] = Array(6).fill([]);
-            
-            mbsData.historique[subject.code][activeStep] = newAverage;
-            mbsData.historiqueSelections[subject.code][activeStep] = selectedIds;
-            
-            localStorage.setItem('mbsData', JSON.stringify(mbsData));
-            
-            // Provide feedback
-            const saveBtn = modal.querySelector('#save-history-step');
-            saveBtn.textContent = `Point ${activeStep + 1} Sauvé! (${newAverage !== null ? newAverage.toFixed(2) : 'N/A'}%)`;
-            setTimeout(() => { saveBtn.textContent = 'Calculer et Sauvegarder ce Point'; }, 2000);
-        });
-
+        
         const closeModal = () => {
             modal.remove();
             renderWidgets(document.querySelector('.tab-btn.active').dataset.etape);
         };
         
+        modal.querySelector('#save-history-all').addEventListener('click', () => {
+            const newHistory = [];
+            for (let i = 0; i < numSteps; i++) {
+                const selectedIds = new Set(tempSelections[i] || []);
+                const assignmentsForStep = allAssignments.filter(a => selectedIds.has(a.uniqueId));
+                
+                const competenciesForCalc = new Map();
+                assignmentsForStep.forEach(assign => {
+                    if (!competenciesForCalc.has(assign.compName)) {
+                        competenciesForCalc.set(assign.compName, { name: assign.compName, assignments: [] });
+                    }
+                    competenciesForCalc.get(assign.compName).assignments.push(assign);
+                });
+                const newAverage = calculateSubjectAverage({ competencies: Array.from(competenciesForCalc.values()) });
+                newHistory.push(newAverage);
+            }
+            
+            mbsData.historique[subject.code] = newHistory;
+            mbsData.historiqueSelections[subject.code] = tempSelections;
+            localStorage.setItem('mbsData', JSON.stringify(mbsData));
+            closeModal();
+        });
+
         modal.querySelector('#close-history-editor').addEventListener('click', closeModal);
         modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
 
-        loadStep(0); // Load the first step initially
+        loadStep(0);
     }
     
-    // --- Omitted functions for brevity (openDetailsModal, closeDetailsModal, createOrUpdateChart, etc.) ---
-    // --- Paste your existing functions for these here. They are unchanged. ---
+    // --- Unchanged Functions ---
 
     function openDetailsModal(subject, etapeKey) {
         const modalContent = document.getElementById('modal-content');
@@ -539,34 +536,27 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = `<p id="calc-info"></p><div id="goal-result" class="goal-result"></div>`;
         const goalResult = container.querySelector('#goal-result');
         const calcInfo = container.querySelector('#calc-info');
-
         const etapeWeights = { etape1: 0.2, etape2: 0.2, etape3: 0.6 };
         const etapeSequence = ['etape1', 'etape2', 'etape3'];
         let nextEtape = null;
         if(currentEtapeKey === 'etape1') nextEtape = 'etape2';
         if(currentEtapeKey === 'etape2') nextEtape = 'etape3';
-
         if (!nextEtape || currentEtapeKey === 'generale') {
             calcInfo.innerHTML = 'Toutes les étapes futures sont déjà planifiées ou le contexte est général.';
             goalResult.style.display = 'none';
             return;
         }
-
-        const etapeAverages = {};
         let currentGlobalContribution = 0;
         etapeSequence.forEach(etape => {
             const subjects = mbsData[etape];
             if(subjects) {
                 const avg = calculateSubjectAverage({competencies: subjects.flatMap(s => s.competencies)});
-                etapeAverages[etape] = avg;
                 if(avg !== null && etape !== nextEtape) {
                     currentGlobalContribution += avg * etapeWeights[etape];
                 }
             }
         });
-        
         calcInfo.innerHTML = `Planifiez votre performance pour l'<b>Étape ${nextEtape.slice(-1)}</b>.`;
-        
         function calculate() {
             const targetGlobalAvg = parseFloat(goalInput.value);
             if (isNaN(targetGlobalAvg) || targetGlobalAvg < 0 || targetGlobalAvg > 100) { goalResult.innerHTML = 'Veuillez entrer un objectif global valide.'; goalResult.className = 'goal-result danger'; return; }
