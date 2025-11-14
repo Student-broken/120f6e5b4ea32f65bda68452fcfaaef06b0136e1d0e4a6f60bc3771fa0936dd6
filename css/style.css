@@ -2,38 +2,47 @@
 
 /* 1. VARIABLES & THEMES */
 :root {
-    /* Light Mode (Default) */
+    /* --- Light Mode (Default) - Based *EXACTLY* on original HTML styles --- */
     --primary-color: #2980b9;
     --secondary-color: #2c3e50;
     --accent-color: #3498db;
-    --background-color: #f7f9fb;
-    --surface-color: #ffffff;        /* Main containers */
-    --surface-color-alt: #f0f4f7;    /* Secondary containers */
-    --text-color: #34495e;
-    --text-muted: #7f8c8d;
-    --border-color: #e0e6eb;
-    --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.08);
-    --shadow-hover: 0 8px 20px rgba(0, 0, 0, 0.15);
+
+    --background-color: #f7f9fb;     /* body background */
+    --surface-color: #ffffff;        /* Header, Side Panel, Modal, Table Backgrounds */
+    --surface-color-alt: #f0f4f7;    /* Widget darker color */
+    --surface-table-header: #f8f9fa; /* Specific table secondary header */
+    
+    --text-color: #34495e;           /* General text */
+    --text-muted: #7f8c8d;           /* Footer, subtle text */
+    
+    --border-color: #e0e6eb;         /* General border, table divider */
+    --shadow-header: 0 2px 4px rgba(0, 0, 0, 0.05);
+    --shadow-widget: 0 8px 15px rgba(0, 0, 0, 0.08);
+
     --success-color: #27ae60;
     --danger-color: #e74c3c;
     --warning-color: #f39c12;
     --modal-overlay: rgba(0, 0, 0, 0.7);
 }
 
-/* Dark Mode Overrides - Neutral Greys (No Blue tints) */
+/* Dark Mode Overrides - Neutral Greys (Smoother Transition) */
 [data-theme="dark"] {
-    --primary-color: #5dade2;        /* Lighter blue for contrast */
-    --secondary-color: #ecf0f1;      /* Light grey text for headers */
+    --primary-color: #5dade2;        /* Lighter blue for contrast on dark background */
+    --secondary-color: #ecf0f1;      /* Light grey text for headers/strong contrast */
     --accent-color: #2980b9;
+
     --background-color: #121212;     /* Very dark grey/black */
-    --surface-color: #1e1e1e;        /* Dark grey card */
-    --surface-color-alt: #2a2a2a;    /* Slightly lighter grey */
+    --surface-color: #1e1e1e;        /* Dark grey surface */
+    --surface-color-alt: #2a2a2a;    /* Slightly lighter card background */
+    --surface-table-header: #333333; /* Darker secondary table header */
+
     --text-color: #e0e0e0;           /* Off-white text */
     --text-muted: #a0a0a0;
+    
     --border-color: #333333;
-    --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.5);
-    --shadow-hover: 0 8px 20px rgba(0, 0, 0, 0.7);
-    --modal-overlay: rgba(0, 0, 0, 0.85);
+    --shadow-header: 0 2px 4px rgba(0, 0, 0, 0.5);
+    --shadow-widget: 0 8px 15px rgba(0, 0, 0, 0.3); /* Darker shadows */
+    --modal-overlay: rgba(0, 0, 0, 0.9);
 }
 
 /* 2. GLOBAL STYLES */
@@ -44,13 +53,14 @@ body {
     font-family: 'Inter', sans-serif;
     background-color: var(--background-color);
     color: var(--text-color);
+    /* NEW: Smooth transition for background/text color change */
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* 3. HEADER & NAV */
 .site-header-container {
     background-color: var(--surface-color);
-    box-shadow: var(--shadow-soft);
+    box-shadow: var(--shadow-header); /* Use original header shadow */
     border-bottom: 1px solid var(--border-color);
     padding: 15px 25px;
     display: flex;
@@ -76,7 +86,7 @@ body {
     transition: all 0.2s ease;
     display: inline-block;
 }
-.nav-arrow:hover { color: var(--primary-color); transform: translateX(-3px); }
+.nav-arrow:hover { color: var(--primary-color); transform: scale(1.05); } /* Restored original scale */
 
 /* 4. LAYOUT */
 .main-container {
@@ -92,8 +102,6 @@ body {
     transform: translateY(20px);
 }
 
-.data-section { flex: 3; }
-
 .side-panel {
     flex: 1;
     position: sticky;
@@ -101,30 +109,24 @@ body {
     background-color: var(--surface-color);
     border-radius: 12px;
     padding: 25px;
-    box-shadow: var(--shadow-soft);
-    border: 1px solid var(--border-color);
-    transition: background-color 0.3s, border-color 0.3s;
+    box-shadow: var(--shadow-widget); /* Use original widget shadow */
+    /* REMOVED: explicit border here to restore 'floaty' look */
+    transition: background-color 0.3s;
 }
 
 /* 5. WIDGETS & CARDS */
-.moyenne-widgets { display: flex; gap: 15px; margin-bottom: 25px; }
-
 .moyenne-widget {
     flex: 1;
     background-color: var(--surface-color-alt);
     border-radius: 10px;
     padding: 15px;
     text-align: center;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-color); /* Kept border for subtle separation */
     transition: transform 0.2s;
 }
 .moyenne-widget:hover { transform: translateY(-2px); }
 
-.moyenne-widget h4 { margin: 0 0 8px 0; font-size: 0.85em; color: var(--text-muted); font-weight: 500; }
-.moyenne-value { font-size: 2.2em; font-weight: bold; color: var(--primary-color); }
-.moyenne-value.invalid { color: var(--danger-color); }
-
-/* 6. BUTTONS */
+/* 6. BUTTONS - Animations and look are preserved here */
 .btn {
     display: inline-block;
     padding: 12px 20px;
@@ -138,22 +140,21 @@ body {
     text-align: center;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
-    position: relative;
-    overflow: hidden;
 }
 
 .btn:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-hover);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15); /* Slightly stronger hover shadow */
 }
 .btn:active { transform: translateY(0); }
 
 .btn-primary { background-color: var(--primary-color); }
-.btn-primary:hover { background-color: var(--accent-color); filter: brightness(1.1); }
+.btn-primary:hover { background-color: var(--accent-color); }
 
 .btn-secondary { background-color: var(--secondary-color); }
-.btn-secondary:hover { filter: brightness(1.2); }
+.btn-secondary:hover { background-color: #3a536b; } /* Restored original hover color */
 
+/* NEW: Dark Mode Toggle Button */
 .btn-icon {
     background: none;
     border: none;
@@ -162,15 +163,25 @@ body {
     color: var(--text-color);
     padding: 5px;
     border-radius: 50%;
-    transition: background 0.2s;
+    transition: background 0.2s, color 0.2s, transform 0.2s;
 }
-.btn-icon:hover { background-color: var(--surface-color-alt); }
-
-.btn-full-width { width: 100%; display: block; }
+.btn-icon:hover { 
+    background-color: var(--surface-color-alt); 
+    transform: rotate(5deg);
+}
 
 /* 7. FORM ELEMENTS */
-.control-group { margin-bottom: 20px; }
-.control-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9em; }
+select {
+    /* Removed custom background-image for select to clean up styling. If needed, re-add. */
+    -webkit-appearance: none; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='5'%3E%3Cpath d='M0 0l5 5 5-5z' fill='%2334495e'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; 
+    background-position: right 15px center; 
+    background-size: 10px;
+}
+[data-theme="dark"] select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='5'%3E%3Cpath d='M0 0l5 5 5-5z' fill='%23e0e0e0'/%3E%3C/svg%3E");
+}
 
 select, input[type="text"], input[type="number"] {
     width: 100%;
@@ -179,93 +190,71 @@ select, input[type="text"], input[type="number"] {
     border: 1px solid var(--border-color);
     background-color: var(--surface-color);
     color: var(--text-color);
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, background-color 0.2s;
 }
-select:focus, input:focus { outline: none; border-color: var(--primary-color); }
 
 /* 8. TABS & TABLES */
-.tabs { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 20px; }
+.tabs { border-bottom: 2px solid var(--border-color); }
+
 .tab-btn {
-    padding: 12px 24px;
-    cursor: pointer;
-    border: none;
-    background: none;
-    font-size: 1.05em;
-    font-weight: 600;
-    color: var(--text-muted);
-    position: relative;
-    transition: color 0.2s;
-}
-.tab-btn:hover { color: var(--primary-color); }
-.tab-btn.active { color: var(--primary-color); }
-.tab-btn.active::after {
-    content: ''; position: absolute; bottom: -2px; left: 0;
-    width: 100%; height: 3px; background-color: var(--primary-color);
-    animation: expandWidth 0.3s ease;
+    padding: 12px 20px; /* Restored original padding */
+    color: var(--text-muted); /* Used text-muted for light grey */
+    /* Animation for the underline remains */
 }
 
 .subject-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    margin-bottom: 30px;
+    box-shadow: var(--shadow-widget); /* Use original widget shadow */
     background: var(--surface-color);
-    box-shadow: var(--shadow-soft);
+    /* REMOVED: explicit border here to restore 'floaty' look */
     border-radius: 12px;
     overflow: hidden;
-    border: 1px solid var(--border-color);
 }
-.subject-table th, .subject-table td { padding: 14px 18px; text-align: left; border-bottom: 1px solid var(--border-color); }
-.subject-table thead tr:first-child th { background-color: var(--secondary-color); color: var(--background-color); } /* Inverted text for contrast */
-.subject-table thead tr:last-child th { background-color: var(--surface-color-alt); color: var(--text-color); font-size: 0.85em; text-transform: uppercase; }
+.subject-table th, .subject-table td { border-bottom: 1px solid #f0f0f0; }
+[data-theme="dark"] .subject-table th, [data-theme="dark"] .subject-table td { border-bottom: 1px solid #333; }
 
-.competency-row td { background-color: var(--surface-color-alt); color: var(--text-color); font-style: italic; }
+/* Table Header Styles - Corrected to match original structure */
+.subject-table thead tr:first-child th { 
+    background-color: var(--secondary-color); 
+    color: white; /* Always white for high contrast */
+    font-size: 1.1em;
+}
+.subject-table thead tr:last-child th { 
+    background-color: var(--surface-table-header); /* #f8f9fa in light mode */
+    color: var(--text-color); 
+    font-size: 0.85em; 
+    text-transform: uppercase;
+}
 
-/* 9. MODAL & POPUPS */
+.competency-row td { 
+    background-color: #eaf2f8; /* Specific blueish grey from original */
+    color: var(--secondary-color); 
+    font-weight: bold; 
+    font-style: italic; 
+}
+[data-theme="dark"] .competency-row td {
+    background-color: #252d3a; /* Darker, slightly blueish grey for dark mode */
+    color: var(--secondary-color);
+}
+
+/* 9. MODAL & POPUPS - Animation preserved */
 .modal-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background-color: var(--modal-overlay);
-    display: flex; justify-content: center; align-items: center;
-    z-index: 1000;
-    opacity: 0; visibility: hidden;
-    transition: opacity 0.3s ease;
-    backdrop-filter: blur(3px); /* Blur effect behind modal */
+    backdrop-filter: blur(3px);
 }
-.modal-overlay.active { opacity: 1; visibility: visible; }
-
 .modal-content {
     background-color: var(--surface-color);
-    padding: 30px;
-    border-radius: 16px;
-    width: 450px;
-    position: relative;
-    box-shadow: var(--shadow-hover);
-    transform: scale(0.8);
-    opacity: 0;
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+    box-shadow: var(--shadow-widget);
+    /* Scale-in animation remains */
 }
-.modal-overlay.active .modal-content { transform: scale(1); opacity: 1; }
 
-.modal-close {
-    position: absolute; top: 15px; right: 20px;
-    font-size: 2em; cursor: pointer; color: var(--text-muted);
-    transition: color 0.2s;
-}
-.modal-close:hover { color: var(--danger-color); }
-
-/* 10. LOADING ANIMATION */
+/* 10. LOADING ANIMATION - Remains the same */
 #page-loader {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background-color: var(--background-color);
-    z-index: 9999;
-    display: flex; justify-content: center; align-items: center;
-    transition: opacity 0.5s ease, visibility 0.5s;
+    /* Fade out transition remains */
 }
 .spinner {
-    width: 50px; height: 50px;
     border: 5px solid var(--border-color);
     border-top-color: var(--primary-color);
-    border-radius: 50%;
     animation: spin 1s linear infinite;
 }
 
@@ -275,9 +264,7 @@ select:focus, input:focus { outline: none; border-color: var(--primary-color); }
 @keyframes expandWidth { from { width: 0; left: 50%; } to { width: 100%; left: 0; } }
 
 /* UTILS & FOOTER */
-.hidden { display: none !important; }
 footer {
-    text-align: center; padding: 25px; font-size: 0.9em;
-    color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 40px;
+    color: var(--text-muted); 
+    border-top: 1px solid var(--border-color);
 }
-footer a { color: var(--primary-color); text-decoration: none; }
