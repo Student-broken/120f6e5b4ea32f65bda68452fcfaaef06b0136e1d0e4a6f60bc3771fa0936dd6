@@ -74,7 +74,7 @@
         .widget-info { flex: 1; }
         .widget-title { font-size: 1.2em; font-weight: 700; color: var(--secondary-color); margin: 0 0 10px 0; }
         .widget-average { font-size: 2.5em; font-weight: 700; color: var(--primary-color); margin: 0; }
-        .widget-trend { display: flex; align-items: center; gap: 5px; font-weight: 600; font-size: 0.9em; margin-top: auto; padding-top: 15px; }
+        .widget-trend { display: flex; align-items: center; gap: 5px; font-weight: 600; font-size: 0.9em; margin-top: 5px; }
         .widget-trend.up { color: var(--success-color); }
         .widget-trend.down { color: var(--danger-color); }
         .gauge-container { width: 120px; height: 70px; position: relative; }
@@ -189,33 +189,26 @@
             return totalWeight > 0 ? { average: totalWeightedGrade / totalWeight, weight: totalWeight } : null;
         }
         
-        // --- !! CRITICAL FIX: ACCURATE SUBJECT AVERAGE CALCULATION !! ---
         function calculateSubjectAverage(subject) {
             let totalWeightedCompetencyScore = 0;
             let totalCompetencyWeight = 0;
-
             subject.competencies.forEach(comp => {
                 const compWeightMatch = comp.name.match(/\((\d+)%\)/);
-                if (!compWeightMatch) return; // Skip if competency has no weight
-                
+                if (!compWeightMatch) return;
                 const competencyWeight = parseFloat(compWeightMatch[1]);
                 const competencyResult = calculateAverage(comp.assignments);
-
                 if (competencyResult) {
                     totalWeightedCompetencyScore += competencyResult.average * competencyWeight;
                     totalCompetencyWeight += competencyWeight;
                 }
             });
-
             return totalCompetencyWeight > 0 ? totalWeightedCompetencyScore / totalCompetencyWeight : null;
         }
         
         function renderWidgets(etapeKey) {
             widgetGrid.innerHTML = '';
-            // Clear old gauges
             Object.values(activeGauges).forEach(chart => chart.destroy());
             activeGauges = {};
-
             let subjectsToRender = [];
             if (etapeKey === 'generale') {
                 const allSubjects = new Map();
@@ -254,14 +247,14 @@
                         <div class="widget-info">
                             <h3 class="widget-title">${subject.name}</h3>
                             <p class="widget-average">${subject.average.toFixed(2)}%</p>
+                            <div class="widget-trend ${trend.class}">
+                                <span>${trend.direction}</span>
+                                <span>${trend.change}</span>
+                            </div>
                         </div>
                         <div class="gauge-container"><canvas id="${canvasId}"></canvas></div>
                     </div>
-                    <div class="histogram-container"><canvas id="hist-${canvasId}"></canvas></div>
-                    <div class="widget-trend ${trend.class}">
-                        <span>${trend.direction}</span>
-                        <span>${trend.change}</span>
-                    </div>`;
+                    <div class="histogram-container"><canvas id="hist-${canvasId}"></canvas></div>`;
                 widget.addEventListener('click', () => openDetailsModal(subject));
                 widgetGrid.appendChild(widget);
                 renderGauge(canvasId, subject.average, mbsData.settings.objectives[subject.code]);
@@ -274,21 +267,16 @@
 
         function renderGauge(canvasId, value, goal) {
             const ctx = document.getElementById(canvasId).getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, 120, 0);
+            gradient.addColorStop(0, "var(--danger-color)");
+            gradient.addColorStop(0.7, "var(--warning-color)");
+            gradient.addColorStop(1, "var(--success-color)");
+
             const gaugeChart = new Chart(ctx, {
                 type: 'doughnut',
-                data: {
-                    datasets: [{
-                        data: [value, 100 - value],
-                        backgroundColor: ['var(--primary-color)', '#e0e6eb'],
-                        borderWidth: 0
-                    }]
-                },
+                data: { datasets: [{ data: [value, 100 - value], backgroundColor: [gradient, '#e0e6eb'], borderWidth: 0 }] },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    circumference: 180,
-                    rotation: -90,
-                    cutout: '60%',
+                    responsive: true, maintainAspectRatio: false, circumference: 180, rotation: -90, cutout: '60%',
                     plugins: { tooltip: { enabled: false } }
                 },
                 plugins: [{
@@ -299,7 +287,6 @@
                         const cx = chartArea.left + chartArea.width / 2;
                         const cy = chartArea.top + chartArea.height;
                         ctx.save();
-                        // Needle
                         ctx.translate(cx, cy);
                         ctx.rotate(angle);
                         ctx.beginPath();
@@ -309,7 +296,6 @@
                         ctx.fillStyle = 'var(--secondary-color)';
                         ctx.fill();
                         ctx.restore();
-                        // Goal Line
                         if (goal) {
                             const goalAngle = Math.PI + (goal / 100) * Math.PI;
                             ctx.save();
@@ -344,10 +330,7 @@
             });
             new Chart(document.getElementById(canvasId).getContext('2d'), {
                 type: 'bar',
-                data: {
-                    labels: Object.keys(bins),
-                    datasets: [{ data: Object.values(bins), backgroundColor: ['#e74c3c', '#f39c12', '#a0c800', '#27ae60'] }]
-                },
+                data: { labels: Object.keys(bins), datasets: [{ data: Object.values(bins), backgroundColor: ['#e74c3c', '#f39c12', '#a0c800', '#27ae60'] }] },
                 options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false }, title: { display: true, text: 'Distribution des notes' } } }
             });
         }
@@ -365,7 +348,7 @@
                         <div class="goal-input">
                             <label for="objective-input">Objectif pour cette matière :</label>
                             <input type="number" id="objective-input" min="0" max="100" value="${currentObjective}">%
-                            <button id="save-objective-btn" class="btn-save">Sauver</button>
+                            <button id="save-objective-btn" class="btn-save">Sauvegarder</button>
                         </div>
                         <div id="goal-result" class="goal-result"></div>
                     </div>
@@ -399,24 +382,20 @@
                     createOrUpdateChart(compsForChart[widget.dataset.index]);
                 });
             });
-
-            // Setup goal calculator AND objective saver
             const objectiveInput = modalContent.querySelector('#objective-input');
             const saveObjectiveBtn = modalContent.querySelector('#save-objective-btn');
-
             saveObjectiveBtn.addEventListener('click', () => {
                 const newObjective = parseFloat(objectiveInput.value);
                 if (!isNaN(newObjective) && newObjective >= 0 && newObjective <= 100) {
                     mbsData.settings.objectives[subject.code] = newObjective;
                 } else {
-                    delete mbsData.settings.objectives[subject.code]; // Remove if invalid
+                    delete mbsData.settings.objectives[subject.code];
                 }
                 localStorage.setItem('mbsData', JSON.stringify(mbsData));
-                saveObjectiveBtn.textContent = 'Sauvé!';
-                setTimeout(() => { saveObjectiveBtn.textContent = 'Sauver'; }, 1500);
-                renderWidgets(document.querySelector('.tab-btn.active').dataset.etape); // Re-render dashboard to show new goal line
+                saveObjectiveBtn.textContent = 'Sauvegardé!';
+                setTimeout(() => { saveObjectiveBtn.textContent = 'Sauvegarder'; }, 1500);
+                renderWidgets(document.querySelector('.tab-btn.active').dataset.etape);
             });
-            
             setupGoalCalculator(subject, modalContent.querySelector('.calculator-container'));
             detailsModal.classList.add('active');
         }
@@ -438,46 +417,62 @@
         }
         
         function setupGoalCalculator(subject, container) {
-            const goalInput = container.querySelector('#objective-input'); // Re-use the objective input for the calculator
+            const goalInput = container.querySelector('#objective-input');
             const goalResult = container.querySelector('#goal-result');
-            
             function calculate() {
-                let sumOfWeightedGrades = 0;
-                let sumOfCompletedWeights = 0;
-                let sumOfFutureWeights = 0;
-                let sumOfTotalWeights = 0;
+                let sumOfWeightedGrades = 0; // ∑(w * x) for completed assignments
+                let sumOfCompletedWeights = 0; // ∑w for completed assignments
+                let sumOfFutureWeights = 0; // ∑w for future assignments
+                let totalCompetencyWeightSum = 0; // Ensures total doesn't exceed 100%
+
                 subject.competencies.forEach(comp => {
+                    const compWeightMatch = comp.name.match(/\((\d+)%\)/);
+                    if (!compWeightMatch) return;
+                    const competencyWeight = parseFloat(compWeightMatch[1]);
+                    totalCompetencyWeightSum += competencyWeight;
+                    
+                    let pointsEarnedInComp = 0;
+                    let completedWeightInComp = 0;
+                    let futureWeightInComp = 0;
+
                     comp.assignments.forEach(assign => {
                         const weight = parseFloat(assign.pond);
                         if (isNaN(weight) || weight <= 0) return;
-                        sumOfTotalWeights += weight;
                         const grade = getNumericGrade(assign.result);
                         if (grade !== null) {
-                            sumOfWeightedGrades += grade * weight;
-                            sumOfCompletedWeights += weight;
+                            pointsEarnedInComp += grade * weight;
+                            completedWeightInComp += weight;
                         } else {
-                            sumOfFutureWeights += weight;
+                            futureWeightInComp += weight;
                         }
                     });
+                    
+                    if (completedWeightInComp > 0) {
+                        const avgOfCompletedInComp = pointsEarnedInComp / completedWeightInComp;
+                        sumOfWeightedGrades += avgOfCompletedInComp * competencyWeight;
+                        sumOfCompletedWeights += competencyWeight;
+                    }
+                    if (futureWeightInComp > 0) {
+                        sumOfFutureWeights += competencyWeight;
+                    }
                 });
-                if (sumOfTotalWeights <= 0) {
-                    goalResult.innerHTML = 'Aucun travail avec une pondération valide n\'a été trouvé.';
-                    return;
-                }
+
                 if (sumOfFutureWeights < 0.01) {
                     goalResult.innerHTML = 'Tous les travaux pour cette matière semblent notés.';
+                    goalResult.className = 'goal-result';
                     return;
                 }
-
                 const targetAvg = parseFloat(goalInput.value);
                 if (isNaN(targetAvg) || targetAvg < 0 || targetAvg > 100) {
                     goalResult.innerHTML = 'Veuillez entrer un objectif entre 0 et 100.';
                     goalResult.className = 'goal-result danger';
                     return;
                 }
-                const totalPointsNeeded = targetAvg * sumOfTotalWeights;
+                
+                const totalPointsNeeded = targetAvg * totalCompetencyWeightSum;
                 const pointsNeededFromFuture = totalPointsNeeded - sumOfWeightedGrades;
                 const requiredAvgOnFuture = pointsNeededFromFuture / sumOfFutureWeights;
+                
                 let message, resultClass;
                 if (requiredAvgOnFuture > 100) {
                     message = `Pour atteindre <strong>${targetAvg}%</strong>, il faudrait <strong>${requiredAvgOnFuture.toFixed(1)}%</strong> sur les travaux restants. Cet objectif est impossible.`;
@@ -492,9 +487,8 @@
                 goalResult.innerHTML = message;
                 goalResult.className = `goal-result ${resultClass}`;
             }
-
             goalInput.addEventListener('input', calculate);
-            calculate(); // Initial calculation
+            calculate();
         }
         
         init();
