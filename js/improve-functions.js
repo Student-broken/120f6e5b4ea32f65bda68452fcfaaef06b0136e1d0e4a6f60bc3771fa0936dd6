@@ -1,16 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- START: VITAL CHANGES FOR PAGE LIFECYCLE ---
-    let listenersAttached = false; // Flag to prevent attaching listeners multiple times
-    
-    // This event fires EVERY time the page is shown, including from the back-forward cache.
-    window.addEventListener('pageshow', function (event) {
-        // event.persisted is true if the page was loaded from the cache.
-        // We reload the data regardless to ensure it's always fresh.
-        console.log("Page shown. Reloading widgets to get fresh data.");
-        init(); 
-    });
-    // --- END: VITAL CHANGES ---
-
     const gradeMap = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 85, 'B': 80, 'B-': 75, 'C+': 70, 'C': 65, 'C-': 60, 'D+': 55, 'D': 50, 'E': 45 };
     let mbsData = {};
     let activeChart = null;
@@ -21,7 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const detailsModal = document.getElementById('details-modal');
 
     function init() {
-        // Load the freshest data from localStorage every time init is called.
         mbsData = JSON.parse(localStorage.getItem('mbsData')) || {};
         mbsData.settings = mbsData.settings || {};
         mbsData.settings.objectives = mbsData.settings.objectives || {};
@@ -32,14 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
             widgetGrid.innerHTML = `<p style="text-align:center; width:100%;">Aucune donnée à analyser. Veuillez d'abord <a href="data.html">importer vos données</a>.</p>`;
             return;
         }
-
-        // Only attach event listeners once to avoid duplication.
-        if (!listenersAttached) {
-            setupEventListeners();
-            listenersAttached = true;
-        }
-        
-        // Always re-render the widgets with the fresh data.
+        setupEventListeners();
         renderWidgets('generale');
     }
 
@@ -145,6 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const subjectHistory = (mbsData.historique[subject.code] || []).filter(h => h !== null);
             let trend;
 
+            // --- KEY FIX: New Trend Calculation Logic ---
             if (subjectHistory.length < 2) {
                 trend = { direction: '▲', change: 'Nouveau', class: 'up' };
             } else {
@@ -157,6 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ? { direction: '▼', change: `${change.toFixed(2)}%`, class: 'down' }
                     : { direction: '▲', change: `+${change.toFixed(2)}%`, class: 'up' };
             }
+            // --- END FIX ---
 
             const widget = document.createElement('div');
             widget.className = 'subject-widget';
@@ -222,8 +204,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- All other functions (renderGauge, renderHistogram, etc.) remain unchanged ---
-    
     function renderGauge(canvasId, value, goal) {
         const ctx = document.getElementById(canvasId).getContext('2d');
         const gradient = ctx.createLinearGradient(0, 0, 120, 0);
@@ -393,7 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 assignmentsForStep.forEach(assign => {
                     if (!competenciesForCalc.has(assign.compName)) competenciesForCalc.set(assign.compName, { name: assign.compName, assignments: [] });
                     competenciesForCalc.get(assign.compName).assignments.push(assign);
-                });
+});
                 const newAverage = calculateSubjectAverage({ competencies: Array.from(competenciesForCalc.values()) });
                 newHistory.push(newAverage);
             }
@@ -409,6 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadStep(0);
     }
     
+    // --- Unchanged Functions ---
     function openDetailsModal(subject, etapeKey) {
         const modalContent = document.getElementById('modal-content');
         modalContent.innerHTML = `
@@ -571,4 +552,6 @@ document.addEventListener('DOMContentLoaded', () => {
         goalInput.addEventListener('input', calculate);
         calculate();
     }
+    
+    init();
 });
