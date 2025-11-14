@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tableau de Bord - Outil MBS</title>
     <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
-    <!-- Font Awesome for icons (Sun/Moon for dark mode toggle) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7t7t0I3U8E50DkK9S61F4f7q7gA3I7l2dE4h/g2I1Q4w6r6tO0Y7xzA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Font Awesome for icons (Updated & Reliable CDN Link) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -37,14 +37,14 @@
             --btn-secondary-hover-bg: #3a536b;
         }
 
-        /* DARK MODE VARIABLES (Grey/Black Focus) */
+        /* DARK MODE VARIABLES */
         [data-theme="dark"] {
-            --background-color: #121212; /* Nearly black */
-            --side-panel-color: #1e1e1e; /* Dark grey for panels */
+            --background-color: #121212;
+            --side-panel-color: #1e1e1e;
             --widget-background: #1e1e1e;
-            --widget-darker-color: #282828; /* Slightly lighter for distinction */
-            --text-color: #e0e0e0; /* Light text */
-            --secondary-color: #bbbbbb; /* Lighter secondary text/icons */
+            --widget-darker-color: #282828;
+            --text-color: #e0e0e0;
+            --secondary-color: #bbbbbb;
             --light-grey: #757575;
             --footer-grey: #a0a0a0;
             --shadow-header: 0 2px 5px rgba(255, 255, 255, 0.1);
@@ -52,7 +52,6 @@
             --border-color: #333333;
             --tab-border-color: #444444;
             --input-bg-color: #282828;
-            
             /* Button Inversion Colors (Dark Mode Inverted) */
             --btn-secondary-bg: #bbbbbb; /* Light grey background */
             --btn-secondary-color: #121212; /* Dark text */
@@ -78,8 +77,12 @@
             transition: background-color var(--transition-duration) ease, color var(--transition-duration) ease, border-color var(--transition-duration) ease, box-shadow var(--transition-duration) ease;
         }
 
-        /* Page Load Animation Keyframes */
+        /* SMOOTHER Page Load Animation Keyframes */
         @keyframes fadeInSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(25px);
+            }
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -88,14 +91,15 @@
         /* Initial state and animation application for main elements */
         .site-header-container, .main-container, footer {
             opacity: 0;
-            transform: translateY(20px);
-            animation: fadeInSlideUp 0.8s ease-out forwards;
+            transform: translateY(25px);
+            /* Smoother easing function and slightly longer duration */
+            animation: fadeInSlideUp 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
         }
         .main-container {
-            animation-delay: 0.15s; /* Stagger the main content */
+            animation-delay: 0.2s; /* Stagger the main content */
         }
         footer {
-            animation-delay: 0.3s; /* Stagger the footer */
+            animation-delay: 0.4s; /* Stagger the footer */
         }
 
         /* General Styles */
@@ -110,7 +114,7 @@
         }
         .header-left { display: flex; align-items: center; }
         .header-center { position: absolute; left: 50%; transform: translateX(-50%); }
-        .header-right { display: flex; gap: 15px; }
+        .header-right { display: flex; align-items: center; gap: 15px; } /* Added align-items for vertical centering */
         .site-header {
             padding: 0; margin: 0; color: var(--secondary-color);
             font-size: 2.2em; font-weight: 700; font-family: 'Playfair Display', serif;
@@ -181,7 +185,6 @@
         }
         .btn-secondary:hover { 
             background-color: var(--btn-secondary-hover-bg); 
-            /* Ensure text color stays dark/light as needed on hover */
             color: var(--btn-secondary-color);
         }
 
@@ -198,7 +201,7 @@
         .subject-table thead tr:first-child th { background-color: var(--secondary-color); color: white; font-size: 1.1em; }
         .subject-table thead tr:last-child th { background-color: #f8f9fa; color: var(--text-color); font-size: 0.85em; text-transform: uppercase; }
         .competency-row td { background-color: #eaf2f8; color: var(--secondary-color); font-weight: bold; font-style: italic; }
-        .no-data { color: var(--light-grey); font-style: italic; }
+        .no-data { color: var(--light-grey); font-style: italic; text-align: center; padding: 40px; }
         .grade-percentage { font-weight: 700; color: var(--success-color); }
         footer { text-align: center; padding: 25px; font-size: 0.9em; color: var(--footer-grey); border-top: 1px solid var(--border-color); margin-top: 40px; }
         footer a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
@@ -213,9 +216,8 @@
         .modal-overlay.active { opacity: 1; visibility: visible; }
         .modal-content { 
             background-color: white; padding: 30px; border-radius: 12px; width: 450px; position: relative; 
-            /* Initial transformation for entry animation */
             transform: scale(0.9) translateY(-20px); 
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Snappy, slightly bouncy effect */
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         .modal-overlay.active .modal-content {
             transform: scale(1) translateY(0);
@@ -236,8 +238,6 @@
 </head>
 <body>
 
-    <!-- Removed #loading-overlay -->
-
     <header class="site-header-container">
         <div class="header-left">
             <a href="index.html" class="nav-arrow" title="Retour à l'accueil">←</a>
@@ -246,13 +246,10 @@
             <h1 class="site-header">Outil MBS</h1>
         </div>
         <div class="header-right">
-            <!-- Theme Toggle Button -->
             <button id="theme-toggle" class="icon-btn" aria-label="Changer de thème (Mode Clair/Sombre)">
-                <i class="fas fa-moon"></i>
+                <i class="fa-solid fa-moon"></i>
             </button>
-            <!-- Text shortened to 'Mise à jour' -->
             <a href="data.html" class="btn btn-secondary">Mise à jour</a>
-            <!-- Text shortened to 'Analyser' -->
             <a href="improve.html" class="btn btn-primary">Analyser</a>
         </div>
     </header>
@@ -266,20 +263,8 @@
             </div>
             <div id="tab-contents">
                 <div id="etape1" class="tab-content active">
-                    <!-- Placeholder for content to show loading animation is working -->
-                    <table class="subject-table">
-                        <thead>
-                            <tr><th colspan="4">Mathématiques (Sec 4)</th></tr>
-                            <tr><th>Compétence</th><th>Évaluation</th><th>Pondération</th><th>Résultat</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr class="competency-row"><td colspan="4">Compétence 1: Résoudre</td></tr>
-                            <tr><td></td><td>Examen mi-étape</td><td>20%</td><td><span class="grade-percentage" style="color: var(--danger-color);">65%</span></td></tr>
-                            <tr class="competency-row"><td colspan="4">Compétence 2: Raisonner</td></tr>
-                            <tr><td></td><td>Travail d'équipe</td><td>15%</td><td><span class="grade-percentage" style="color: var(--success-color);">90%</span></td></tr>
-                            <tr><td></td><td>Laboratoire</td><td>15%</td><td><span class="grade-percentage" style="color: var(--warning-color);">78%</span></td></tr>
-                        </tbody>
-                    </table>
+                    <!-- Placeholder text restored. The "no-data" class is used for styling. -->
+                    <p class="no-data">Veuillez vous rendre sur la page "Mise à jour" pour importer vos données.</p>
                 </div>
                 <div id="etape2" class="tab-content"></div>
                 <div id="etape3" class="tab-content"></div>
@@ -300,15 +285,13 @@
                 </select>
             </div>
             <div class="control-group">
-                <!-- Secondary button for inversion -->
                 <button id="unites-btn" class="btn btn-secondary btn-full-width">Configurer les unités</button>
             </div>
             
-            <div id="ponderation-controls" class="hidden" style="background-color: #fff9f0; padding: 15px; border-radius: 8px; border: 1px var(--warning-color); margin-bottom: 20px;">
+            <div id="ponderation-controls" class="hidden" style="background-color: #fff9f0; padding: 15px; border-radius: 8px; border: 1px solid var(--warning-color); margin-bottom: 20px;">
                 <p style="font-weight: bold; text-align: center; margin-top: 0; color: var(--text-color);">Pondérations modifiées</p>
                 <div style="display: flex; gap: 10px;">
                     <button id="save-ponds-btn" class="btn btn-primary" style="flex:1;">Sauvegarder</button>
-                    <!-- Secondary button for inversion -->
                     <button id="revert-ponds-btn" class="btn btn-secondary" style="background-color: #95a5a6; flex:1;">Annuler</button>
                 </div>
             </div>
@@ -331,12 +314,7 @@
                     <option value="perso">Personnalisée</option>
                 </select>
             </div>
-            <div id="unites-list">
-                <!-- Example list item for modal -->
-                <div class="unite-item"><span>Mathématiques</span><input type="number" value="4"></div>
-                <div class="unite-item"><span>Français</span><input type="number" value="4"></div>
-                <div class="unite-item"><span>Anglais</span><input type="number" value="2"></div>
-            </div>
+            <div id="unites-list"></div>
         </div>
     </div>
 
@@ -345,7 +323,6 @@
         <p><a href="ticket.html">Signaler un problème</a></p>
     </footer>
 
-    <!-- JavaScript logic remains for theme and modal -->
     <script>
         // Theme setup and save to local storage
         const themeToggle = document.getElementById('theme-toggle');
@@ -358,19 +335,21 @@
             html.setAttribute('data-theme', theme);
             localStorage.setItem(THEME_KEY, theme);
             // Change icon for the opposite theme
-            toggleIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            if (theme === 'dark') {
+                toggleIcon.classList.remove('fa-moon');
+                toggleIcon.classList.add('fa-sun');
+            } else {
+                toggleIcon.classList.remove('fa-sun');
+                toggleIcon.classList.add('fa-moon');
+            }
         };
 
-        // 1. Initial Load Theme (No separate loading screen logic required)
+        // 1. Initial Load Theme
         const storedTheme = localStorage.getItem(THEME_KEY);
-        if (storedTheme) {
-            updateTheme(storedTheme);
-        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            // Check OS preference if no local storage saved
-            updateTheme('dark');
-        } else {
-            updateTheme('light'); // Default to light
-        }
+        // Determine the initial theme
+        const initialTheme = storedTheme || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        updateTheme(initialTheme);
+
 
         // 2. Theme Toggle Handler
         themeToggle.addEventListener('click', () => {
@@ -379,13 +358,13 @@
             updateTheme(newTheme);
         });
 
-        // 3. Modal/Popup Animation Control (Open/Close)
+        // 3. Modal/Popup Animation Control
         const unitesModal = document.getElementById('unites-modal');
         const unitesBtn = document.getElementById('unites-btn');
         const closeUnitesModal = document.getElementById('close-unites-modal');
 
         unitesBtn.addEventListener('click', (e) => {
-            e.preventDefault(); // Prevent any default button action
+            e.preventDefault();
             unitesModal.classList.add('active');
         });
 
@@ -394,16 +373,12 @@
         };
 
         closeUnitesModal.addEventListener('click', closeModal);
-
-        // Close on overlay click
         unitesModal.addEventListener('click', (e) => {
             if (e.target === unitesModal) {
                 closeModal();
             }
         });
 
-        // Placeholder for the original functions file
-        // console.log("Placeholder for js/main-functions.js logic.")
     </script>
     <script src="js/main-functions.js"></script>
 </body>
