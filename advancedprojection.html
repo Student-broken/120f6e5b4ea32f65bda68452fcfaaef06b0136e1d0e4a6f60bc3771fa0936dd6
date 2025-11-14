@@ -887,7 +887,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 allSubjectAverages[etape][codePrefix] = { name: subjectList[codePrefix] || subject.name, average: subjectAverage };
                 
                 allSubjectStats[codePrefix] = allSubjectStats[codePrefix] || {};
-                allSubjectStats[codePrefix][etape] = { overallConsistency, stdDev, competencyAverages, allGrades };
+                allSubjectStats[codePrefix][etape] = { overallConsistency, stdDev, competencyAverages, allGrades, numGrades: allGrades.length };
             });
         });
 
@@ -895,16 +895,19 @@ document.addEventListener('DOMContentLoaded', () => {
         Object.keys(allSubjectStats).forEach(code => {
             let grades = [];
             let allConsistencies = [];
+            let totalNumGrades = 0;
+
             KNOWN_ETAPE_KEYS.forEach(etape => {
                 if (allSubjectStats[code][etape]) {
                     grades.push(...allSubjectStats[code][etape].allGrades);
                     allConsistencies.push(allSubjectStats[code][etape].overallConsistency);
+                    totalNumGrades += allSubjectStats[code][etape].numGrades;
                 }
             });
             const overallStdDev = calculateStdDev(grades);
             const overallConsistency = allConsistencies.length > 0 ? allConsistencies.reduce((a, b) => a + b) / allConsistencies.length : 100;
             
-            allSubjectOverallStats[code] = { allGrades: grades, stdDev: overallStdDev, overallConsistency, numGrades: grades.length };
+            allSubjectOverallStats[code] = { allGrades: grades, stdDev: overallStdDev, overallConsistency, numGrades: totalNumGrades };
         });
 
 
@@ -986,9 +989,11 @@ document.addEventListener('DOMContentLoaded', () => {
         let count = 0;
         Object.values(allSubjectOverallStats).forEach(s => {
             if (s.numGrades > 0) { 
-                const fsp = s.stdDev * (1 + (100 - s.overallConsistency) / 100);
-                const mismatch = fsp * (100 - s.overallConsistency) / 10; // FSP * Inconsistency
-                totalMismatch += mismatch;
+                // We need ND for accurate mismatch, but ND relies on the full MC run. 
+                // For a pre-MC risk assessment, we use a proxy for mismatch.
+                // Proxy Mismatch = StdDev * (100 - Consistency) / 10
+                const proxyMismatch = s.stdDev * (100 - s.overallConsistency) / 10; 
+                totalMismatch += proxyMismatch;
                 count++; 
             }
         });
@@ -1019,7 +1024,7 @@ document.addEventListener('DOMContentLoaded', () => {
             totalKnownWeight += TERM_WEIGHTS.etape2;
         }
         
-        const totalWeight = TERM_WEIGHTS.etape1 + TERM_WEIGHTS.etairs;
+        const totalWeight = TERM_WEIGHTS.etape1 + TERM_WEIGHTS.etape2 + TERM_WEIGHTS.etape3;
         const remainingWeight = totalWeight - totalKnownWeight;
 
         // If no remaining weight, prediction is the known average
@@ -1039,6 +1044,74 @@ document.addEventListener('DOMContentLoaded', () => {
             targets.forEach(t => { probabilityAnalysis[t] = { requiredAvg: 0, prob: 100 }; });
             return { global: globalPred, subjects: subjectPreds, probabilityAnalysis };
         }
+        
+        // --- PRE-CALCULATIONS FOR ACCURACY (FSP & MPP) ---
+        relevantSubjects.forEach(code => {
+            const subjStats = subjectOverallStats[code];
+            const trend = subjectTrends[code];
+            const subjAvg1 = subjectAverages.etape1?.[code]?.average || null;
+            const subjAvg2 = subjectAverages.etape2?.[code]?.average || null;
+            let trendAvg = subjAvg2 !== null ? subjAvg2 : (subjAvg1 !== null ? subjAvg1 : 75); 
+            let stdDev = subjStats.stdDev;
+            
+            // 1. FSP (Facteur Sigma Pondéré) - Adjust based on Consistency and Data Quantity
+            const inconsistencyFactor = (100 - subjStats.overallConsistency) / 100;
+            let fsp = stdDev * (1 + inconsistencyFactor); 
+            
+            // FSP Adjustment for Low Data Quantity (less than 5 grades)
+            if (subjStats.numGrades < 5) {
+                fsp = fsp + (5 - subjStats.numGrades) * 0.5; // Adds up to 2.5 points of StdDev for 0 grades
+            } else if (subjStats.numGrades > 15 && fsp > 2) {
+                 // Slight reduction if data is abundant and FSP is high
+                fsp = fsp * 0.95;
+            }
+            fsp = Math.max(0.5, fsp); // Minimum FSP to allow simulation randomness
+
+            // 2. ND (Niveau de Difficulté) - Requires a quick subject-level MC to find P50
+            let finalSubjectGradesP50 = [];
+            
+            for (let i = 0; i < 500; i++) { // Shorter MC run for ND estimation
+                const u1 = Math.random();
+                const u2 = Math.random();
+                let z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+                let predictedE3Avg = Math.min(100, Math.max(0, trendAvg + z * fsp));
+                
+                const finalGrade = calculateWeightedFinalAvg(subjAvg1, subjAvg2, predictedE3Avg);
+                finalSubjectGradesP50.push(finalGrade);
+            }
+            finalSubjectGradesP50.sort((a, b) => a - b);
+            const subjectP50 = finalSubjectGradesP50[Math.floor(500 * 0.50)] || trendAvg;
+            
+            // ND Calculation: ND = |P50 - Current Avg| / (Max Possible P50)
+            const maxDelta = 100 - trendAvg;
+            const requiredDelta = subjectP50 - trendAvg;
+            const ndScore = maxDelta > 0 ? (requiredDelta / maxDelta) * 100 : 0;
+            let nd = Math.min(100, Math.max(0, ndScore));
+
+            // 3. MPP (Multiplicateur de Performance Prédite) - Adjust based on Trend, Consistency, and ND
+            let trendAdjustment = trend?.diff ? Math.min(5, Math.max(-5, trend.diff)) * 0.5 : 0; 
+            let consistencyAdjustment = 0;
+            if (subjStats.overallConsistency >= 90) consistencyAdjustment = 2.5; 
+            else if (subjStats.overallConsistency < 70) consistencyAdjustment = -2.5; 
+            
+            // ND Adjustment for MPP
+            let ndAdjustment = 0;
+            if (nd <= 20) ndAdjustment = 1.0; // Small bonus if current success is easy to maintain
+            else if (nd >= 80) ndAdjustment = -1.0; // Small penalty if current high score is difficult to maintain
+
+            const mpp = Math.min(1.10, Math.max(0.90, 1 + (trendAdjustment + consistencyAdjustment + ndAdjustment) / 100)); 
+            const adjustedMean = trendAvg * mpp;
+
+            // Store interim results
+            subjectPreds[code] = { 
+                mpp: mpp,
+                fsp: fsp,
+                consistency: subjStats.overallConsistency,
+                adjustedMean: adjustedMean,
+                nd: nd,
+                predictionFinal: null // To be filled later
+            };
+        });
 
         // --- 1. Required Average for Etape 3 (Deterministic) ---
         targets.forEach(target => {
@@ -1046,8 +1119,8 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Simplified probability (based on global average and SD for initial analysis)
             const currentTrendAvg = globalAverageKnown !== null ? globalAverageKnown : 75; 
-            const stdDevProxy = subjectOverallStats && Object.values(subjectOverallStats).length > 0 ? 
-                                Object.values(subjectOverallStats).reduce((sum, s) => sum + s.stdDev, 0) / Object.values(subjectOverallStats).length : 5;
+            const stdDevProxy = Object.values(subjectPreds).length > 0 ? 
+                                Object.values(subjectPreds).reduce((sum, s) => sum + s.fsp, 0) / Object.values(subjectPreds).length : 5;
             
             const prob = calculateProbability(currentTrendAvg, stdDevProxy, requiredAvg);
 
@@ -1055,69 +1128,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
 
-        // --- 2. Monte Carlo Simulation (Stochastic) & Subject Predictions ---
-        let finalGrades = [];
+        // --- 2. Monte Carlo Simulation (Stochastic) ---
+        let finalGlobalGrades = [];
         
-        relevantSubjects.forEach(code => {
-            const subjStats = subjectOverallStats[code];
-            const trend = subjectTrends[code];
-            const subjAvg1 = subjectAverages.etape1?.[code]?.average || null;
-            const subjAvg2 = subjectAverages.etape2?.[code]?.average || null;
-
-            let trendAvg = subjAvg2 !== null ? subjAvg2 : (subjAvg1 !== null ? subjAvg1 : 75); 
-            let stdDev = subjStats.stdDev;
-            
-            // Calculate MPP (Multiplicateur de Performance Prédite)
-            let trendAdjustment = trend?.diff ? Math.min(5, Math.max(-5, trend.diff)) * 0.5 : 0; 
-            let consistencyAdjustment = 0;
-            if (subjStats.overallConsistency >= 90) consistencyAdjustment = 2.5; 
-            else if (subjStats.overallConsistency < 70) consistencyAdjustment = -2.5; 
-            
-            const mpp = Math.min(1.10, Math.max(0.90, 1 + (trendAdjustment + consistencyAdjustment) / 100)); 
-            const adjustedMean = trendAvg * mpp;
-
-            // Calculate FSP (Facteur Sigma Pondéré)
-            const inconsistencyFactor = (100 - subjStats.overallConsistency) / 100;
-            const fsp = stdDev * (1 + inconsistencyFactor); 
-
-            // Calculate ND (Niveau de Difficulté)
-            // ND = |P50 - Current Avg| / (Max Possible P50)
-            let subjectP50 = 0;
-            let finalSubjectGrades = [];
-            
-            // Run Subject-level MC to find P50 and Final Prediction (Trend)
-            for (let i = 0; i < NUM_MONTE_CARLO_RUNS; i++) {
-                const u1 = Math.random();
-                const u2 = Math.random();
-                let z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
-                let predictedE3Avg = Math.min(100, Math.max(0, adjustedMean + z * fsp));
-
-                // Final Subject Grade for this simulation
-                const finalGrade = calculateWeightedFinalAvg(subjAvg1, subjAvg2, predictedE3Avg);
-                finalSubjectGrades.push(finalGrade);
-            }
-
-            finalSubjectGrades.sort((a, b) => a - b);
-            subjectP50 = finalSubjectGrades[Math.floor(NUM_MONTE_CARLO_RUNS * 0.50)] || trendAvg;
-            const finalPredictionTrend = finalSubjectGrades.reduce((a, b) => a + b) / NUM_MONTE_CARLO_RUNS;
-            
-            // ND Calculation
-            const maxDelta = 100 - trendAvg;
-            const requiredDelta = subjectP50 - trendAvg;
-            const ndScore = maxDelta > 0 ? (requiredDelta / maxDelta) * 100 : 0;
-            
-            subjectPreds[code] = { 
-                mpp: mpp,
-                fsp: fsp,
-                consistency: subjStats.overallConsistency,
-                predictionFinal: finalPredictionTrend,
-                nd: Math.min(100, Math.max(0, ndScore))
-            };
-        });
-
-        // Run Global MC using Subject Predictions for E3
         for (let i = 0; i < NUM_MONTE_CARLO_RUNS; i++) {
-            let simKnownSum = currentKnownGlobalSum;
             let simRemainingSum = 0;
             let simTotalUnitWeight = 0;
             
@@ -1126,41 +1140,57 @@ document.addEventListener('DOMContentLoaded', () => {
                 const unit = units[code] || 2;
                 const subjAvg1 = subjectAverages.etape1?.[code]?.average || null;
                 const subjAvg2 = subjectAverages.etape2?.[code]?.average || null;
-
-                let trendAvg = subjAvg2 !== null ? subjAvg2 : (subjAvg1 !== null ? subjAvg1 : 75);
-
-                // Re-calculate E3 Prediction (different random draw for global simulation)
+                
+                // Re-calculate E3 Prediction using adjusted mean and FSP
                 const u1 = Math.random();
                 const u2 = Math.random();
                 let z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
-                // Use FSP as the standard deviation for the global simulation
-                let predictedE3Avg = Math.min(100, Math.max(0, (trendAvg * subjPred.mpp) + z * subjPred.fsp)); 
+                
+                // Prediction based on Adjusted Mean (MPP) and FSP (Sigma Pondéré)
+                let predictedE3Avg = Math.min(100, Math.max(0, subjPred.adjustedMean + z * subjPred.fsp)); 
                 
                 simRemainingSum += predictedE3Avg * unit;
                 simTotalUnitWeight += unit;
+
+                // Capture subject final grade for subject trend calculation (only once per subject)
+                if (i === 0) {
+                     const finalGrade = calculateWeightedFinalAvg(subjAvg1, subjAvg2, predictedE3Avg);
+                     subjPred.predictionFinal = finalGrade;
+                }
             });
             
             const predictedE3AvgGlobal = simTotalUnitWeight > 0 ? simRemainingSum / simTotalUnitWeight : 0;
             const finalGlobalGrade = (currentKnownGlobalSum + predictedE3AvgGlobal * remainingWeight) / totalWeight;
             
-            finalGrades.push(finalGlobalGrade);
+            finalGlobalGrades.push(finalGlobalGrade);
         }
 
         // --- 3. Final Monte Carlo Results (Percentiles) ---
-        finalGrades.sort((a, b) => a - b);
+        finalGlobalGrades.sort((a, b) => a - b);
 
-        globalPred.p5 = finalGrades[Math.floor(NUM_MONTE_CARLO_RUNS * 0.05)] || 0;
-        globalPred.p25 = finalGrades[Math.floor(NUM_MONTE_CARLO_RUNS * 0.25)] || 0;
-        globalPred.p50 = finalGrades[Math.floor(NUM_MONTE_CARLO_RUNS * 0.50)] || 0;
-        globalPred.p75 = finalGrades[Math.floor(NUM_MONTE_CARLO_RUNS * 0.75)] || 0;
-        globalPred.p95 = finalGrades[Math.floor(NUM_MONTE_CARLO_RUNS * 0.95)] || 0;
-        globalPred.trend = finalGrades.reduce((a, b) => a + b) / NUM_MONTE_CARLO_RUNS; // Actual Mean
+        globalPred.p5 = finalGlobalGrades[Math.floor(NUM_MONTE_CARLO_RUNS * 0.05)] || 0;
+        globalPred.p25 = finalGlobalGrades[Math.floor(NUM_MONTE_CARLO_RUNS * 0.25)] || 0;
+        globalPred.p50 = finalGlobalGrades[Math.floor(NUM_MONTE_CARLO_RUNS * 0.50)] || 0;
+        globalPred.p75 = finalGlobalGrades[Math.floor(NUM_MONTE_CARLO_RUNS * 0.75)] || 0;
+        globalPred.p95 = finalGlobalGrades[Math.floor(NUM_MONTE_CARLO_RUNS * 0.95)] || 0;
+        globalPred.trend = finalGlobalGrades.reduce((a, b) => a + b) / NUM_MONTE_CARLO_RUNS; // Actual Mean
 
         // Re-evaluate probability based on MC trend and its own SD
-        const mcStdDev = calculateStdDev(finalGrades);
+        const mcStdDev = calculateStdDev(finalGlobalGrades);
         targets.forEach(target => {
             const prob = calculateProbability(globalPred.trend, mcStdDev, probabilityAnalysis[target].requiredAvg);
             probabilityAnalysis[target].prob = prob;
+        });
+        
+        // Ensure final subject prediction is set for all relevant subjects (using the trend average from the first simulation pass)
+        Object.keys(subjectPreds).forEach(code => {
+            if (subjectPreds[code].predictionFinal === null) {
+                // If it wasn't set (e.g., if relevantSubjects was empty or an error occurred), default to the trendAvg
+                const subjAvg1 = subjectAverages.etape1?.[code]?.average || null;
+                const subjAvg2 = subjectAverages.etape2?.[code]?.average || null;
+                let trendAvg = subjAvg2 !== null ? subjAvg2 : (subjAvg1 !== null ? subjAvg1 : 75); 
+                subjectPreds[code].predictionFinal = trendAvg;
+            }
         });
 
 
@@ -1173,26 +1203,29 @@ document.addEventListener('DOMContentLoaded', () => {
         if (stdDev <= 0.1) return mean >= requiredTarget ? 100 : 0;
         
         if (requiredTarget > 100) return 0;
+        
         // If the target is already below the trend mean (P50), the probability must be > 50%
-        if (requiredTarget <= mean) return 100 - (50 * Math.exp(-(mean - requiredTarget) / stdDev / 2)); 
+        if (requiredTarget <= mean) {
+            // Use a function that converges to 100% as target moves far below the mean
+            const z = (mean - requiredTarget) / stdDev;
+            return Math.min(100, 50 + 50 * (1 - Math.exp(-z * 0.7))); 
+        }
 
         const z = (requiredTarget - mean) / stdDev;
 
         // Custom approximation of 1-CDF(z) for a more linear feel at extremes
-        if (z < 0) { // Should not happen if target > mean, but for safety
-            return 100;
-        } else if (z < 0.5) {
-            return 50 - 50 * z / 2; // 50 to 37.5
+        if (z < 0.5) {
+            return 50 - 50 * z / 2;
         } else if (z < 1.0) {
-            return 37.5 - 20 * (z - 0.5); // 37.5 to 27.5
+            return 37.5 - 20 * (z - 0.5);
         } else if (z < 1.5) {
-            return 27.5 - 15 * (z - 1.0); // 27.5 to 20
+            return 27.5 - 15 * (z - 1.0);
         } else if (z < 2.0) {
-            return 20 - 10 * (z - 1.5); // 20 to 15
+            return 20 - 10 * (z - 1.5);
         } else if (z < 2.5) {
-            return 15 - 5 * (z - 2.0); // 15 to 12.5
+            return 15 - 5 * (z - 2.0);
         } else {
-            return 12.5 - 10 * (z - 2.5); // Slow decay to near 0
+            return Math.max(0.1, 12.5 - 5 * (z - 2.5)); // Slow decay to near 0
         }
     }
 
