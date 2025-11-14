@@ -40,6 +40,8 @@
             transition: background-color var(--transition-duration) ease, color var(--transition-duration) ease, border-color var(--transition-duration) ease, box-shadow var(--transition-duration) ease;
         }
 
+        /*
+        The following animation code was removed:
         @keyframes fadeInSlideUp {
             from { opacity: 0; transform: translateY(25px); }
             to { opacity: 1; transform: translateY(0); }
@@ -51,6 +53,7 @@
         }
         .content { animation-delay: 0.2s; }
         footer { animation-delay: 0.4s; }
+        */
 
         body {
             margin: 0;
@@ -316,7 +319,8 @@
                         const max = parseFloat(scoreMatch[2].replace(',', '.'));
                         return (max > 0) ? (score / max) * 100 : null;
                     }
-                    return null;
+                    return;
+                    return (max > 0) ? (score / max) * 100 : null;
                 }
 
                 let currentTermAverage = 0;
