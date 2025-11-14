@@ -67,11 +67,10 @@
             background-color: var(--widget-background); border-radius: 12px;
             box-shadow: var(--shadow-widget); padding: 20px;
             cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
-            position: relative;
         }
         .subject-widget:hover { transform: translateY(-5px); box-shadow: 0 12px 20px rgba(0,0,0,0.1); }
         .widget-top-section { display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; }
-        .widget-info { flex: 1; }
+        .widget-info { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
         .widget-title { font-size: 1.2em; font-weight: 700; color: var(--secondary-color); margin: 0 0 10px 0; }
         .widget-average { font-size: 2.5em; font-weight: 700; color: var(--primary-color); margin: 0; }
         .widget-trend { display: flex; align-items: center; gap: 5px; font-weight: 600; font-size: 0.9em; margin-top: 5px; }
@@ -79,31 +78,31 @@
         .widget-trend.down { color: var(--danger-color); }
         .widget-visuals { margin-top: 20px; }
         .gauge-container {
-            width: 120px; height: 60px; position: relative;
-            overflow: hidden;
+            width: 120px; height: 60px; /* This creates the semi-circle shape */
+            position: relative;
+            overflow: hidden; /* Clips the bottom half of the circle */
         }
-        .gauge-background {
-            width: 120px; height: 120px; border-radius: 50%;
-            background-color: #e0e6eb; position: absolute;
+        .gauge-body {
+            width: 120px; height: 120px;
+            border-radius: 50%;
+            position: absolute;
             top: 0; left: 0;
-        }
-        .gauge-fill {
-            width: 120px; height: 120px; border-radius: 50%;
-            background-color: var(--primary-color); position: absolute;
-            top: 0; left: 0; transform-origin: center bottom;
-            transition: transform 0.5s ease-out;
+            /* The magic: conic gradient for the fill and background */
+            background: conic-gradient(var(--fill-color, var(--primary-color)) 0deg var(--value-angle, 0deg), #e0e6eb var(--value-angle, 0deg) 180deg);
+            transform: rotate(-90deg); /* Starts the gauge from the left */
         }
         .gauge-cover {
             width: 100px; height: 100px; border-radius: 50%;
-            background-color: var(--widget-background); position: absolute;
-            top: 10px; left: 10px;
+            background: var(--widget-background);
+            position: absolute; top: 10px; left: 10px;
             display: flex; justify-content: center; align-items: center;
             font-size: 1.4em; font-weight: 700;
         }
         .gauge-goal-line {
-            height: 50%; width: 2px; background-color: var(--danger-color);
-            position: absolute; bottom: 50%; left: calc(50% - 1px);
+            width: 2px; height: 60px; background: var(--danger-color);
+            position: absolute; left: calc(50% - 1px); top: 0;
             transform-origin: bottom center;
+            transition: transform 0.5s ease-out;
         }
         .modal-overlay {
             position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.6);
@@ -174,7 +173,7 @@
                 widgetGrid.innerHTML = `<p style="text-align:center; width:100%;">Aucune donnée à analyser. Veuillez d'abord <a href="data.html">importer vos données</a>.</p>`;
                 return;
             }
-            if (!mbsData.goals) mbsData.goals = {}; // Initialize goals object if it doesn't exist
+            if (!mbsData.goals) mbsData.goals = {};
             setupEventListeners();
             renderWidgets('generale');
         }
@@ -215,26 +214,19 @@
             return totalWeight > 0 ? { average: totalWeightedGrade / totalWeight, weight: totalWeight } : null;
         }
         
-        // --- !! CRITICAL FIX: THIS FUNCTION NOW CORRECTLY USES COMPETENCY WEIGHTS !! ---
         function calculateSubjectAverage(subject) {
             let totalPointsEarned = 0;
             let totalCompetencyWeight = 0;
-
             subject.competencies.forEach(comp => {
                 const compWeightMatch = comp.name.match(/\((\d+)%\)/);
-                if (!compWeightMatch) return; // Skip if competency has no weight
-                
+                if (!compWeightMatch) return;
                 const competencyWeight = parseFloat(compWeightMatch[1]);
                 const competencyResult = calculateCompetencyAverage(comp.assignments);
-
                 if (competencyResult !== null) {
-                    // Add the weighted average of this competency to the total
                     totalPointsEarned += competencyResult.average * (competencyWeight / 100);
                     totalCompetencyWeight += competencyWeight;
                 }
             });
-
-            // Final average is the sum of weighted competency scores, normalized by the sum of their weights
             return totalCompetencyWeight > 0 ? (totalPointsEarned / totalCompetencyWeight) * 100 : null;
         }
         
@@ -263,8 +255,6 @@
             subjectsToRender.forEach(subject => {
                 if (subject.average === null) return;
                 let trend = { direction: '▲', change: 'Nouveau', class: 'up' };
-                // Trend logic would need refinement for a "general" tab, using a different history source.
-                // This implementation correctly shows trends for specific etapes.
                 if (etapeKey !== 'generale' && mbsData.historique?.[etapeKey]?.moyennes?.length > 1) {
                     const moyennes = mbsData.historique[etapeKey].moyennes;
                     const change = moyennes[moyennes.length - 1] - moyennes[moyennes.length - 2];
@@ -289,9 +279,7 @@
                         <div class="gauge-container" id="gauge-${subject.code}-${etapeKey}"></div>
                     </div>
                     <div class="widget-visuals">
-                        <div class="histogram-container">
-                            <canvas id="hist-${subject.code}-${etapeKey}" style="max-height: 120px;"></canvas>
-                        </div>
+                        <div class="histogram-container"><canvas id="hist-${subject.code}-${etapeKey}" style="max-height: 120px;"></canvas></div>
                     </div>`;
                 widget.addEventListener('click', () => openDetailsModal(subject));
                 widgetGrid.appendChild(widget);
@@ -305,11 +293,11 @@
         }
 
         function renderGauge(container, value, goal) {
-            const angle = (val) => -90 + (Math.min(100, Math.max(0, val)) / 100) * 180;
+            const valueAngle = (Math.min(100, Math.max(0, value)) / 100) * 180;
+            const goalAngle = goal ? (goal / 100) * 180 : null;
             container.innerHTML = `
-                <div class="gauge-background"></div>
-                <div class="gauge-fill" style="transform: rotate(${angle(value)}deg)"></div>
-                ${goal ? `<div class="gauge-goal-line" style="transform: rotate(${angle(goal)}deg)"></div>` : ''}
+                <div class="gauge-body" style="--value-angle: ${valueAngle}deg;"></div>
+                ${goal !== undefined ? `<div class="gauge-goal-line" style="transform: rotate(${goalAngle}deg)"></div>` : ''}
                 <div class="gauge-cover">${value.toFixed(0)}%</div>
             `;
         }
@@ -333,10 +321,7 @@
                 type: 'bar',
                 data: {
                     labels: Object.keys(bins),
-                    datasets: [{
-                        data: Object.values(bins),
-                        backgroundColor: ['#e74c3c', '#f39c12', '#a8e063', '#27ae60']
-                    }]
+                    datasets: [{ data: Object.values(bins), backgroundColor: ['#e74c3c', '#f39c12', '#a8e063', '#27ae60'] }]
                 },
                 options: { scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false }, title: { display: true, text: 'Distribution des Notes' } } }
             });
@@ -400,7 +385,6 @@
             });
         }
         
-        // --- !! NEW, ACCURATE GOAL CALCULATOR !! ---
         function setupGoalCalculator(subject, container) {
             let sumOfWeightedGrades = 0;
             let sumOfCompletedCompetencyWeights = 0;
@@ -410,9 +394,7 @@
                 const compWeightMatch = comp.name.match(/\((\d+)%\)/);
                 if (!compWeightMatch) return;
                 const competencyWeight = parseFloat(compWeightMatch[1]);
-                
                 const competencyResult = calculateCompetencyAverage(comp.assignments);
-
                 if (competencyResult !== null) {
                     sumOfWeightedGrades += competencyResult.average * competencyWeight;
                     sumOfCompletedCompetencyWeights += competencyWeight;
@@ -420,7 +402,6 @@
                     sumOfFutureCompetencyWeights += competencyWeight;
                 }
             });
-
             const totalWeight = sumOfCompletedCompetencyWeights + sumOfFutureCompetencyWeights;
             if (totalWeight <= 0) {
                 container.innerHTML = '<h3>Planificateur d\'Objectifs</h3><p>Aucune compétence avec une pondération valide n\'a été trouvée.</p>';
@@ -431,7 +412,6 @@
                 container.innerHTML = '<h3>Planificateur d\'Objectifs</h3><p>Toutes les compétences pour cette matière semblent notées.</p>';
                 return;
             }
-            
             container.innerHTML = `
                 <h3>Planificateur d'Objectifs</h3>
                 <p>Moyenne actuelle : <strong>${currentAverage.toFixed(2)}%</strong> (basée sur <strong>${sumOfCompletedCompetencyWeights}%</strong> de la matière complétée).</p>
@@ -441,10 +421,8 @@
                     <button id="save-goal-btn" class="btn">Sauvegarder</button>
                 </div>
                 <div id="goal-result" class="goal-result"></div>`;
-            
             const goalInput = container.querySelector('#goal-input');
             const goalResult = container.querySelector('#goal-result');
-            
             function calculate() {
                 const targetAvg = parseFloat(goalInput.value);
                 if (isNaN(targetAvg) || targetAvg < 0 || targetAvg > 100) {
@@ -456,7 +434,7 @@
                 const requiredAvgOnFuture = pointsNeededFromFuture / sumOfFutureCompetencyWeights;
                 let message, resultClass;
                 if (requiredAvgOnFuture > 100) {
-                    message = `Pour atteindre <strong>${targetAvg}%</strong>, il faudrait <strong>${requiredAvgOnFuture.toFixed(1)}%</strong> sur les travaux restants. C'est impossible.`;
+                    message = `Pour atteindre <strong>${targetAvg}%</strong>, il faudrait <strong>${requiredAvgOnFuture.toFixed(1)}%</strong> sur les compétences restantes. C'est impossible.`;
                     resultClass = 'danger';
                 } else if (requiredAvgOnFuture < 0) {
                     message = `Félicitations ! Vous avez déjà atteint l'objectif de <strong>${targetAvg}%</strong>.`;
@@ -468,7 +446,6 @@
                 goalResult.innerHTML = message;
                 goalResult.className = `goal-result ${resultClass}`;
             }
-
             goalInput.addEventListener('input', calculate);
             container.querySelector('#save-goal-btn').addEventListener('click', () => {
                 const goalValue = parseFloat(goalInput.value);
@@ -476,7 +453,6 @@
                     mbsData.goals[subject.code] = goalValue;
                     localStorage.setItem('mbsData', JSON.stringify(mbsData));
                     closeDetailsModal();
-                    // Refresh the main widget view to show the new goal line
                     document.querySelector('.tab-btn.active').click(); 
                 } else {
                     alert('Veuillez entrer un objectif valide avant de sauvegarder.');
