@@ -3,17 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mise à Jour des Données - Outil MBS</title>
+    <title>Ajouter des Données - Outil MBS</title>
     <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <!-- Font Awesome for icons (Updated & Reliable CDN Link) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         :root {
-            /* Animation & Transition */
-            --transition-duration: 0.35s;
-
-            /* Light Mode Variables */
             --primary-color: #2980b9;
             --secondary-color: #2c3e50;
             --background-color: #f7f9fb;
@@ -23,43 +18,25 @@
             --footer-grey: #7f8c8d;
             --danger-color: #e74c3c;
             --shadow: 0 8px 15px rgba(0, 0, 0, 0.08);
-            --border-color: #e0e6eb;
+            --transition-speed: 0.3s;
         }
-
-        /* DARK MODE VARIABLES */
+        /* Définition des variables pour le mode sombre */
         [data-theme='dark'] {
-            --background-color: #121212;
-            --widget-background: #1e1e1e;
-            --text-color: #e0e0e0;
-            --secondary-color: #bbbbbb;
-            --light-grey: #757575;
-            --footer-grey: #a0a0a0;
+            --primary-color: #5d9cec;
+            --secondary-color: #ecf0f1;
+            --background-color: #1a1a2e;
+            --widget-background: #232946;
+            --text-color: #b8c1ec;
+            --light-grey: #4f5b93;
+            --footer-grey: #8a8d9b;
             --danger-color: #ff6b6b;
-            --shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-            --border-color: #333333;
-
-            /* Specific element adjustments for dark mode */
-            .site-header { color: var(--text-color); }
-            .important-message { border-color: var(--primary-color); }
+            --shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
         }
 
-        /* GLOBAL TRANSITIONS */
-        body, .site-header-container, .data-widget, textarea, .icon-btn, footer, .modal-content, .important-message {
-            transition: background-color var(--transition-duration) ease, color var(--transition-duration) ease, border-color var(--transition-duration) ease, box-shadow var(--transition-duration) ease;
+        /* Application de la transition à tous les éléments clés */
+        body, .site-header-container, .data-widget, textarea, .info-btn, .theme-toggle, .back-arrow, footer, .modal-content, .important-message {
+            transition: all var(--transition-speed) ease-in-out;
         }
-
-        /* SMOOTHER Page Load Animation */
-        @keyframes fadeInSlideUp {
-            from { opacity: 0; transform: translateY(25px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .site-header-container, .content, footer {
-            opacity: 0;
-            transform: translateY(25px);
-            animation: fadeInSlideUp 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-        }
-        .content { animation-delay: 0.2s; }
-        footer { animation-delay: 0.4s; }
 
         body {
             margin: 0;
@@ -73,61 +50,78 @@
         .site-header-container {
             background-color: var(--widget-background);
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            padding: 15px 25px;
+            padding: 15px 0;
             position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .header-left, .header-right {
-            display: flex;
-            align-items: center;
-            gap: 15px;
         }
         .site-header {
             text-align: center;
-            padding: 0; margin: 0;
+            padding: 0;
+            margin: 0;
             color: var(--secondary-color);
-            font-size: 2.2em; font-weight: 700;
+            font-size: 2.2em;
+            font-weight: 700;
             font-family: 'Playfair Display', serif;
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
         }
         .content {
-            flex-grow: 1; display: flex;
-            justify-content: center; align-items: flex-start;
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
             padding: 40px 20px;
         }
-        
-        /* Standardized Icon Button Style */
-        .icon-btn {
-            background: none; border: 2px solid var(--light-grey); color: var(--text-color);
-            width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; font-size: 1.1em;
+        .back-arrow {
+            position: absolute;
+            top: 50%;
+            left: 25px;
+            transform: translateY(-50%);
+            font-size: 2em;
+            color: var(--secondary-color);
             text-decoration: none;
-            transition: all 0.2s ease, background-color var(--transition-duration);
+            transition: color 0.2s, transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            padding: 5px;
         }
-        .icon-btn:hover {
-            border-color: var(--primary-color);
+        .back-arrow:hover {
             color: var(--primary-color);
-            transform: scale(1.1);
+            transform: translateY(-50%) scale(1.1);
         }
-
+        .back-arrow:active {
+            transform: translateY(-50%) scale(0.95);
+            box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
+        }
         .data-widget {
             background-color: var(--widget-background);
-            padding: 40px; border-radius: 16px;
+            padding: 40px;
+            border-radius: 16px;
             box-shadow: var(--shadow);
-            width: 100%; max-width: 650px; text-align: center;
+            width: 100%;
+            max-width: 650px;
+            text-align: center;
+            /* Animation d'entrée */
+            transform: translateY(20px); 
+            opacity: 0;
+            filter: blur(5px);
+        }
+        .data-widget.loaded {
+            transform: translateY(0);
+            opacity: 1;
+            filter: blur(0);
+            transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.6s, filter 0.6s, box-shadow var(--transition-speed);
         }
         textarea {
-            width: 100%; height: 350px; padding: 15px;
+            width: 100%;
+            height: 350px;
+            padding: 15px;
             border: 2px dashed var(--light-grey);
-            border-radius: 10px; font-family: monospace;
-            font-size: 14px; box-sizing: border-box; resize: vertical;
-            background-color: var(--background-color); /* Matches page BG */
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 14px;
+            box-sizing: border-box;
+            resize: vertical;
+            transition: border-color 0.2s, box-shadow 0.2s, background-color var(--transition-speed), color var(--transition-speed);
+            background-color: var(--widget-background);
             color: var(--text-color);
-            transition: border-color 0.2s, box-shadow 0.2s, background-color var(--transition-duration), color var(--transition-duration);
         }
         textarea:focus {
             border-color: var(--primary-color);
@@ -135,65 +129,163 @@
             outline: none;
         }
         
-        /* Modal Animation */
+        /* Nouveau bouton de bascule du thème */
+        .theme-toggle {
+            position: absolute;
+            top: 50%;
+            right: 80px;
+            transform: translateY(-50%);
+            width: 45px;
+            height: 45px;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.2s, transform 0.2s, color var(--transition-speed), box-shadow 0.2s;
+            font-size: 1.2em;
+            z-index: 10;
+            outline: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .theme-toggle:hover {
+            background-color: var(--primary-color);
+            transform: translateY(-50%) scale(1.05);
+        }
+        .theme-toggle:active {
+            transform: translateY(-50%) scale(0.95);
+            box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .info-btn {
+            position: absolute;
+            top: 50%;
+            right: 25px;
+            transform: translateY(-50%);
+            width: 45px;
+            height: 45px;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
+            font-size: 1.5em;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .info-btn:hover {
+            background-color: var(--primary-color);
+            transform: translateY(-50%) scale(1.05);
+        }
+        .info-btn:active {
+            transform: translateY(-50%) scale(0.95);
+            box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Pop-up (Modal) Animation */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(5px);
-            display: flex; justify-content: center; align-items: center; z-index: 1000;
-            opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s;
+            background-color: rgba(0, 0, 0, 0.7); display: flex;
+            justify-content: center; align-items: center; z-index: 1000;
+            opacity: 0; visibility: hidden; transition: opacity 0.3s ease-out, visibility 0s 0.3s;
         }
-        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-overlay.active { 
+            opacity: 1; 
+            visibility: visible; 
+            transition: opacity 0.3s ease-out; 
+        }
         .modal-content {
-            background-color: var(--widget-background);
+            background-color: var(--widget-background); 
             padding: 30px; border-radius: 12px;
-            max-width: 90%; width: 450px; position: relative;
+            max-width: 90%; width: 450px;
+            position: relative;
             box-shadow: var(--shadow);
-            transform: scale(0.9) translateY(-20px);
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s, background-color var(--transition-duration);
+            /* Animation d'entrée */
+            transform: scale(0.9) translateY(20px);
+            opacity: 0;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease-out, background-color var(--transition-speed);
         }
         .modal-overlay.active .modal-content {
             transform: scale(1) translateY(0);
+            opacity: 1;
         }
+
         .modal-close { position: absolute; top: 10px; right: 15px; font-size: 2em; cursor: pointer; color: var(--light-grey); transition: color 0.2s; }
         .modal-close:hover { color: var(--danger-color); }
         .modal-content h3 { color: var(--primary-color); margin-top: 0; }
         .modal-content p { line-height: 1.5; margin-bottom: 10px; border-left: 3px solid var(--primary-color); padding-left: 10px; }
-        
         .important-message {
-            background-color: var(--background-color);
+            background-color: var(--widget-background);
             border: 1px solid var(--primary-color);
             color: var(--text-color);
-            padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: 500;
-            display: flex; align-items: center; font-size: 0.95em;
+            padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: 500; display: flex;
+            align-items: center; font-size: 0.95em;
+            transition: background-color var(--transition-speed), border-color var(--transition-speed), color var(--transition-speed);
         }
         .important-message .icon { font-size: 1.5em; margin-right: 10px; color: var(--primary-color); }
 
         footer {
             text-align: center; padding: 25px; font-size: 0.9em;
-            color: var(--footer-grey); border-top: 1px solid var(--border-color); margin-top: auto;
+            color: var(--footer-grey); border-top: 1px solid var(--light-grey); margin-top: auto;
         }
         footer a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
         footer a:hover { text-decoration: underline; }
+
+        /* Écran de chargement (Animation initiale) */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--background-color);
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 1;
+            transition: opacity 0.5s ease-out;
+        }
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .loading-spinner {
+            border: 5px solid var(--light-grey);
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
-<body>
+<body id="page-body">
+
+    <!-- Écran de chargement -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner"></div>
+    </div>
 
     <header class="site-header-container">
-        <div class="header-left">
-             <a href="main.html" class="icon-btn" title="Retour au tableau de bord">
-                <i class="fa-solid fa-arrow-left"></i>
-            </a>
-        </div>
+        <a href="main.html" class="back-arrow" title="Retour au tableau de bord">←</a>
         <h1 class="site-header">Outil MBS</h1>
-        <div class="header-right">
-            <button class="icon-btn" id="theme-toggle" title="Mode Sombre/Clair">
-                <i class="fa-solid fa-moon"></i>
-            </button>
-            <button class="icon-btn" id="open-modal-btn" title="Comment ça marche ?">
-                <i class="fa-solid fa-circle-question"></i>
-            </button>
-        </div>
+        <!-- Bouton de bascule du mode sombre/clair -->
+        <button class="theme-toggle" id="theme-toggle" title="Mode Sombre/Clair">
+            <i class="fas fa-moon" id="theme-icon"></i>
+        </button>
+        <button class="info-btn" id="open-modal-btn" title="Comment ça marche ?">?</button>
     </header>
 
     <main class="content">
@@ -225,37 +317,7 @@
         <p><a href="ticket.html">Signaler un problème</a></p>
     </footer>
 
-    <!-- Theme and animation control script -->
-    <script>
-        const themeToggle = document.getElementById('theme-toggle');
-        const html = document.documentElement;
-        const toggleIcon = themeToggle.querySelector('i');
-        const THEME_KEY = 'mbs-theme';
-
-        const updateTheme = (theme) => {
-            html.setAttribute('data-theme', theme);
-            localStorage.setItem(THEME_KEY, theme);
-            if (theme === 'dark') {
-                toggleIcon.classList.remove('fa-moon');
-                toggleIcon.classList.add('fa-sun');
-            } else {
-                toggleIcon.classList.remove('fa-sun');
-                toggleIcon.classList.add('fa-moon');
-            }
-        };
-
-        const storedTheme = localStorage.getItem(THEME_KEY);
-        const initialTheme = storedTheme || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        updateTheme(initialTheme);
-
-        themeToggle.addEventListener('click', () => {
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            updateTheme(newTheme);
-        });
-    </script>
-    
-    <!-- Link to the external JavaScript file for page functionality -->
+    <!-- Link to the external JavaScript file -->
     <script src="js/data-functions.js"></script>
 </body>
 </html>
