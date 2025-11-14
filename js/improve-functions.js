@@ -146,8 +146,10 @@ document.addEventListener('DOMContentLoaded', () => {
             let trend;
 
             if (subjectHistory.length < 2) {
+                // If there's one or zero points, show 0.00% change
                 trend = { direction: '▲', change: '0.00%', class: 'up' };
             } else {
+                // Calculate change between the last two points
                 const currentAvg = subjectHistory[subjectHistory.length - 1];
                 const previousAvg = subjectHistory[subjectHistory.length - 2];
                 const change = currentAvg - previousAvg;
@@ -221,8 +223,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- All other functions (renderGauge, renderHistogram, etc.) remain unchanged ---
-    
     function renderGauge(canvasId, value, goal) {
         const ctx = document.getElementById(canvasId).getContext('2d');
         const gradient = ctx.createLinearGradient(0, 0, 120, 0);
@@ -293,12 +293,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    /**
+     * --- REWRITTEN AND FIXED HISTORY EDITOR ---
+     * This function opens a modal to allow step-by-step editing of a subject's grade history.
+     * Each "step" corresponds to a graded assignment, in chronological order.
+     * The user can select which other assignments were completed at that point in time.
+     */
     function openHistoryEditor(subject) {
+        // 1. GATHER DATA: Collect all assignments for the subject from all etapes.
         const allAssignments = ['etape1', 'etape2', 'etape3'].flatMap(etapeKey => 
             (mbsData[etapeKey] || []).filter(s => s.code === subject.code)
             .flatMap(s => s.competencies.flatMap(c => c.assignments.map(a => ({...a, compName: c.name}))))
         ).map((a, index) => ({...a, uniqueId: `${subject.code}-${index}`}));
 
+        // A "step" in history is defined by a graded assignment.
         const gradedAssignments = allAssignments.filter(a => getNumericGrade(a.result) !== null);
         const numSteps = gradedAssignments.length;
 
@@ -307,65 +315,83 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // 2. CREATE MODAL UI
         const modal = document.createElement('div');
         modal.id = 'history-editor-modal';
         modal.className = 'modal-overlay active';
+        
         let stepButtonsHTML = '';
         for (let i = 0; i < numSteps; i++) {
             stepButtonsHTML += `<button class="step-btn" data-step="${i}">${i + 1}</button>${i < numSteps - 1 ? '<span class="arrow">→</span>' : ''}`;
         }
+
         modal.innerHTML = `
             <div class="history-editor-content">
-                <div class="history-editor-header"><h3>Éditeur d'historique pour ${subject.name}</h3><p>Pour chaque point (basé sur un travail noté), cochez tous les travaux qui étaient complétés à ce moment.</p></div>
+                <div class="history-editor-header">
+                    <h3>Éditeur d'historique pour ${subject.name}</h3>
+                    <p>Chaque point représente un travail noté. Sélectionnez les travaux qui étaient complétés à ce moment pour recalculer la moyenne.</p>
+                </div>
                 <div class="history-steps-container"><span class="arrow">Ancien</span>${stepButtonsHTML}<span class="arrow">Récent</span></div>
                 <div class="assignments-list"></div>
-                <div class="history-editor-footer"><button id="close-history-editor" class="btn-secondary">Annuler</button><button id="save-history-all" class="btn-primary">Sauvegarder l'Historique</button></div>
+                <div class="history-editor-footer">
+                    <button id="close-history-editor" class="btn-secondary">Annuler</button>
+                    <button id="save-history-all" class="btn-primary">Sauvegarder l'Historique</button>
+                </div>
             </div>`;
         document.body.appendChild(modal);
 
         const assignmentsContainer = modal.querySelector('.assignments-list');
         const stepButtons = modal.querySelectorAll('.step-btn');
         let activeStep = 0;
-        let tempSelections = Array.from({ length: numSteps }, () => []);
 
+        // 3. STATE MANAGEMENT: Use an array of Sets. Each Set holds the unique IDs of assignments for that step.
+        let historyStepSelections = [];
+        const existingHistory = mbsData.historique[subject.code] || [];
+        
+        // Initialize state: default to a chronological progression.
+        for (let i = 0; i < numSteps; i++) {
+            const selectionsForStep = new Set();
+            // By default, step 'i' includes all graded assignments up to and including 'i'.
+            for (let j = 0; j <= i; j++) {
+                selectionsForStep.add(gradedAssignments[j].uniqueId);
+            }
+            historyStepSelections.push(selectionsForStep);
+        }
+
+        // 4. RENDER AND EVENT HANDLING LOGIC
         const loadStep = (stepIndex) => {
             activeStep = stepIndex;
             stepButtons.forEach(btn => btn.classList.remove('active'));
             stepButtons[stepIndex].classList.add('active');
             
-            let selectionsForThisStep = new Set();
-            for(let i = 0; i <= stepIndex; i++) {
-                selectionsForThisStep.add(gradedAssignments[i].uniqueId);
-                if (tempSelections[i]) {
-                    tempSelections[i].forEach(id => selectionsForThisStep.add(id));
-                }
-            }
-
-            assignmentsContainer.innerHTML = gradedAssignments.map(assign => {
-                const isChecked = selectionsForThisStep.has(assign.uniqueId);
+            const currentSelections = historyStepSelections[activeStep];
+            
+            assignmentsContainer.innerHTML = allAssignments.map(assign => {
+                const isChecked = currentSelections.has(assign.uniqueId);
+                // The assignment that defines the current step cannot be unchecked.
+                const definingAssignmentId = gradedAssignments[activeStep].uniqueId;
+                const isDisabled = (assign.uniqueId === definingAssignmentId);
+                const isGraded = getNumericGrade(assign.result) !== null;
+                
                 return `
-                <div class="assignment-item">
-                    <input type="checkbox" id="${assign.uniqueId}" data-id="${assign.uniqueId}" ${isChecked ? 'checked' : ''}>
-                    <label for="${assign.uniqueId}">${assign.work.replace('<br>', ' ')}<small>Note: ${assign.result} | Pondération: ${assign.pond}%</small></label>
+                <div class="assignment-item ${isGraded ? '' : 'ungraded'}">
+                    <input type="checkbox" id="${assign.uniqueId}-${stepIndex}" data-id="${assign.uniqueId}" ${isChecked ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}>
+                    <label for="${assign.uniqueId}-${stepIndex}">
+                        ${assign.work.replace('<br>', ' ')}
+                        <small>Note: ${assign.result || 'N/A'} | Pondération: ${assign.pond}%</small>
+                    </label>
                 </div>`;
             }).join('');
 
-            assignmentsContainer.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            // Attach event listeners to checkboxes for the current step
+            assignmentsContainer.querySelectorAll('input[type="checkbox"]:not([disabled])').forEach(checkbox => {
                 checkbox.addEventListener('change', () => {
                     const id = checkbox.dataset.id;
-                    const isChecked = checkbox.checked;
-                    const assignmentForId = gradedAssignments.find(a => a.uniqueId === id);
-                    const assignmentIndex = gradedAssignments.indexOf(assignmentForId);
-                    
-                    if (isChecked) {
-                        if(!tempSelections[assignmentIndex]) tempSelections[assignmentIndex] = [];
-                        tempSelections[assignmentIndex].push(id);
+                    if (checkbox.checked) {
+                        historyStepSelections[activeStep].add(id);
                     } else {
-                        if(tempSelections[assignmentIndex]) {
-                           tempSelections[assignmentIndex] = tempSelections[assignmentIndex].filter(selectedId => selectedId !== id);
-                        }
+                        historyStepSelections[activeStep].delete(id);
                     }
-                    loadStep(activeStep); 
                 });
             });
         };
@@ -374,30 +400,30 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const closeModal = () => {
             modal.remove();
+            // Re-render widgets to reflect any potential changes
             renderWidgets(document.querySelector('.tab-btn.active').dataset.etape);
         };
         
+        // 5. SAVE LOGIC
         modal.querySelector('#save-history-all').addEventListener('click', () => {
             const newHistory = [];
             for (let i = 0; i < numSteps; i++) {
-                const finalSelectionsForStep = new Set();
-                for (let j = 0; j <= i; j++) {
-                    finalSelectionsForStep.add(gradedAssignments[j].uniqueId);
-                    if(tempSelections[j]) tempSelections[j].forEach(id => finalSelectionsForStep.add(id));
-                }
-
-                const assignmentsForStep = allAssignments.filter(a => finalSelectionsForStep.has(a.uniqueId));
+                const stepSelections = historyStepSelections[i];
+                const assignmentsForStep = allAssignments.filter(a => stepSelections.has(a.uniqueId));
                 
                 const competenciesForCalc = new Map();
                 assignmentsForStep.forEach(assign => {
-                    if (!competenciesForCalc.has(assign.compName)) competenciesForCalc.set(assign.compName, { name: assign.compName, assignments: [] });
+                    if (!competenciesForCalc.has(assign.compName)) {
+                        competenciesForCalc.set(assign.compName, { name: assign.compName, assignments: [] });
+                    }
                     competenciesForCalc.get(assign.compName).assignments.push(assign);
                 });
+
                 const newAverage = calculateSubjectAverage({ competencies: Array.from(competenciesForCalc.values()) });
                 newHistory.push(newAverage);
             }
             
-            mbsData.historique[subject.code] = newHistory;
+            mbsData.historique[subject.code] = newHistory.filter(h => h !== null); // Ensure no nulls are saved
             localStorage.setItem('mbsData', JSON.stringify(mbsData));
             closeModal();
         });
@@ -405,7 +431,8 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.querySelector('#close-history-editor').addEventListener('click', closeModal);
         modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
 
-        loadStep(0);
+        // Load the last step by default, as it's the most current one.
+        loadStep(numSteps - 1);
     }
     
     function openDetailsModal(subject, etapeKey) {
