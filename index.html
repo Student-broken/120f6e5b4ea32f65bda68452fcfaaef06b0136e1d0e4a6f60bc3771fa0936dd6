@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accueil - Outil MBS</title>
+    <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2980b9;
+            --secondary-color: #2c3e50;
+            --performance-color: #27ae60;
+            --widget-background: rgba(255, 255, 255, 0.85);
+            --text-color: #34495e;
+            --footer-grey: #f0f4f7;
+        }
+
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: var(--text-color);
+            overflow: hidden; /* Prevents scrollbars from the background image */
+        }
+
+        .background-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('background.jpg');
+            background-size: cover;
+            background-position: center;
+            z-index: -2;
+            animation: fadeInBackground 1.5s ease-out;
+        }
+
+        .background-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.2);
+            z-index: -1;
+        }
+
+        .content {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .welcome-widget {
+            background-color: var(--widget-background);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px); /* For Safari */
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+            width: 100%;
+            max-width: 420px;
+            animation: fadeInWidget 0.8s ease-out 0.3s forwards;
+            opacity: 0;
+        }
+        
+        @keyframes fadeInWidget {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInBackground {
+            from { opacity: 0; transform: scale(1.05); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+
+        .welcome-widget h1 {
+            margin-top: 0;
+            margin-bottom: 30px;
+            color: var(--secondary-color);
+            font-family: 'Playfair Display', serif;
+            font-size: 2.8em;
+            font-weight: 700;
+        }
+
+        .welcome-back {
+            font-size: 1.2em;
+            font-weight: 500;
+            color: var(--secondary-color);
+            margin-bottom: 5px;
+        }
+
+        .user-name {
+            font-size: 2em;
+            font-weight: 300;
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 30px;
+            word-break: break-word; /* Prevents long names from breaking layout */
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.05em;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            color: white;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .btn:last-child {
+            margin-bottom: 0;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .btn-primary { background-color: var(--primary-color); }
+        .btn-primary:hover { background-color: #3498db; }
+
+        .btn-secondary { background-color: var(--secondary-color); }
+        .btn-secondary:hover { background-color: #3a536b; }
+        
+        .btn-performance { background-color: var(--performance-color); }
+        .btn-performance:hover { background-color: #2ecc71; }
+
+        #signup-flow, #login-flow {
+            display: none; /* Hidden by default, JS will show the correct one */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="background-container"></div>
+    <div class="background-overlay"></div>
+
+    <main class="content">
+        <div class="welcome-widget">
+            <!-- This block is shown to new users -->
+            <div id="signup-flow">
+                <h1>Outil MBS</h1>
+                <a href="data.html" class="btn btn-primary">
+                    <span>🚀</span>
+                    <span>Commencer</span>
+                </a>
+            </div>
+
+            <!-- This block is shown to returning users -->
+            <div id="login-flow">
+                <p class="welcome-back">Bon retour,</p>
+                <h2 id="userNameDisplay" class="user-name"></h2>
+                
+                <a href="main.html" class="btn btn-primary">
+                    <span>📊</span>
+                    <span>Accéder au tableau de bord</span>
+                </a>
+                <a href="data.html" class="btn btn-secondary">
+                    <span>🔄</span>
+                    <span>Mettre à jour les données</span>
+                </a>
+                <a href="improve.html" class="btn btn-performance">
+                    <span>📈</span>
+                    <span>Analyser ma performance</span>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const signupFlow = document.getElementById('signup-flow');
+            const loginFlow = document.getElementById('login-flow');
+            const userNameDisplay = document.getElementById('userNameDisplay');
+
+            try {
+                // We check for 'mbsData' and ensure it's valid and has a name
+                const mbsData = JSON.parse(localStorage.getItem('mbsData'));
+                
+                if (mbsData && mbsData.valid === true && mbsData.nom) {
+                    // If data is valid, show the returning user flow
+                    userNameDisplay.textContent = mbsData.nom;
+                    loginFlow.style.display = 'block';
+                } else {
+                    // Otherwise, show the new user flow
+                    // Also clear any potentially corrupted old data
+                    if(localStorage.getItem('mbsData')) {
+                        localStorage.removeItem('mbsData');
+                    }
+                    signupFlow.style.display = 'block';
+                }
+            } catch (error) {
+                // If there's an error parsing the data, treat as a new user
+                console.error("Could not parse mbsData from localStorage:", error);
+                localStorage.removeItem('mbsData'); // Clean up corrupted data
+                signupFlow.style.display = 'block';
+            }
+        });
+    </script>
+
+</body>
+</html>
