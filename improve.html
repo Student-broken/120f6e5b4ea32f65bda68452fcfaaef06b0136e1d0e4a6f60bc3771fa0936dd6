@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analyse - Outil MBS</title>
     <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
-    <!-- Font Awesome for icons -->
+    <!-- Font Awesome for icons (Updated & Reliable CDN Link) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -47,56 +47,125 @@
             --goal-success-bg: #1a3e2a;
             --goal-warning-bg: #4d381c;
             --goal-danger-bg: #4f2323;
-            .site-header, .nav-arrow, .widget-title { color: var(--text-color); }
-            .comp-widget, .calculator-container { background-color: #282828; border-color: var(--border-color); }
+
+            /* Specific element adjustments for dark mode */
+            .site-header { color: var(--text-color); }
+            .nav-arrow { color: var(--text-color); }
+            .widget-title { color: var(--text-color); }
+            .comp-widget, .calculator-container {
+                background-color: #282828;
+                border-color: var(--border-color);
+            }
             .modal-content { background-color: var(--background-color); }
-            .modal-header { background-color: #2c3e50; }
-            .goal-input input { background-color: #282828; border-color: var(--light-grey); color: var(--text-color); }
+            .modal-header { background-color: #2c3e50; } /* Keep header dark */
+            .goal-input input {
+                background-color: #282828;
+                border-color: var(--light-grey);
+                color: var(--text-color);
+            }
         }
 
-        /* GLOBAL TRANSITIONS */
-        body, .site-header-container, .sticky-tabs, .subject-widget, .modal-content, .tab-btn, .comp-widget, .calculator-container, input, button {
+        /* GLOBAL TRANSITIONS for smooth theme change */
+        body, .site-header-container, .sticky-tabs, .subject-widget, .modal-content, .tab-btn, .comp-widget, .calculator-container, input {
             transition: background-color var(--transition-duration) ease, color var(--transition-duration) ease, border-color var(--transition-duration) ease, box-shadow var(--transition-duration) ease;
         }
         
-        @keyframes fadeInSlideUp { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }
-        .site-header-container, .sticky-tabs, .widget-grid, footer { animation: fadeInSlideUp 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
-        .sticky-tabs { animation-delay: 0.1s; } .widget-grid { animation-delay: 0.2s; } footer { animation-delay: 0.4s; }
+        /* SMOOTHER Page Load Animation Keyframes */
+        @keyframes fadeInSlideUp {
+            from { opacity: 0; transform: translateY(25px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Animation application for main elements */
+        .site-header-container, .sticky-tabs, .widget-grid, footer {
+            opacity: 0;
+            transform: translateY(25px);
+            animation: fadeInSlideUp 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        .sticky-tabs { animation-delay: 0.1s; }
+        .widget-grid { animation-delay: 0.2s; }
+        footer { animation-delay: 0.4s; }
 
-        body { margin: 0; font-family: 'Inter', sans-serif; background-color: var(--background-color); color: var(--text-color); }
-        .site-header-container { background-color: var(--widget-background); box-shadow: var(--shadow-header); border-bottom: 1px solid var(--border-color); padding: 15px 25px; display: flex; align-items: center; }
-        .header-left { flex: 1; } .header-center { flex: 2; text-align: center; } .header-right { flex: 1; display: flex; justify-content: flex-end; }
-        .site-header { padding: 0; margin: 0; color: var(--secondary-color); font-size: 2.2em; font-weight: 700; font-family: 'Playfair Display', serif; }
+        /* General Styles */
+        body {
+            margin: 0; font-family: 'Inter', sans-serif;
+            background-color: var(--background-color); color: var(--text-color);
+        }
+        .site-header-container {
+            background-color: var(--widget-background); box-shadow: var(--shadow-header);
+            border-bottom: 1px solid var(--border-color); padding: 15px 25px;
+            display: flex; align-items: center; position: relative; margin-bottom: 0; /* Margin removed for sticky tabs */
+        }
+        .header-left { flex: 1; display: flex; justify-content: flex-start; }
+        .header-center { flex: 2; text-align: center; }
+        .header-right { flex: 1; display: flex; justify-content: flex-end; }
+        .site-header {
+            padding: 0; margin: 0; color: var(--secondary-color);
+            font-size: 2.2em; font-weight: 700; font-family: 'Playfair Display', serif;
+            display: inline-block;
+        }
         .nav-arrow { font-size: 2em; color: var(--secondary-color); text-decoration: none; transition: all 0.2s; }
         .nav-arrow:hover { color: var(--primary-color); transform: scale(1.05); }
 
-        .icon-btn { background: none; border: 2px solid var(--light-grey); color: var(--text-color); width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1em; transition: all 0.2s ease; }
-        .icon-btn:hover { border-color: var(--primary-color); color: var(--primary-color); transform: scale(1.1); }
+        /* Dark Mode Toggle Button */
+        .icon-btn {
+            background: none; border: 2px solid var(--light-grey); color: var(--text-color);
+            width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; font-size: 1.1em;
+            transition: all 0.2s ease, background-color var(--transition-duration);
+        }
+        .icon-btn:hover {
+            border-color: var(--primary-color); color: var(--primary-color);
+            transform: scale(1.1);
+        }
 
-        .sticky-tabs { position: sticky; top: 0; background-color: var(--background-color); z-index: 100; padding: 15px 0; border-bottom: 1px solid var(--border-color); display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
-        .tab-btn { padding: 10px 20px; border: 1px solid var(--light-grey); border-radius: 20px; background-color: transparent; color: var(--text-color); font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .sticky-tabs {
+            position: sticky; top: 0; background-color: var(--background-color);
+            z-index: 100; padding: 15px 0; border-bottom: 1px solid var(--border-color);
+            display: flex; justify-content: center; gap: 10px; margin-bottom: 20px;
+        }
+        .tab-btn {
+            padding: 10px 20px; border: 1px solid var(--light-grey); border-radius: 20px;
+            background-color: transparent; color: var(--text-color); font-weight: 600;
+            cursor: pointer; transition: all 0.2s;
+        }
         .tab-btn.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
-        .widget-grid { max-width: 1400px; margin: 30px auto; padding: 0 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 25px; }
-        .subject-widget { background-color: var(--widget-background); border-radius: 12px; box-shadow: var(--shadow-widget); padding: 20px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; }
+        .widget-grid {
+            max-width: 1400px; margin: 30px auto; padding: 0 20px;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 25px;
+        }
+        .subject-widget {
+            background-color: var(--widget-background); border-radius: 12px;
+            box-shadow: var(--shadow-widget); padding: 20px;
+            cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+            display: flex; flex-direction: column;
+        }
         .subject-widget:hover { transform: translateY(-5px); box-shadow: 0 12px 20px rgba(0,0,0,0.1); }
         .widget-top-section { display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; }
         .widget-info { flex: 1; }
         .widget-title { font-size: 1.2em; font-weight: 700; color: var(--secondary-color); margin: 0 0 10px 0; }
         .widget-average { font-size: 2.5em; font-weight: 700; color: var(--primary-color); margin: 0; }
         .widget-trend { display: flex; align-items: center; gap: 5px; font-weight: 600; font-size: 0.9em; margin-top: 5px; }
-        .widget-trend.up { color: var(--success-color); } .widget-trend.down { color: var(--danger-color); }
+        .widget-trend.up { color: var(--success-color); }
+        .widget-trend.down { color: var(--danger-color); }
         .gauge-container { width: 120px; height: 70px; position: relative; }
-        .widget-bottom-section { margin-top: 15px; flex-grow: 1; display: flex; flex-direction: column; }
-        .chart-toggle-header { display: flex; justify-content: flex-end; margin-bottom: 5px; }
-        .chart-container { height: 140px; position: relative; }
-        .chart-container canvas { cursor: default; } .chart-container.clickable canvas { cursor: pointer; }
-        .reconstruct-prompt { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: var(--light-grey); pointer-events: none; }
-
-        /* Modals */
-        .modal-overlay { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(5px); z-index: 1000; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; }
+        .histogram-container { margin-top: 15px; height: 120px; }
+        
+        /* Modal Animations */
+        .modal-overlay {
+            position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px); z-index: 1000; display: flex;
+            justify-content: center; align-items: center; opacity: 0;
+            visibility: hidden; transition: opacity 0.3s, visibility 0.3s;
+        }
         .modal-overlay.active { opacity: 1; visibility: visible; }
-        .modal-content { background-color: var(--background-color); border-radius: 16px; width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto; transform: scale(0.9) translateY(-20px); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .modal-content {
+            background-color: var(--background-color); border-radius: 16px; width: 90%;
+            max-width: 800px; max-height: 90vh; overflow-y: auto;
+            transform: scale(0.9) translateY(-20px);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
         .modal-overlay.active .modal-content { transform: scale(1) translateY(0); }
+
         .modal-header { padding: 20px 25px; background-color: var(--secondary-color); color: white; border-radius: 16px 16px 0 0; }
         .modal-title { font-family: 'Playfair Display', serif; font-size: 1.8em; margin: 0; }
         .modal-body { padding: 25px; }
@@ -106,26 +175,163 @@
         .calculator-container { background-color: var(--widget-background); border-radius: 8px; padding: 20px; border: 1px solid var(--border-color); }
         .goal-input { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
         .goal-input input { width: 80px; padding: 8px; border-radius: 6px; border: 1px solid var(--light-grey); text-align: center; font-size: 1.1em; }
-        .goal-result { padding: 15px; border-radius: 6px; text-align: center; font-size: 1.1em; font-weight: 600; }
+        .goal-result { padding: 15px; border-radius: 6px; text-align: center; font-size: 1.1em; font-weight: 600; transition: background-color var(--transition-duration); }
         .goal-result.success { background-color: var(--goal-success-bg); color: var(--success-color); }
         .goal-result.warning { background-color: var(--goal-warning-bg); color: var(--warning-color); }
         .goal-result.danger { background-color: var(--goal-danger-bg); color: var(--danger-color); }
         .btn-save { padding: 8px 12px; border: none; background-color: var(--primary-color); color: white; border-radius: 6px; cursor: pointer; }
-
-        /* History Editor Modal Styles */
-        #history-editor-modal .modal-content { max-width: 900px; }
-        .editor-container { display: flex; gap: 20px; }
-        .steps-panel { flex-basis: 200px; }
-        .assignments-panel { flex-grow: 1; }
-        .steps-timeline { display: flex; align-items: center; justify-content: center; margin: 10px 0 20px; font-weight: 600; color: var(--light-grey); }
-        .step-btn { display: block; width: 100%; padding: 12px; margin-bottom: 10px; border: 2px solid var(--light-grey); border-radius: 8px; background: transparent; color: var(--text-color); font-size: 1em; cursor: pointer; text-align: left; }
-        .step-btn.active { border-color: var(--primary-color); background-color: rgba(41, 128, 185, 0.1); font-weight: bold; }
-        .assignments-list { max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; }
-        .assignment-item { padding: 8px; margin-bottom: 5px; border-radius: 6px; display: flex; align-items: center; gap: 10px; }
-        .assignment-item input { width: 20px; height: 20px; }
-        .editor-actions { margin-top: 20px; text-align: right; }
-
         footer { text-align: center; padding: 25px; font-size: 0.9em; color: var(--footer-grey); border-top: 1px solid var(--border-color); margin-top: 40px; }
+   
+    
+    /* ----- ADD THIS CSS TO YOUR STYLESHEET ----- */
+
+/* Chart Toggle Button */
+.widget-chart-controls {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-bottom: 5px; /* Space between button and chart */
+    height: 25px; /* Reserve space to prevent layout shift */
+}
+
+.chart-toggle-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--light-grey);
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8em;
+    transition: all 0.2s ease;
+}
+
+.chart-toggle-btn:hover {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* History Editor Modal Specific Styles */
+#history-editor-modal { /* Using the same overlay class */
+    z-index: 1100; /* Ensure it's above the details modal */
+}
+
+.history-editor-content {
+    background-color: var(--widget-background);
+    padding: 25px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 700px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-widget);
+}
+
+.history-editor-header h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6em;
+    margin-top: 0;
+    color: var(--primary-color);
+}
+
+.history-steps-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap; /* Allow wrapping on small screens */
+}
+
+.step-btn {
+    padding: 10px 15px;
+    border: 1px solid var(--border-color);
+    background-color: transparent;
+    color: var(--text-color);
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.step-btn.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.history-steps-container .arrow {
+    font-size: 1.2em;
+    color: var(--light-grey);
+}
+
+.assignments-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding-right: 10px; /* for scrollbar */
+    margin-bottom: 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.assignment-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    border-radius: 6px;
+}
+
+.assignment-item:nth-child(odd) {
+    background-color: rgba(128, 128, 128, 0.05);
+}
+
+.assignment-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary-color);
+    cursor: pointer;
+}
+
+.assignment-item label {
+    flex-grow: 1;
+    cursor: pointer;
+}
+.assignment-item label small {
+    display: block;
+    color: var(--light-grey);
+    font-size: 0.8em;
+}
+
+.history-editor-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+}
+
+.btn-secondary {
+    padding: 10px 15px;
+    border: 1px solid var(--light-grey);
+    background-color: transparent;
+    color: var(--text-color);
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.btn-primary {
+    padding: 10px 15px;
+    border: none;
+    background-color: var(--success-color);
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+}
+    
+    
     </style>
 </head>
 <body>
@@ -133,7 +339,8 @@
         <div class="header-left"><a href="main.html" class="nav-arrow" title="Retour au tableau de bord">←</a></div>
         <div class="header-center"><h1 class="site-header">Outil MBS</h1></div>
         <div class="header-right">
-            <button id="theme-toggle" class="icon-btn" aria-label="Changer de thème">
+            <!-- Theme Toggle Button -->
+            <button id="theme-toggle" class="icon-btn" aria-label="Changer de thème (Mode Clair/Sombre)">
                 <i class="fa-solid fa-moon"></i>
             </button>
         </div>
@@ -146,18 +353,19 @@
         <button class="tab-btn" data-etape="etape3">Étape 3</button>
     </div>
 
-    <main id="widget-grid" class="widget-grid"></main>
+    <main id="widget-grid" class="widget-grid">
+        <!-- Widgets will be populated by JavaScript -->
+    </main>
     
     <div id="details-modal" class="modal-overlay">
-        <div id="modal-content" class="modal-content"></div>
-    </div>
-    
-    <div id="history-editor-modal" class="modal-overlay">
-         <!-- History editor content will be populated by JavaScript -->
+        <div id="modal-content" class="modal-content">
+            <!-- Modal content will be populated by JavaScript -->
+        </div>
     </div>
 
     <footer><p>Outil MBS - Moyenne, Bilan, Stratégie</p></footer>
 
+    <!-- Theme and animation control script -->
     <script>
         const themeToggle = document.getElementById('theme-toggle');
         const html = document.documentElement;
@@ -167,28 +375,27 @@
         const updateTheme = (theme) => {
             html.setAttribute('data-theme', theme);
             localStorage.setItem(THEME_KEY, theme);
-            toggleIcon.classList.toggle('fa-sun', theme === 'dark');
-            toggleIcon.classList.toggle('fa-moon', theme !== 'dark');
-             // Re-render widgets if the theme changes to update chart colors
-            if (window.renderWidgets && typeof window.renderWidgets === 'function') {
-                const activeTab = document.querySelector('.tab-btn.active');
-                if (activeTab) {
-                    window.renderWidgets(activeTab.dataset.etape);
-                }
+            if (theme === 'dark') {
+                toggleIcon.classList.remove('fa-moon');
+                toggleIcon.classList.add('fa-sun');
+            } else {
+                toggleIcon.classList.remove('fa-sun');
+                toggleIcon.classList.add('fa-moon');
             }
         };
 
         const storedTheme = localStorage.getItem(THEME_KEY);
-        const initialTheme = storedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        const initialTheme = storedTheme || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         updateTheme(initialTheme);
 
         themeToggle.addEventListener('click', () => {
-            const newTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
             updateTheme(newTheme);
         });
     </script>
-    
-    <script src="path/to/your/javascript.js"></script> <!-- CHANGE THIS PATH -->
 
+    <!-- Link to the external JavaScript file for page functionality -->
+    <script src="js/improve-functions.js"></script>
 </body>
 </html>
