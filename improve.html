@@ -282,20 +282,17 @@
                         const cy = chartArea.top + chartArea.height;
                         const needleRadius = chart.getDatasetMeta(0).data[0].outerRadius;
                         ctx.save();
-                        // Needle
                         ctx.translate(cx, cy); ctx.rotate(angle); ctx.beginPath();
                         ctx.moveTo(0, -5); ctx.lineTo(needleRadius - 10, 0); ctx.lineTo(0, 5);
                         ctx.fillStyle = 'var(--secondary-color)'; ctx.fill();
                         ctx.restore();
-                        // Goal Line
                         if (goal) {
                             const goalAngle = Math.PI + (goal / 100) * Math.PI;
                             const innerRadius = chart.getDatasetMeta(0).data[0].innerRadius;
                             ctx.save();
                             ctx.translate(cx, cy); ctx.rotate(goalAngle); ctx.beginPath();
-                            ctx.moveTo(innerRadius, 0); ctx.lineTo(needleRadius, 0);
-                            ctx.strokeStyle = 'var(--danger-color)'; ctx.lineWidth = 3;
-                            ctx.stroke();
+                            ctx.moveTo(innerRadius, 0); ctx.lineTo(needleRadius, 0); // Correct radial line
+                            ctx.strokeStyle = 'var(--danger-color)'; ctx.lineWidth = 3; ctx.stroke();
                             ctx.restore();
                         }
                     }
@@ -323,7 +320,6 @@
         
         function openDetailsModal(subject, etapeKey) {
             const modalContent = document.getElementById('modal-content');
-            const currentObjective = mbsData.settings.objectives[subject.code] || '';
             modalContent.innerHTML = `
                 <div class="modal-header"><h2 class="modal-title">${subject.name} (${subject.code})</h2></div>
                 <div class="modal-body">
@@ -359,7 +355,6 @@
                     createOrUpdateChart(compsForChart[widget.dataset.index]);
                 });
             });
-
             setupGoalFramework(subject, modalContent.querySelector('.calculator-container'), etapeKey);
             detailsModal.classList.add('active');
         }
@@ -381,12 +376,11 @@
             container.innerHTML = `
                 <h3>Planificateur d'Objectifs</h3>
                 <div class="goal-input">
-                    <label for="objective-input">Objectif pour cette matière :</label>
+                    <label for="objective-input" id="objective-label">Objectif :</label>
                     <input type="number" id="objective-input" min="0" max="100" value="${currentObjective}">%
                     <button id="save-objective-btn" class="btn-save">Sauvegarder</button>
                 </div>
                 <div id="calculator-content"></div>`;
-
             const objectiveInput = container.querySelector('#objective-input');
             const saveObjectiveBtn = container.querySelector('#save-objective-btn');
             saveObjectiveBtn.addEventListener('click', () => {
@@ -401,14 +395,14 @@
                 setTimeout(() => { saveObjectiveBtn.textContent = 'Sauvegarder'; }, 1500);
                 renderWidgets(document.querySelector('.tab-btn.active').dataset.etape);
             });
-
             const calculatorContent = container.querySelector('#calculator-content');
             const hasFutureWork = subject.competencies.some(comp => comp.assignments.some(a => getNumericGrade(a.result) === null && parseFloat(a.pond) > 0));
-            
             if (hasFutureWork) {
+                container.querySelector('#objective-label').textContent = 'Objectif pour cette matière :';
                 setupIntraSubjectCalculator(subject, calculatorContent, objectiveInput);
             } else {
-                setupInterEtapeCalculator(calculatorContent, etapeKey);
+                container.querySelector('#objective-label').textContent = 'Objectif global :';
+                setupInterEtapeCalculator(calculatorContent, etapeKey, objectiveInput);
             }
         }
         
@@ -416,21 +410,18 @@
             container.innerHTML = `<p id="calc-info"></p><div id="goal-result" class="goal-result"></div>`;
             const goalResult = container.querySelector('#goal-result');
             const calcInfo = container.querySelector('#calc-info');
-
             function calculate() {
                 let sumOfWeightedGrades = 0, sumOfCompletedWeights = 0, sumOfFutureWeights = 0, sumOfTotalWeights = 0;
-                subject.competencies.forEach(comp => {
-                    comp.assignments.forEach(assign => {
-                        const weight = parseFloat(assign.pond);
-                        if (isNaN(weight) || weight <= 0) return;
-                        sumOfTotalWeights += weight;
-                        const grade = getNumericGrade(assign.result);
-                        if (grade !== null) {
-                            sumOfWeightedGrades += grade * weight;
-                            sumOfCompletedWeights += weight;
-                        } else { sumOfFutureWeights += weight; }
-                    });
-                });
+                subject.competencies.forEach(comp => comp.assignments.forEach(assign => {
+                    const weight = parseFloat(assign.pond);
+                    if (isNaN(weight) || weight <= 0) return;
+                    sumOfTotalWeights += weight;
+                    const grade = getNumericGrade(assign.result);
+                    if (grade !== null) {
+                        sumOfWeightedGrades += grade * weight;
+                        sumOfCompletedWeights += weight;
+                    } else { sumOfFutureWeights += weight; }
+                }));
                 if (sumOfTotalWeights <= 0) { calcInfo.textContent = 'Aucun travail avec une pondération valide n\'a été trouvé.'; return; }
                 const currentAverage = sumOfCompletedWeights > 0 ? (sumOfWeightedGrades / sumOfCompletedWeights) : 0;
                 const completedPercentage = (sumOfCompletedWeights / sumOfTotalWeights) * 100;
@@ -450,30 +441,45 @@
             calculate();
         }
 
-        function setupInterEtapeCalculator(container, currentEtapeKey) {
+        function setupInterEtapeCalculator(container, currentEtapeKey, goalInput) {
+            container.innerHTML = `<p id="calc-info"></p><div id="goal-result" class="goal-result"></div>`;
+            const goalResult = container.querySelector('#goal-result');
+            const calcInfo = container.querySelector('#calc-info');
+
             const etapeWeights = { etape1: 0.2, etape2: 0.2, etape3: 0.6 };
-            let currentGlobalContribution = 0;
-            let futureEtapeWeight = 0;
+            const etapeSequence = ['etape1', 'etape2', 'etape3'];
             let nextEtape = null;
-            ['etape1', 'etape2', 'etape3'].forEach(etape => {
-                const avg = calculateSubjectAverage({ competencies: (mbsData[etape] || []).flatMap(s => s.competencies) });
-                if (avg !== null) {
-                    currentGlobalContribution += avg * etapeWeights[etape];
-                } else if (!nextEtape) {
-                    nextEtape = etape;
-                    futureEtapeWeight = etapeWeights[etape];
+            if(currentEtapeKey === 'etape1') nextEtape = 'etape2';
+            if(currentEtapeKey === 'etape2') nextEtape = 'etape3';
+
+            if (!nextEtape || currentEtapeKey === 'generale') {
+                calcInfo.innerHTML = 'Toutes les étapes futures sont déjà planifiées ou le contexte est général.';
+                goalResult.style.display = 'none';
+                return;
+            }
+
+            const etapeAverages = {};
+            let currentGlobalContribution = 0;
+            let pastAndPresentWeight = 0;
+            etapeSequence.forEach(etape => {
+                const subjects = mbsData[etape];
+                if(subjects) {
+                    const avg = calculateSubjectAverage({competencies: subjects.flatMap(s => s.competencies)});
+                    etapeAverages[etape] = avg;
+                    if(avg !== null && etape !== nextEtape) { // Only count completed etapes
+                        currentGlobalContribution += avg * etapeWeights[etape];
+                        pastAndPresentWeight += etapeWeights[etape];
+                    }
                 }
             });
-            if (!nextEtape) { container.innerHTML = '<p>Toutes les étapes sont complétées.</p>'; return; }
-            container.innerHTML = `<p>Cette matière est complétée. Calculez votre objectif global.</p><div id="goal-result" class="goal-result"></div>`;
-            const goalResult = container.querySelector('#goal-result');
-            const goalInput = container.parentElement.querySelector('#objective-input');
-
+            
+            calcInfo.innerHTML = `Planifiez votre performance pour l'<b>Étape ${nextEtape.slice(-1)}</b>.`;
+            
             function calculate() {
                 const targetGlobalAvg = parseFloat(goalInput.value);
                 if (isNaN(targetGlobalAvg) || targetGlobalAvg < 0 || targetGlobalAvg > 100) { goalResult.innerHTML = 'Veuillez entrer un objectif global valide.'; goalResult.className = 'goal-result danger'; return; }
                 const pointsNeededFromFuture = targetGlobalAvg - currentGlobalContribution;
-                const requiredAvgInNextEtape = pointsNeededFromFuture / futureEtapeWeight;
+                const requiredAvgInNextEtape = pointsNeededFromFuture / etapeWeights[nextEtape];
                 let message, resultClass;
                 if (requiredAvgInNextEtape > 100.01) { message = `Pour atteindre <strong>${targetGlobalAvg}%</strong> global, il faudrait <strong>${requiredAvgInNextEtape.toFixed(1)}%</strong> à l'étape ${nextEtape.slice(-1)}. Objectif impossible.`; resultClass = 'danger'; }
                 else if (requiredAvgInNextEtape < 0) { message = `Félicitations ! Objectif global déjà atteint.`; resultClass = 'success'; }
