@@ -10,7 +10,7 @@
     <!-- NEW: Link to Global CSS -->
     <link rel="stylesheet" href="css/style.css">
     
-    <!-- Script to prevent flash of wrong theme (runs before body renders) -->
+    <!-- Script to prevent flash of unstyled/wrong theme (must run before body renders) -->
     <script>
         const saved = localStorage.getItem('theme');
         const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -21,7 +21,7 @@
 </head>
 <body>
 
-    <!-- NEW: Loading Spinner -->
+    <!-- NEW: Loading Spinner/Overlay -->
     <div id="page-loader">
         <div class="spinner"></div>
     </div>
@@ -34,15 +34,16 @@
             <h1 class="site-header">Outil MBS</h1>
         </div>
         <div class="header-right">
-            <!-- NEW: Dark Mode Toggle -->
+            <!-- NEW: Dark Mode Toggle Button -->
             <button id="theme-toggle" class="btn-icon" title="Changer de thème">🌙</button>
             
-            <a href="data.html" class="btn btn-secondary">Mettre à jour</a>
-            <a href="improve.html" class="btn btn-primary">Analyser</a>
+            <a href="data.html" class="btn btn-secondary">Mettre à jour les données</a>
+            <a href="improve.html" class="btn btn-primary">Analyser ma performance</a>
         </div>
     </header>
 
     <main class="main-container">
+        <!-- ... rest of your original main content ... -->
         <section class="data-section">
             <div class="tabs">
                 <button class="tab-btn active" data-tab="etape1">Étape 1</button>
@@ -50,9 +51,7 @@
                 <button class="tab-btn" data-tab="etape3">Étape 3</button>
             </div>
             <div id="tab-contents">
-                <div id="etape1" class="tab-content active">
-                    <!-- Content will be injected by JS -->
-                </div>
+                <div id="etape1" class="tab-content active"></div>
                 <div id="etape2" class="tab-content"></div>
                 <div id="etape3" class="tab-content"></div>
             </div>
@@ -60,14 +59,8 @@
 
         <aside class="side-panel">
             <div class="moyenne-widgets">
-                <div class="moyenne-widget">
-                    <h4>Moyenne générale</h4>
-                    <div id="moyenne-generale" class="moyenne-value">--</div>
-                </div>
-                <div class="moyenne-widget">
-                    <h4>Moyenne de l'étape</h4>
-                    <div id="moyenne-etape" class="moyenne-value">--</div>
-                </div>
+                <div class="moyenne-widget"><h4>Moyenne générale</h4><div id="moyenne-generale" class="moyenne-value">--</div></div>
+                <div class="moyenne-widget"><h4>Moyenne de l'étape</h4><div id="moyenne-etape" class="moyenne-value">--</div></div>
             </div>
             <div class="control-group">
                 <label for="niveau-secondaire">Niveau Secondaire</label>
@@ -81,19 +74,17 @@
                 <button id="unites-btn" class="btn btn-secondary btn-full-width">Configurer les unités</button>
             </div>
             
-            <div id="ponderation-controls" class="hidden" style="background-color: var(--surface-color-alt); padding: 15px; border-radius: 8px; border: 1px solid var(--warning-color); margin-bottom: 20px;">
+            <div id="ponderation-controls" class="hidden" style="background-color: var(--warning-color); padding: 15px; border-radius: 8px; border: 1px solid var(--warning-color); margin-bottom: 20px;">
                 <p style="font-weight: bold; text-align: center; margin-top: 0;">Pondérations modifiées</p>
                 <div style="display: flex; gap: 10px;">
                     <button id="save-ponds-btn" class="btn btn-primary" style="flex:1;">Sauvegarder</button>
-                    <button id="revert-ponds-btn" class="btn btn-secondary" style="flex:1;">Annuler</button>
+                    <button id="revert-ponds-btn" class="btn btn-secondary" style="background-color: var(--light-grey); flex:1;">Annuler</button>
                 </div>
             </div>
 
             <div class="subject-averages">
                 <h4>Moyennes par matière</h4>
-                <ul id="subject-averages-list">
-                    <li class="no-data">Aucune donnée</li>
-                </ul>
+                <ul id="subject-averages-list"><li class="no-data">Aucune donnée</li></ul>
             </div>
         </aside>
     </main>
