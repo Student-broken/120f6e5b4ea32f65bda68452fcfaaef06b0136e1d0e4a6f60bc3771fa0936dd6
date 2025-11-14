@@ -209,6 +209,7 @@
             widgetGrid.innerHTML = '';
             Object.values(activeGauges).forEach(chart => chart.destroy());
             activeGauges = {};
+
             let subjectsToRender = [];
             if (etapeKey === 'generale') {
                 const allSubjects = new Map();
@@ -271,9 +272,12 @@
             gradient.addColorStop(0, '#e74c3c');
             gradient.addColorStop(0.6, '#f39c12');
             gradient.addColorStop(1, '#27ae60');
+
             const gaugeChart = new Chart(ctx, {
                 type: 'doughnut',
-                data: { datasets: [{ data: [100], backgroundColor: [gradient], borderWidth: 0 }] },
+                data: {
+                    datasets: [{ data: [100], backgroundColor: [gradient], borderWidth: 0 }]
+                },
                 options: {
                     responsive: true, maintainAspectRatio: false,
                     circumference: 180, rotation: -90, cutout: '60%',
@@ -283,13 +287,13 @@
                     id: 'gaugeNeedleAndLine',
                     afterDraw: chart => {
                         const { ctx, chartArea } = chart;
+                        const angle = Math.PI + (value / 100) * Math.PI;
                         const cx = chartArea.left + chartArea.width / 2;
                         const cy = chartArea.top + chartArea.height;
                         ctx.save();
                         // Needle
-                        const needleAngle = (value / 100 - 0.5) * Math.PI;
                         ctx.translate(cx, cy);
-                        ctx.rotate(needleAngle);
+                        ctx.rotate(angle);
                         ctx.beginPath();
                         ctx.moveTo(0, -5);
                         ctx.lineTo(chartArea.height - 10, 0);
@@ -299,18 +303,18 @@
                         ctx.restore();
                         // Goal Line
                         if (goal) {
-                            const goalAngleRad = (goal / 100 - 0.5) * Math.PI;
-                            const radius = chartArea.height;
-                            const x1 = cx + (radius - 15) * Math.cos(goalAngleRad);
-                            const y1 = cy + (radius - 15) * Math.sin(goalAngleRad);
-                            const x2 = cx + (radius - 5) * Math.cos(goalAngleRad);
-                            const y2 = cy + (radius - 5) * Math.sin(goalAngleRad);
+                            const goalAngle = Math.PI + (goal / 100) * Math.PI;
+                            ctx.save();
+                            ctx.translate(cx, cy);
+                            ctx.rotate(goalAngle);
                             ctx.beginPath();
-                            ctx.moveTo(x1, y1);
-                            ctx.lineTo(x2, y2);
+                            // --- CORRECTED: Draw along the new X-axis (radially) ---
+                            ctx.moveTo(chartArea.height * 0.6, 0);
+                            ctx.lineTo(chartArea.height, 0);
                             ctx.strokeStyle = 'var(--danger-color)';
                             ctx.lineWidth = 3;
                             ctx.stroke();
+                            ctx.restore();
                         }
                     }
                 }]
@@ -388,6 +392,7 @@
                     createOrUpdateChart(compsForChart[widget.dataset.index]);
                 });
             });
+
             const objectiveInput = modalContent.querySelector('#objective-input');
             const saveObjectiveBtn = modalContent.querySelector('#save-objective-btn');
             saveObjectiveBtn.addEventListener('click', () => {
@@ -402,6 +407,7 @@
                 setTimeout(() => { saveObjectiveBtn.textContent = 'Sauvegarder'; }, 1500);
                 renderWidgets(document.querySelector('.tab-btn.active').dataset.etape);
             });
+            
             setupGoalCalculator(subject, modalContent.querySelector('.calculator-container'));
             detailsModal.classList.add('active');
         }
@@ -453,11 +459,8 @@
                 }
                 const currentAverage = sumOfCompletedWeights > 0 ? (sumOfWeightedGrades / sumOfCompletedWeights) : 0;
                 const completedPercentage = (sumOfCompletedWeights / sumOfTotalWeights) * 100;
-                goalResult.parentElement.querySelector('p')?.remove(); // Remove old p if exists
-                const infoPara = document.createElement('p');
-                infoPara.innerHTML = `Moyenne actuelle : <strong>${currentAverage.toFixed(2)}%</strong> (sur <strong>${completedPercentage.toFixed(1)}%</strong> de la matière complétée).`;
-                container.insertBefore(infoPara, container.querySelector('.goal-input'));
-                
+                container.querySelector('h3').nextElementSibling.innerHTML = `Moyenne actuelle : <strong>${currentAverage.toFixed(2)}%</strong> (sur <strong>${completedPercentage.toFixed(1)}%</strong> de la matière complétée).`;
+
                 const targetAvg = parseFloat(goalInput.value);
                 if (isNaN(targetAvg) || targetAvg < 0 || targetAvg > 100) {
                     goalResult.innerHTML = 'Veuillez entrer un objectif entre 0 et 100.';
@@ -467,7 +470,7 @@
                 const pointsNeededFromFuture = totalPointsNeeded - sumOfWeightedGrades;
                 const requiredAvgOnFuture = pointsNeededFromFuture / sumOfFutureWeights;
                 let message, resultClass;
-                if (requiredAvgOnFuture > 100) {
+                if (requiredAvgOnFuture > 100.01) { // Add a small tolerance
                     message = `Pour atteindre <strong>${targetAvg}%</strong>, il faudrait <strong>${requiredAvgOnFuture.toFixed(1)}%</strong> sur les travaux restants. Cet objectif est impossible.`;
                     resultClass = 'danger';
                 } else if (requiredAvgOnFuture < 0) {
