@@ -6,6 +6,7 @@
     <title>Ajouter des Données - Outil MBS</title>
     <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         :root {
             --primary-color: #2980b9;
@@ -17,7 +18,26 @@
             --footer-grey: #7f8c8d;
             --danger-color: #e74c3c;
             --shadow: 0 8px 15px rgba(0, 0, 0, 0.08);
+            --transition-speed: 0.3s; /* Nouvelle variable pour les transitions */
         }
+        /* Définition des variables pour le mode sombre */
+        [data-theme='dark'] {
+            --primary-color: #5d9cec;
+            --secondary-color: #ecf0f1;
+            --background-color: #1a1a2e;
+            --widget-background: #232946;
+            --text-color: #b8c1ec;
+            --light-grey: #4f5b93;
+            --footer-grey: #8a8d9b;
+            --danger-color: #ff6b6b;
+            --shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Application de la transition à tous les éléments clés */
+        body, .site-header-container, .data-widget, textarea, .info-btn, .theme-toggle, .back-arrow, footer, .modal-content, .important-message {
+            transition: all var(--transition-speed) ease-in-out;
+        }
+
         body {
             margin: 0;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -57,11 +77,18 @@
             font-size: 2em;
             color: var(--secondary-color);
             text-decoration: none;
-            transition: color 0.2s, transform 0.2s;
+            transition: color 0.2s, transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 50%; /* Just for aesthetics with shadow */
+            padding: 5px; /* Visual padding for effect */
         }
         .back-arrow:hover {
             color: var(--primary-color);
-            transform: translateY(-50%) scale(1.05);
+            transform: translateY(-50%) scale(1.1);
+        }
+        .back-arrow:active {
+            transform: translateY(-50%) scale(0.95);
+            box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
         }
         .data-widget {
             background-color: var(--widget-background);
@@ -71,6 +98,16 @@
             width: 100%;
             max-width: 650px;
             text-align: center;
+            /* Animation d'entrée */
+            transform: translateY(20px); 
+            opacity: 0;
+            filter: blur(5px);
+        }
+        .data-widget.loaded {
+            transform: translateY(0);
+            opacity: 1;
+            filter: blur(0);
+            transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.6s, filter 0.6s, box-shadow var(--transition-speed);
         }
         textarea {
             width: 100%;
@@ -82,14 +119,47 @@
             font-size: 14px;
             box-sizing: border-box;
             resize: vertical;
-            transition: border-color 0.2s, box-shadow 0.2s;
-            background-color: #fdfdfd;
+            transition: border-color 0.2s, box-shadow 0.2s, background-color var(--transition-speed), color var(--transition-speed);
+            background-color: var(--widget-background);
+            color: var(--text-color);
         }
         textarea:focus {
             border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(41, 128, 185, 0.2);
             outline: none;
         }
+        
+        /* Nouveau bouton de bascule du thème */
+        .theme-toggle {
+            position: absolute;
+            top: 50%;
+            right: 80px; /* Décalé pour laisser la place au bouton info */
+            transform: translateY(-50%);
+            width: 45px;
+            height: 45px;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.2s, transform 0.2s, color var(--transition-speed), box-shadow 0.2s;
+            font-size: 1.2em;
+            z-index: 10;
+            outline: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .theme-toggle:hover {
+            background-color: var(--primary-color);
+            transform: translateY(-50%) scale(1.05);
+        }
+        .theme-toggle:active {
+            transform: translateY(-50%) scale(0.95);
+            box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
+        }
+
         .info-btn {
             position: absolute;
             top: 50%;
@@ -105,52 +175,121 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            transition: background-color 0.2s, transform 0.2s;
+            transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
             font-size: 1.5em;
             font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         .info-btn:hover {
             background-color: var(--primary-color);
             transform: translateY(-50%) scale(1.05);
         }
+        .info-btn:active {
+            transform: translateY(-50%) scale(0.95);
+            box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Pop-up (Modal) Animation */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(0, 0, 0, 0.7); display: flex;
             justify-content: center; align-items: center; z-index: 1000;
-            opacity: 0; visibility: hidden; transition: opacity 0.3s;
+            opacity: 0; visibility: hidden; transition: opacity 0.3s ease-out, visibility 0s 0.3s;
         }
-        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-overlay.active { 
+            opacity: 1; 
+            visibility: visible; 
+            transition: opacity 0.3s ease-out; 
+        }
         .modal-content {
-            background-color: white; padding: 30px; border-radius: 12px;
+            background-color: var(--widget-background); 
+            padding: 30px; border-radius: 12px;
             max-width: 90%; width: 450px;
+            position: relative;
+            box-shadow: var(--shadow);
+            /* Animation d'entrée */
+            transform: scale(0.9) translateY(20px);
+            opacity: 0;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease-out, background-color var(--transition-speed);
         }
-        .modal-close { position: absolute; top: 10px; right: 15px; font-size: 2em; cursor: pointer; color: var(--light-grey); }
+        .modal-overlay.active .modal-content {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+
+        .modal-close { position: absolute; top: 10px; right: 15px; font-size: 2em; cursor: pointer; color: var(--light-grey); transition: color 0.2s; }
+        .modal-close:hover { color: var(--danger-color); }
         .modal-content h3 { color: var(--primary-color); margin-top: 0; }
         .modal-content p { line-height: 1.5; margin-bottom: 10px; border-left: 3px solid var(--primary-color); padding-left: 10px; }
         .important-message {
-            background-color: #fdf3f2; color: var(--danger-color); border: 1px solid #f9d6d5;
+            background-color: var(--widget-background); /* Utiliser widget-background pour le mode sombre */
+            border: 1px solid var(--primary-color); /* Utiliser primary-color pour la bordure */
+            color: var(--text-color); /* Utiliser text-color pour le mode sombre */
             padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: 500; display: flex;
             align-items: center; font-size: 0.95em;
+            transition: background-color var(--transition-speed), border-color var(--transition-speed), color var(--transition-speed);
         }
-        .important-message .icon { font-size: 1.5em; margin-right: 10px; }
+        .important-message .icon { font-size: 1.5em; margin-right: 10px; color: var(--primary-color); }
+
         footer {
             text-align: center; padding: 25px; font-size: 0.9em;
-            color: var(--footer-grey); border-top: 1px solid #eee; margin-top: auto;
+            color: var(--footer-grey); border-top: 1px solid var(--light-grey); margin-top: auto;
         }
         footer a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
         footer a:hover { text-decoration: underline; }
+
+        /* Écran de chargement (Animation initiale) */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--background-color);
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 1;
+            transition: opacity 0.5s ease-out;
+        }
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .loading-spinner {
+            border: 5px solid var(--light-grey);
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
-<body>
+<body id="page-body">
+
+    <!-- Écran de chargement -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner"></div>
+    </div>
 
     <header class="site-header-container">
         <a href="main.html" class="back-arrow" title="Retour au tableau de bord">←</a>
         <h1 class="site-header">Outil MBS</h1>
+        <!-- Bouton de bascule du mode sombre/clair -->
+        <button class="theme-toggle" id="theme-toggle" title="Mode Sombre/Clair">
+            <i class="fas fa-moon" id="theme-icon"></i>
+        </button>
         <button class="info-btn" id="open-modal-btn" title="Comment ça marche ?">?</button>
     </header>
 
     <main class="content">
-        <div class="data-widget">
+        <div class="data-widget" id="data-widget">
             <h2 style="font-family: 'Playfair Display', serif; font-weight: 700;">Mise à Jour des Données</h2>
             <p style="margin-top: -10px; margin-bottom: 30px;">Collez simplement vos données du portail ci-dessous.</p>
             <textarea id="raw-text" placeholder="1. Allez sur le portail et copiez tout (Ctrl+A, Ctrl+C)&#10;2. Revenez ici et collez (Ctrl+V)&#10;&#10;L'analyse et la sauvegarde sont automatiques !"></textarea>
@@ -162,7 +301,7 @@
             <span class="modal-close" id="close-modal-btn">&times;</span>
             <h3>Comment utiliser l'outil</h3>
             <div class="important-message">
-                <span class="icon">💡</span>
+                <span class="icon"><i class="fas fa-lightbulb"></i></span>
                 <span>Pour garder vos moyennes à jour, répétez ces étapes régulièrement.</span>
             </div>
             <p>1. Allez dans la section "Travaux" du portail étudiant.</p>
@@ -185,6 +324,54 @@
             const closeModalBtn = document.getElementById('close-modal-btn');
             const tutorialModal = document.getElementById('tutorial-modal');
             const rawTextArea = document.getElementById('raw-text');
+            
+            // Nouveaux éléments pour le thème et l'animation
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            const themeIcon = document.getElementById('theme-icon');
+            const pageBody = document.getElementById('page-body');
+            const dataWidget = document.getElementById('data-widget');
+            const loadingOverlay = document.getElementById('loading-overlay');
+
+            // --- Initial Loading Animation ---
+            // Déclenchement de l'animation d'entrée du widget
+            dataWidget.classList.add('loaded');
+            
+            // Masquage de l'écran de chargement après un court délai
+            setTimeout(() => {
+                loadingOverlay.classList.add('hidden');
+                setTimeout(() => {
+                    if (loadingOverlay.parentNode) {
+                        loadingOverlay.parentNode.removeChild(loadingOverlay);
+                    }
+                }, 500); // 500ms correspond à la transition CSS
+            }, 100);
+
+            // --- Dark Mode Logic ---
+            const THEME_KEY = 'mbsTheme';
+            const savedTheme = localStorage.getItem(THEME_KEY) || 'light';
+            
+            const applyTheme = (theme) => {
+                pageBody.setAttribute('data-theme', theme);
+                const isDark = theme === 'dark';
+                // Mise à jour de l'icône
+                themeIcon.classList.toggle('fa-sun', isDark);
+                themeIcon.classList.toggle('fa-moon', !isDark);
+                themeToggleBtn.title = isDark ? 'Mode Clair' : 'Mode Sombre';
+            };
+
+            // Application du thème initial
+            applyTheme(savedTheme);
+
+            // Fonction de bascule
+            const toggleTheme = () => {
+                const currentTheme = pageBody.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                applyTheme(newTheme);
+                localStorage.setItem(THEME_KEY, newTheme);
+            };
+
+            // Écouteur d'événement pour le bouton de bascule
+            themeToggleBtn.addEventListener('click', toggleTheme);
 
             // --- Modal Logic ---
             const openModal = () => tutorialModal.classList.add('active');
@@ -197,6 +384,12 @@
 
             // --- Core Paste & Save Logic ---
             rawTextArea.addEventListener('paste', (e) => {
+                // Animation temporaire sur la zone de texte
+                rawTextArea.style.boxShadow = '0 0 0 5px var(--primary-color)';
+                setTimeout(() => {
+                    rawTextArea.style.boxShadow = ''; // Laisser la transition CSS reprendre le contrôle
+                }, 300);
+
                 // Allow the pasted text to populate the textarea before we read it
                 setTimeout(() => {
                     const rawText = rawTextArea.value;
