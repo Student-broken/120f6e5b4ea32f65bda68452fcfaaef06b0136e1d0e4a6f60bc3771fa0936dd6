@@ -236,6 +236,216 @@
         .grade-display { cursor: pointer; min-height: 30px; display: inline-block; padding: 4px; border-radius: 4px; }
     </style>
 </head>
+
+
+
+
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forced Announcement Popup</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for smooth transitions */
+        .popup-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'primary-blue': '#107c92',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="font-sans bg-gray-50 min-h-screen">
+
+    <!-- 1. FULL POPUP MODAL (Hidden/Shown based on state) -->
+    <div id="forced-popup" class="fixed inset-0 z-50 bg-gray-900/70 backdrop-blur-sm flex items-start justify-center p-4 sm:p-8 popup-transition" style="display: none; opacity: 0; pointer-events: none;">
+        
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mt-12 transform scale-100 opacity-100 popup-transition" id="popup-content">
+            
+            <!-- Header -->
+            <div class="flex justify-between items-center p-4 sm:p-6 border-b border-gray-100 bg-primary-blue rounded-t-xl">
+                <h2 class="text-xl font-semibold text-white">Annonces:</h2>
+                <button id="close-popup-btn" class="text-white hover:text-gray-200 transition" aria-label="Minimize announcement">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Content & Loading State -->
+            <div class="p-4 sm:p-6">
+                <div id="loading-state" class="flex items-center space-x-2 text-primary-blue">
+                    <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p>Loading message...</p>
+                </div>
+                
+                <div id="popup-message-container" class="hidden">
+                    <p id="popup-message" class="text-gray-700 leading-relaxed whitespace-pre-line"></p>
+                </div>
+                
+                <div id="error-state" class="hidden bg-red-50 border border-red-200 text-red-700 p-3 rounded mt-3">
+                    <p class="font-medium">Error:</p>
+                    <p class="text-sm">Could not load the message.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. MINIMIZED PANEL (Collapsed state) -->
+    <div id="minimized-panel" class="fixed left-0 bottom-5 z-50 transform -translate-x-full popup-transition" style="display: none;">
+        <!-- MODIFIED: Added hover:translate-x-1 to make the button pop out on hover -->
+        <button id="restore-popup-btn" class="flex items-center p-3 bg-primary-blue text-white rounded-r-xl shadow-lg hover:bg-opacity-90 transition transform hover:translate-x-1" aria-label="Restore announcement">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+            </svg>
+        </button>
+    </div>
+
+    <script>
+        const forcedPopup = document.getElementById('forced-popup');
+        const popupContent = document.getElementById('popup-content');
+        const closeBtn = document.getElementById('close-popup-btn');
+        const popupMessageElement = document.getElementById('popup-message');
+        const loadingState = document.getElementById('loading-state');
+        const errorState = document.getElementById('error-state');
+        const messageContainer = document.getElementById('popup-message-container');
+        const minimizedPanel = document.getElementById('minimized-panel');
+        const restoreBtn = document.getElementById('restore-popup-btn');
+
+        const SESSION_KEY = 'announcementMinimized';
+
+        /**
+         * Fetches the announcement message from a specified API.
+         * @returns {Promise<string>} The message content.
+         */
+        async function fetchMessage() {
+            // ⚠️ IMPORTANT: REPLACE THIS URL with your actual Google Sheets Web App URL.
+            const GS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzQhgU6ypNAEoR6QlX0PI_wlrEfvGwVP8pKvj91EYwquZ309Hqk5xAtFIs0uzyUAe_c/exec';
+            
+            try {
+                const response = await fetch(GS_WEB_APP_URL);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const data = await response.json();
+                if (data && data.message) {
+                    return data.message;
+                } else {
+                    throw new Error("API response was valid but lacked a 'message' field.");
+                }
+            } catch (error) {
+                console.error("Error fetching message from API:", error.message);
+                throw error; 
+            }
+        }
+
+
+        function minimizePopup() {
+            // Hide full popup
+            forcedPopup.style.opacity = '0';
+            forcedPopup.style.pointerEvents = 'none';
+
+            // Show minimized panel with slide-in transition
+            minimizedPanel.style.display = 'block';
+            setTimeout(() => {
+                minimizedPanel.style.transform = 'translateX(0)';
+            }, 10);
+
+            sessionStorage.setItem(SESSION_KEY, 'true');
+        }
+        
+        /**
+         * Restores the full modal popup from the minimized state.
+         */
+        function restorePopup() {
+            // Hide minimized panel with slide-out transition
+            minimizedPanel.style.transform = 'translateX(-100%)';
+            
+            // Show full popup
+            forcedPopup.style.display = 'flex';
+            setTimeout(() => {
+                forcedPopup.style.opacity = '1';
+                forcedPopup.style.pointerEvents = 'auto';
+            }, 10); 
+            
+            sessionStorage.removeItem(SESSION_KEY);
+        }
+
+        /**
+         * Initializes the popup state and fetches content.
+         */
+        async function initPopup() {
+            try {
+                // 1. Fetch content
+                const message = await fetchMessage();
+                
+                loadingState.classList.add('hidden');
+                popupMessageElement.textContent = message;
+                messageContainer.classList.remove('hidden');
+
+                // 2. Check session state
+                const isMinimized = sessionStorage.getItem(SESSION_KEY) === 'true';
+
+                if (isMinimized) {
+                    minimizedPanel.style.display = 'block';
+                    setTimeout(() => {
+                       minimizedPanel.style.transform = 'translateX(0)';
+                    }, 10);
+                } else {
+                    forcedPopup.style.display = 'flex';
+                    setTimeout(() => {
+                        forcedPopup.style.opacity = '1';
+                        forcedPopup.style.pointerEvents = 'auto';
+                    }, 10);
+                }
+
+            } catch (error) {
+                console.error("Failed to initialize announcement:", error);
+                loadingState.classList.add('hidden');
+                errorState.classList.remove('hidden');
+                
+                // Show the popup to display the error
+                forcedPopup.style.display = 'flex';
+                setTimeout(() => {
+                    forcedPopup.style.opacity = '1';
+                    forcedPopup.style.pointerEvents = 'auto';
+                }, 10);
+            }
+        }
+
+        // Attach Event Listeners
+        window.addEventListener('load', () => {
+            initPopup();
+            closeBtn.addEventListener('click', minimizePopup);
+            restoreBtn.addEventListener('click', restorePopup);
+        });
+
+    </script>
+</body>
+       
+
+
+
+
+
+
+
+    
 <body>
 
     <header class="site-header-container">
