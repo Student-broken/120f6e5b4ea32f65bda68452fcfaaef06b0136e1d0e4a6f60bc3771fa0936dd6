@@ -4,13 +4,150 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analyseur Dynamique V10 (Pathfinder V2)</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Custom Compressed CSS -->
     <style>
-:root{--primary-color:#5B21B6;--secondary-color:#059669;--warning-color:#F59E0B;--danger-color:#DC2626;--bg-color:#f9fafb}body{font-family:'Inter',sans-serif;background-color:var(--bg-color);color:#1f2937}.main-container{display:flex;min-height:100vh}.side-panel{width:100%;max-width:380px;background-color:white;padding:1.5rem;box-shadow:0 4px 16px rgba(0,0,0,.1);border-radius:.75rem;margin:1rem;height:fit-content}@media (max-width:1024px){.main-container{flex-direction:column}.side-panel{max-width:100%}}.content-area{flex-grow:1;padding:1rem}.tab-btn{padding:.75rem 1.5rem;font-weight:600;border-radius:.375rem .375rem 0 0;border-bottom:2px solid transparent;cursor:pointer;transition:all .2s;background-color:#eef2ff;color:#4c1d95;margin-right:.25rem}.tab-btn.active{background-color:white;border-bottom:2px solid var(--primary-color);color:var(--primary-color);box-shadow:0 -2px 6px rgba(0,0,0,.05)}.tab-content{background-color:white;padding:1.5rem;border-radius:0 .75rem .75rem .75rem;box-shadow:0 4px 16px rgba(0,0,0,.08)}.tab-content:not(.active){display:none}.subject-table{width:100%;border-collapse:collapse;margin-top:1.5rem;box-shadow:0 1px 4px rgba(0,0,0,.08);border-radius:.5rem;overflow:hidden;margin-bottom:1.5rem}.subject-table thead th{padding:.75rem;text-align:left;background-color:var(--primary-color);color:white;font-weight:700}.subject-table thead tr:first-child th{font-size:1.125rem;text-align:center}.subject-table tbody tr:nth-child(even){background-color:#f3f4f6}.subject-table td{padding:.5rem .75rem;border-bottom:1px solid #e5e7eb}.grade-percentage{font-weight:700;color:var(--primary-color)}.subject-analysis{background-color:#f5f3ff;border:1px solid #e9d5ff;padding:1rem;border-radius:.5rem;margin-top:-1rem;margin-bottom:1.5rem}.analysis-badge{display:inline-flex;align-items:center;padding:.25rem .75rem;border-radius:9999px;font-size:.875rem;font-weight:600;margin-right:.5rem}.badge-green{background-color:#D1FAE5;color:#065F46}.badge-yellow{background-color:#FEF3C7;color:#92400E}.badge-red{background-color:#FEE2E2;color:#991B1B}.badge-violet{background-color:#E9D5FF;color:#5B21B6}.badge-blue{background-color:#DBEAFE;color:#1E40AF}.badge-orange{background-color:#FFEDD5;color:#C2410C}.prediction-card{background-color:#f7f7f7;padding:1rem;border-radius:.5rem;border-left:4px solid;margin-bottom:1rem;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.05)}.card-green{border-left-color:var(--secondary-color)}.card-violet{border-left-color:var(--primary-color)}.card-yellow{border-left-color:var(--warning-color)}.card-red{border-left-color:var(--danger-color)}.card-score{font-size:1.875rem;font-weight:800;margin-top:.25rem}.probability-table th,.probability-table td{padding:.5rem;text-align:center;border:1px solid #e5e7eb}.prob-high{background-color:#D1FAE5;color:#065F46;font-weight:700}.prob-medium{background-color:#FEF3C7;color:#92400E}.prob-low{background-color:#FEE2E2;color:#991B1B}.modal{position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0,0,0,.5);display:flex;justify-content:center;align-items:center;z-index:1000;transition:opacity .3s ease-out;opacity:0;pointer-events:none}.modal.active{opacity:1;pointer-events:auto}.modal-content{background:white;padding:2rem;border-radius:.75rem;box-shadow:0 10px 15px rgba(0,0,0,.1);max-width:90%;width:500px}.score-card{display:flex;align-items:center;padding:.75rem;border-radius:.5rem;background-color:#f3f4f6;transition:all .15s}.score-card strong{font-size:1.5rem}.score-icon{font-size:1.5rem;margin-right:1rem}.effort-needed{font-size:1.25rem;font-weight:700}.slider-label{font-weight:600;margin-top:1rem}.ai-insight-box{background-color:#f5f3ff;border:1px solid #ddd6fe;border-radius:.5rem;padding:1rem;margin-top:.75rem}.ai-insight-box h4{display:flex;align-items:center;font-size:1rem;font-weight:700;color:var(--primary-color);margin-bottom:.75rem}.ai-insight-box h4 span{font-size:1.25rem;margin-right:.5rem}.ai-insight-box ul{list-style-type:none;padding-left:0;font-size:.875rem}.ai-insight-box li{position:relative;padding-left:1.5rem;margin-bottom:.5rem;color:#374151;line-height:1.4}.ai-insight-box li::before{content:'⚠️';font-size:.75rem;position:absolute;left:0;top:4px}.ai-insight-box li.insight-good::before{content:'✅'}.ai-insight-box li.insight-info::before{content:'ℹ️'}.ai-insight-box li.insight-trend::before{content:'📈'}.ai-insight-box li.insight-focus::before{content:'🎯'}.ai-insight-box li.insight-priority::before{content:'🧠'}.ai-insight-box li.insight-erratic::before{content:'⚡'}.gauge-container{width:100%;padding:.5rem 0;margin-top:.5rem;margin-bottom:1rem}.gauge-bar{width:100%;height:12px;background:linear-gradient(90deg,var(--danger-color),var(--warning-color),var(--secondary-color));border-radius:6px;position:relative;box-shadow:inset 0 1px 3px rgba(0,0,0,.1)}.gauge-needle{position:absolute;top:-4px;width:4px;height:20px;background-color:#1f2937;border-radius:2px;border:1px solid white;box-shadow:0 0 5px rgba(0,0,0,.5);transform:translateX(-50%);transition:left .5s ease-out}.gauge-labels{display:flex;justify-content:space-between;font-size:.75rem;font-weight:600;color:#4b5563;margin-top:.5rem}.help-btn{position:fixed;top:10px;right:10px;width:30px;height:30px;background-color:#000000;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;text-decoration:none;box-shadow:0 4px 10px rgba(0,0,0,.2);z-index:999;cursor:pointer;transition:all .2s ease-in-out}.help-btn:hover{transform:translateY(-2px) scale(1.05);box-shadow:0 6px 15px rgba(0,0,0,.3);background-color:#6D28D9}#help-modal .modal-content{width:750px;max-width:95%;max-height:90vh;overflow-y:auto;text-align:left}.help-title{font-size:1.5rem;font-weight:700;color:var(--primary-color);margin-bottom:1rem;text-align:left}.help-section-title{font-size:1.25rem;font-weight:600;color:var(--primary-color);margin-top:1.5rem;border-bottom:2px solid var(--primary-color);padding-bottom:4px;margin-bottom:1rem}#help-modal h4{font-size:1.0rem;font-weight:700;color:#1f2937;margin-top:1.25rem;margin-bottom:.25rem}#help-modal p,#help-modal li{font-size:.95rem;color:#374151;line-height:1.6;margin-top:.5rem}#help-modal ul{list-style-type:disc;padding-left:2rem;margin-top:.5rem;margin-bottom:1rem}#help-modal ol.detailed-list{list-style-type:decimal;padding-left:1.5rem}#help-modal ol.detailed-list>li{font-weight:600;color:#1f2937;margin-top:1rem}#help-modal ol.detailed-list>li>ul{margin-top:.25rem;font-weight:normal}#help-modal b{font-weight:600;color:#1f2937}#help-modal .modal-close{position:absolute;top:10px;right:15px;font-size:2em;cursor:pointer;color:#aaa;line-height:1;z-index:1001}.back-to-main-btn{position:fixed;top:10px;left:30px;width:20px;height:20px;background-color:var(--primary-color);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.0rem;text-decoration:none;box-shadow:0 4px 10px rgba(0,0,0,.2);z-index:999;transition:all .2s ease-in-out}.back-to-main-btn:hover{transform:translateY(-2px) scale(1.05);box-shadow:0 6px 15px rgba(0,0,0,.3);background-color:#6D28D9}
+:root{--primary-color:#5B21B6;--secondary-color:#059669;--warning-color:#F59E0B;--danger-color:#DC2626;--bg-color:#f9fafb;--transition-duration:0.3s}
+body, .side-panel, .tab-content, .modal-content, .tab-btn, select, input, .score-card, .prediction-card, .ai-insight-box, .subject-table, .help-btn, .back-to-main-btn, .gauge-needle, .bg-violet-100 {
+    transition: background-color var(--transition-duration) ease, color var(--transition-duration) ease, border-color var(--transition-duration) ease, box-shadow var(--transition-duration) ease;
+}
+body{font-family:'Inter',sans-serif;background-color:var(--bg-color);color:#1f2937}.main-container{display:flex;min-height:100vh}.side-panel{width:100%;max-width:380px;background-color:white;padding:1.5rem;box-shadow:0 4px 16px rgba(0,0,0,.1);border-radius:.75rem;margin:1rem;height:fit-content}@media (max-width:1024px){.main-container{flex-direction:column}.side-panel{max-width:100%}}.content-area{flex-grow:1;padding:1rem}.tab-btn{padding:.75rem 1.5rem;font-weight:600;border-radius:.375rem .375rem 0 0;border-bottom:2px solid transparent;cursor:pointer;transition:all .2s;background-color:#eef2ff;color:#4c1d95;margin-right:.25rem}.tab-btn.active{background-color:white;border-bottom:2px solid var(--primary-color);color:var(--primary-color);box-shadow:0 -2px 6px rgba(0,0,0,.05)}.tab-content{background-color:white;padding:1.5rem;border-radius:0 .75rem .75rem .75rem;box-shadow:0 4px 16px rgba(0,0,0,.08)}.tab-content:not(.active){display:none}.subject-table{width:100%;border-collapse:collapse;margin-top:1.5rem;box-shadow:0 1px 4px rgba(0,0,0,.08);border-radius:.5rem;overflow:hidden;margin-bottom:1.5rem}.subject-table thead th{padding:.75rem;text-align:left;background-color:var(--primary-color);color:white;font-weight:700}.subject-table thead tr:first-child th{font-size:1.125rem;text-align:center}.subject-table tbody tr:nth-child(even){background-color:#f3f4f6}.subject-table td{padding:.5rem .75rem;border-bottom:1px solid #e5e7eb}.grade-percentage{font-weight:700;color:var(--primary-color)}.subject-analysis{background-color:#f5f3ff;border:1px solid #e9d5ff;padding:1rem;border-radius:.5rem;margin-top:-1rem;margin-bottom:1.5rem}.analysis-badge{display:inline-flex;align-items:center;padding:.25rem .75rem;border-radius:9999px;font-size:.875rem;font-weight:600;margin-right:.5rem}.badge-green{background-color:#D1FAE5;color:#065F46}.badge-yellow{background-color:#FEF3C7;color:#92400E}.badge-red{background-color:#FEE2E2;color:#991B1B}.badge-violet{background-color:#E9D5FF;color:#5B21B6}.badge-blue{background-color:#DBEAFE;color:#1E40AF}.badge-orange{background-color:#FFEDD5;color:#C2410C}.prediction-card{background-color:#f7f7f7;padding:1rem;border-radius:.5rem;border-left:5px solid;margin-bottom:1rem;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.05)}.card-green{border-left-color:var(--secondary-color)}.card-violet{border-left-color:var(--primary-color)}.card-yellow{border-left-color:var(--warning-color)}.card-red{border-left-color:var(--danger-color)}.card-score{font-size:1.875rem;font-weight:800;margin-top:.25rem}.probability-table th,.probability-table td{padding:.5rem;text-align:center;border:1px solid #e5e7eb}.prob-high{background-color:#D1FAE5;color:#065F46;font-weight:700}.prob-medium{background-color:#FEF3C7;color:#92400E}.prob-low{background-color:#FEE2E2;color:#991B1B}.modal{position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0,0,0,.5);display:flex;justify-content:center;align-items:center;z-index:1000;transition:opacity .3s ease-out;opacity:0;pointer-events:none}.modal.active{opacity:1;pointer-events:auto}.modal-content{background:white;padding:2rem;border-radius:.75rem;box-shadow:0 10px 15px rgba(0,0,0,.1);max-width:90%;width:500px}.score-card{display:flex;align-items:center;padding:.75rem;border-radius:.5rem;background-color:#f3f4f6;transition:all .15s}.score-card strong{font-size:1.5rem}.score-icon{font-size:1.5rem;margin-right:1rem}.effort-needed{font-size:1.25rem;font-weight:700}.slider-label{font-weight:600;margin-top:1rem}.ai-insight-box{background-color:#f5f3ff;border:1px solid #ddd6fe;border-radius:.5rem;padding:1rem;margin-top:.75rem}.ai-insight-box h4{display:flex;align-items:center;font-size:1rem;font-weight:700;color:var(--primary-color);margin-bottom:.75rem}.ai-insight-box h4 span{font-size:1.25rem;margin-right:.5rem}.ai-insight-box ul{list-style-type:none;padding-left:0;font-size:.875rem}.ai-insight-box li{position:relative;padding-left:1.5rem;margin-bottom:.5rem;color:#374151;line-height:1.4}.ai-insight-box li::before{content:'⚠️';font-size:.75rem;position:absolute;left:0;top:4px}.ai-insight-box li.insight-good::before{content:'✅'}.ai-insight-box li.insight-info::before{content:'ℹ️'}.ai-insight-box li.insight-trend::before{content:'📈'}.ai-insight-box li.insight-focus::before{content:'🎯'}.ai-insight-box li.insight-priority::before{content:'🧠'}.ai-insight-box li.insight-erratic::before{content:'⚡'}.gauge-container{width:100%;padding:.5rem 0;margin-top:.5rem;margin-bottom:1rem}.gauge-bar{width:100%;height:12px;background:linear-gradient(90deg,var(--danger-color),var(--warning-color),var(--secondary-color));border-radius:6px;position:relative;box-shadow:inset 0 1px 3px rgba(0,0,0,.1)}.gauge-needle{position:absolute;top:-4px;width:4px;height:20px;background-color:#1f2937;border-radius:2px;border:1px solid white;box-shadow:0 0 5px rgba(0,0,0,.5);transform:translateX(-50%);transition:left .5s ease-out}.gauge-labels{display:flex;justify-content:space-between;font-size:.75rem;font-weight:600;color:#4b5563;margin-top:.5rem}.help-btn{position:fixed;top:10px;right:10px;width:30px;height:30px;background-color:#000000;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;text-decoration:none;box-shadow:0 4px 10px rgba(0,0,0,.2);z-index:999;cursor:pointer;transition:all .2s ease-in-out}.help-btn:hover{transform:translateY(-2px) scale(1.05);box-shadow:0 6px 15px rgba(0,0,0,.3);background-color:#6D28D9}#help-modal .modal-content{width:750px;max-width:95%;max-height:90vh;overflow-y:auto;text-align:left}.help-title{font-size:1.5rem;font-weight:700;color:var(--primary-color);margin-bottom:1rem;text-align:left}.help-section-title{font-size:1.25rem;font-weight:600;color:var(--primary-color);margin-top:1.5rem;border-bottom:2px solid var(--primary-color);padding-bottom:4px;margin-bottom:1rem}#help-modal h4{font-size:1.0rem;font-weight:700;color:#1f2937;margin-top:1.25rem;margin-bottom:.25rem}#help-modal p,#help-modal li{font-size:.95rem;color:#374151;line-height:1.6;margin-top:.5rem}#help-modal ul{list-style-type:disc;padding-left:2rem;margin-top:.5rem;margin-bottom:1rem}#help-modal ol.detailed-list{list-style-type:decimal;padding-left:1.5rem}#help-modal ol.detailed-list>li{font-weight:600;color:#1f2937;margin-top:1rem}#help-modal ol.detailed-list>li>ul{margin-top:.25rem;font-weight:normal}#help-modal b{font-weight:600;color:#1f2937}#help-modal .modal-close{position:absolute;top:10px;right:1button5px;font-size:2em;cursor:pointer;color:#aaa;line-height:1;z-index:1001}.back-to-main-btn{position:fixed;top:10px;left:30px;width:20px;height:20px;background-color:var(--primary-color);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.0rem;text-decoration:none;box-shadow:0 4px 10px rgba(0,0,0,.2);z-index:999;transition:all .2s ease-in-out}.back-to-main-btn:hover{transform:translateY(-2px) scale(1.05);box-shadow:0 6px 15px rgba(0,0,0,.3);background-color:#6D28D9}
+
+[data-theme="dark"] {
+    --bg-color: #121212;
+    body, .content-area h1, .side-panel h2, .side-panel h3, .text-gray-800, .text-gray-700, .text-gray-600, .text-gray-500, .modal-content h3, .modal-content p, .ai-insight-box li, .text-sm, .text-base, .text-lg, .text-xl, .text-2xl, .text-3xl, .text-4xl, p, span, strong, div, button, label, select, th, td {
+        color: #e0e0e0;
+    }
+    .text-gray-500, .text-xs, .text-sm.font-medium.text-gray-500, .gauge-labels span, .text-sm.text-gray-600 {
+        color: #a0a0a0;
+    }
+    .gauge-needle {
+        background-color: #e0e0e0;
+        border-color: #121212;
+    }
+    .text-primary-color, .text-violet-700, .ai-insight-box h4, #gauge-label-p50, .grade-percentage, #help-modal .help-title, #help-modal .help-section-title {
+        color: var(--primary-color);
+    }
+    .text-red-600 { color: var(--danger-color); }
+    .text-orange-600 { color: var(--warning-color); }
+    
+    .side-panel, .tab-content, .modal-content, .subject-table tbody tr {
+        background-color: #1e1e1e;
+    }
+    .subject-table tbody tr:nth-child(even), .score-card, .prediction-card {
+        background-color: #2a2a2a;
+    }
+    .tab-btn {
+        background-color: #2a2a2a;
+        color: #a0a0a0;
+    }
+    .tab-btn.active {
+        background-color: #1e1e1e;
+        color: var(--primary-color);
+    }
+    .subject-table td, .side-panel h2, .side-panel h3, .content-area h1, .flex.border-b, .probability-table th, .probability-table td, .ai-insight-box, .subject-analysis, .modal-content, #unites-list, .border-t, .border-b, .border-l-4 {
+        border-color: #333333;
+    }
+    .subject-analysis {
+        background-color: #2a2a2a;
+    }
+    .ai-insight-box {
+         background-color: #2a2a2a;
+         border-color: #4a2c7a;
+    }
+    .bg-violet-100 {
+        background-color: #2a2a2a;
+        border-color: var(--primary-color);
+    }
+    select, input[type="range"] {
+        background-color: #2a2a2a;
+        color: #e0e0e0;
+        border-color: #444;
+    }
+    #help-modal .modal-content {
+        background: #1e1e1e;
+    }
+    #help-modal h4, #help-modal b {
+         color: #e5e5e5;
+    }
+     #help-modal p, #help-modal li {
+         color: #b0b0b0;
+     }
+     #unites-modal .modal-content {
+         background: #1e1e1e;
+     }
+     #unites-list {
+         border-color: #333;
+     }
+    .help-btn, .back-to-main-btn {
+        background-color: #333;
+        color: #e0e0e0;
+    }
+    .help-btn:hover, .back-to-main-btn:hover {
+        background-color: var(--primary-color);
+    }
+    #unites-btn {
+        background-color: #444;
+        color: #e0e0e0;
+    }
+    #unites-btn:hover {
+        background-color: #555;
+    }
+    .badge-green { background-color: #1a3e2a; color: #D1FAE5; }
+    .badge-yellow { background-color: #4d381c; color: #FEF3C7; }
+    .badge-red { background-color: #4f2323; color: #FEE2E2; }
+    .badge-violet { background-color: #3a226d; color: #E9D5FF; }
+    .badge-blue { background-color: #1e3a8a; color: #DBEAFE; }
+    .badge-orange { background-color: #612c0a; color: #FFEDD5; }
+
+    /* === FIXES START HERE === */
+
+    /* 1. Fix for bright probability table rows */
+    .prob-high { background-color: #1a3e2a !important; color: #D1FAE5 !important; }
+    .prob-medium { background-color: #4d381c !important; color: #FEF3C7 !important; }
+    .prob-low { background-color: #4f2323 !important; color: #FEE2E2 !important; }
+
+    /* 2. Fix for bright table headers (which use Tailwind 'bg-gray-100') */
+    .bg-gray-100 { background-color: #3a3a3a; }
+
+    /* 3. NEW: Fix backgrounds for Mismatch cards (but DON'T touch their borders) */
+    #mismatch-analysis > div {
+        background-color: #2a2a2a !important;
+        /* By not specifying a border-color here, the original classes 
+           like .card-red and .card-yellow will apply correctly. */
+    }
+
+    /* 4. NEW: Fix backgrounds AND borders for the *other* Prediction cards */
+    #global-predictions > div, 
+    #subject-predictions-list > div {
+        background-color: #2a2a2a !important;
+        border-top: 1px solid #333333 !important;
+        border-right: 1px solid #333333 !important;
+        border-bottom: 1px solid #333333 !important;
+        border-left-width: 5px !important;
+        border-left-style: solid !important;
+        border-left-color: #333333 !important; /* Default dark grey border */
+    }
+    
+    /* 5. NEW: Apply specific colors ONLY to the *other* Prediction cards */
+    #global-predictions > div.card-green, 
+    #subject-predictions-list > div.card-green { 
+        border-left-color: var(--secondary-color) !important; 
+    }
+    #global-predictions > div.card-violet, 
+    #subject-predictions-list > div.card-violet { 
+        border-left-color: var(--primary-color) !important; 
+    }
+    #global-predictions > div.card-yellow, 
+    #subject-predictions-list > div.card-yellow { 
+        border-left-color: var(--warning-color) !important; 
+    }
+    #global-predictions > div.card-red, 
+    #subject-predictions-list > div.card-red { 
+        border-left-color: var(--danger-color) !important; 
+    }
+    /* === FIXES END HERE === */
+}
     </style>
-    <!-- Font Awesome (for icons) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
@@ -18,6 +155,10 @@
 <a id="open-help-btn" class="help-btn" title="Comment ça marche ?">
     <i class="fa-solid fa-question"></i>
 </a>
+
+<button id="theme-toggle" class="help-btn" title="Changer de thème" style="right: 50px;">
+    <i class="fa-solid fa-moon"></i>
+</button>
 
 <div id="help-modal" class="modal">
     <div class="modal-content">
@@ -31,7 +172,6 @@
         <h4>Qu'est-ce que c'est ?</h4>
         <p>Le "Moteur de Découverte (IA)" utilise un outil statistique appelé <b>Régression Linéaire</b>. Son but est de trouver la "ligne de tendance" (la ligne droite de meilleur ajustement) qui passe au milieu d'un nuage de points de données. 
 
-[Image of a scatter plot with a positive trend line]
 </p>
         <p>L'IA n'analyse pas seulement vos notes, elle analyse la <b>relation</b> entre deux variables. L'application effectue 3 analyses de régression distinctes :</p>
         
@@ -296,6 +436,29 @@
 
 <script src="js/projected-averages.js"></script> 
 <script src="js/projection.js"></script>
+
+<script>
+    // Inline script for instant theme loading
+    const themeToggle = document.getElementById('theme-toggle');
+    const html = document.documentElement;
+    const toggleIcon = themeToggle.querySelector('i');
+    const THEME_KEY = 'mbs-theme'; // Using the same key as improve.html
+
+    const updateTheme = (theme) => {
+        html.setAttribute('data-theme', theme);
+        localStorage.setItem(THEME_KEY, theme);
+        toggleIcon.className = theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+    };
+
+    const storedTheme = localStorage.getItem(THEME_KEY);
+    const initialTheme = storedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    updateTheme(initialTheme);
+
+    themeToggle.addEventListener('click', () => {
+        const newTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        updateTheme(newTheme);
+    });
+</script>
 
 </body>
 </html>
