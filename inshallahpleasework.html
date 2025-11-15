@@ -117,10 +117,13 @@ body{font-family:'Inter',sans-serif;background-color:var(--bg-color);color:#1f29
         border-top: 1px solid #333333 !important;
         border-right: 1px solid #333333 !important;
         border-bottom: 1px solid #333333 !important;
-        border-left: 5px solid #333333 !important; /* Default thicker border */
+        /* CORRECTED RULE: Use longhand properties to allow override */
+        border-left-width: 5px !important;
+        border-left-style: solid !important;
+        border-left-color: #333333 !important; /* Default dark grey border */
     }
     
-    /* 4. Apply specific colors to the thicker left border */
+    /* 4. Apply specific colors to the thicker left border (This will now work) */
     #global-predictions > div.card-green, 
     #mismatch-analysis > div.card-green, 
     #subject-predictions-list > div.card-green { 
