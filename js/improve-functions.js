@@ -96,7 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return totalCompetencyWeight > 0 ? totalWeightedCompetencyScore / totalCompetencyWeight : null;
     }
 
-    // This function ALWAYS updates the average history for trend calculations.
     function updateAverageHistory(subjectCode) {
         const allCompetencies = ['etape1', 'etape2', 'etape3']
             .flatMap(e => (mbsData[e] || []).filter(s => s.code === subjectCode))
@@ -125,7 +124,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
     }
 
-    // This function syncs the manual assignment history with any new grades.
+    /**
+     * --- NEW: Syncs manual assignment history with new grades ---
+     */
     function syncAssignmentHistory(subjectCode) {
         const mode = mbsData.settings.historyModes[subjectCode];
         if (mode !== 'assignment') return false;
@@ -191,7 +192,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (updateAverageHistory(subject.code)) needsDataSave = true;
             if (syncAssignmentHistory(subject.code)) needsDataSave = true;
 
-            // Trend arrows are ALWAYS based on the average history.
             const averageHistory = (mbsData.historique[subject.code] || []).filter(h => h !== null);
             let trend;
 
@@ -241,7 +241,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
-        // --- EVENT LISTENERS ---
         const toggleGraphView = (element) => {
             const subjectCode = element.dataset.subjectCode;
             const canvasId = element.dataset.canvasId;
@@ -251,7 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const currentView = mbsData.settings.chartViewPrefs[subjectCode] || 'histogram';
             const newView = currentView === 'histogram' ? 'line' : 'histogram';
             mbsData.settings.chartViewPrefs[subjectCode] = newView;
-            localStorage.setItem('mbsData', JSON.stringify(mbsData)); // Save preference
+            localStorage.setItem('mbsData', JSON.stringify(mbsData));
 
             if (activeWidgetCharts[canvasId]) activeWidgetCharts[canvasId].destroy();
             if (newView === 'line') {
@@ -265,7 +264,6 @@ document.addEventListener('DOMContentLoaded', () => {
             button.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const subjectCode = button.dataset.subjectCode;
-                // Find subject data from the combined list to ensure it's always found
                 const subject = subjectsToRender.find(s => s.code === subjectCode);
                 if (subject) openHistoryEditor(subject);
             });
@@ -293,7 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
             labels = history.map((_, i) => `Point ${i + 1}`);
             data = history;
             title = 'Historique des moyennes';
-        } else { // mode === 'assignment'
+        } else {
             const history = (mbsData.assignmentHistory[subject.code] || []).filter(h => h && h.assignmentName && h.grade !== null);
             labels = history.map(h => h.assignmentName);
             data = history.map(h => h.grade);
@@ -312,7 +310,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- REWRITTEN HISTORY EDITOR ---
     function openHistoryEditor(subject) {
         const allGradedAssignments = ['etape1', 'etape2', 'etape3']
             .flatMap(etapeKey => (mbsData[etapeKey] || []).filter(s => s.code === subject.code))
@@ -369,13 +366,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentMode === 'average') {
             modal.querySelector('#switch-to-assignment-mode').addEventListener('click', () => {
                 mbsData.settings.historyModes[subject.code] = 'assignment';
-                // Start with a clean slate, but let the auto-sync populate it on the next render.
+                // --- FIX: Start with a blank slate, not pre-populated assignments ---
                 mbsData.assignmentHistory[subject.code] = [];
                 localStorage.setItem('mbsData', JSON.stringify(mbsData));
                 modal.remove();
-                openHistoryEditor(subject); // Re-open in the new mode
+                openHistoryEditor(subject);
             });
-        } else { // Assignment mode logic
+        } else {
             let tempHistory = JSON.parse(JSON.stringify(mbsData.assignmentHistory[subject.code] || []));
             const pointsContainer = modal.querySelector('#data-points-container');
 
@@ -428,14 +425,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             modal.querySelector('#save-history-assignments').addEventListener('click', () => {
-                const finalHistory = tempHistory.filter(h => h !== null);
-                mbsData.assignmentHistory[subject.code] = finalHistory;
-
-                // If user removes all assignments, revert to average mode.
-                if (finalHistory.length === 0) {
-                    mbsData.settings.historyModes[subject.code] = 'average';
-                    delete mbsData.assignmentHistory[subject.code];
-                }
+                mbsData.assignmentHistory[subject.code] = tempHistory.filter(h => h !== null);
                 localStorage.setItem('mbsData', JSON.stringify(mbsData));
                 closeModal();
             });
@@ -452,7 +442,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    // --- Unchanged Helper Functions ---
+    // --- Unchanged Helper Functions (Gauge, Histogram, Modals, Calculators, etc.) ---
     
     function renderGauge(canvasId, value, goal) {
         const ctx = document.getElementById(canvasId).getContext('2d');
