@@ -300,10 +300,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
         activeWidgetCharts[canvasId] = new Chart(ctx, {
             type: 'line', data: chartData,
-            options: { 
-                responsive: true, maintainAspectRatio: false, 
-                scales: { y: { suggestedMin: 50, suggestedMax: 100 } },
-                plugins: { legend: { display: false }, title: { display: true, text: chartTitle } }
+options: {
+    responsive: true, maintainAspectRatio: false,
+    scales: {
+        x: { // Hides the labels on the x-axis
+            ticks: {
+                display: false
+            },
+            grid: {
+                display: false // Optional: also hides vertical grid lines
+            }
+        },
+        y: { 
+            suggestedMin: 50, 
+            suggestedMax: 100 
+        }
+    },
+    plugins: { legend: { display: false }, title: { display: true, text: chartTitle } }
+}
             }
         });
     }
