@@ -19,7 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
         mbsData.settings.objectives = mbsData.settings.objectives || {};
         mbsData.settings.chartViewPrefs = mbsData.settings.chartViewPrefs || {};
         mbsData.settings.historyMode = mbsData.settings.historyMode || {};
-        // --- NEW: Stores the user-defined assignment order for the graph ---
         mbsData.settings.assignmentOrder = mbsData.settings.assignmentOrder || {};
         mbsData.historique = mbsData.historique || {};
         
@@ -72,17 +71,19 @@ document.addEventListener('DOMContentLoaded', () => {
     function calculateSubjectAverage(subject) {
         let totalWeightedCompetencyScore = 0;
         let totalCompetencyWeight = 0;
-        subject.competencies.forEach(comp => {
-            const compWeightMatch = comp.name.match(/\((\d+)%\)/);
-            if (!compWeightMatch) return;
-            const competencyWeight = parseFloat(compWeightMatch[1]);
-            const assignments = comp.assignments || [];
-            const competencyResult = calculateAverage(assignments);
-            if (competencyResult) {
-                totalWeightedCompetencyScore += competencyResult.average * competencyWeight;
-                totalCompetencyWeight += competencyWeight;
-            }
-        });
+        if (subject && subject.competencies) {
+            subject.competencies.forEach(comp => {
+                const compWeightMatch = comp.name.match(/\((\d+)%\)/);
+                if (!compWeightMatch) return;
+                const competencyWeight = parseFloat(compWeightMatch[1]);
+                const assignments = comp.assignments || [];
+                const competencyResult = calculateAverage(assignments);
+                if (competencyResult) {
+                    totalWeightedCompetencyScore += competencyResult.average * competencyWeight;
+                    totalCompetencyWeight += competencyWeight;
+                }
+            });
+        }
         return totalCompetencyWeight > 0 ? totalWeightedCompetencyScore / totalCompetencyWeight : null;
     }
     
@@ -109,35 +110,25 @@ document.addEventListener('DOMContentLoaded', () => {
         ['etape1', 'etape2', 'etape3'].forEach(etape => {
             (mbsData[etape] || []).forEach(subject => {
                 if (!allSubjectsAcrossEtapes.has(subject.code)) {
-                    allSubjectsAcrossEtapes.set(subject.code, { 
-                        ...subject, 
-                        competencies: [] 
-                    });
+                    allSubjectsAcrossEtapes.set(subject.code, { ...subject, competencies: [] });
                 }
             });
         });
 
         ['etape1', 'etape2', 'etape3'].forEach(etape => {
             (mbsData[etape] || []).forEach(subject => {
-                const existingSubject = allSubjectsAcrossEtapes.get(subject.code);
-                if (existingSubject) {
-                    existingSubject.competencies.push(...subject.competencies);
-                }
+                allSubjectsAcrossEtapes.get(subject.code)?.competencies.push(...subject.competencies);
             });
         });
 
-        let subjectsToRender = [];
-        if (etapeKey === 'generale') {
-            subjectsToRender = Array.from(allSubjectsAcrossEtapes.values()).map(subject => ({
-                ...subject,
-                average: calculateSubjectAverage(subject)
-            }));
-        } else {
-            subjectsToRender = (mbsData[etapeKey] || []).map(subject => ({
-                ...subject,
-                average: calculateSubjectAverage(subject)
-            }));
-        }
+        let subjectsToRender = (etapeKey === 'generale')
+            ? Array.from(allSubjectsAcrossEtapes.values())
+            : (mbsData[etapeKey] || []);
+
+        subjectsToRender = subjectsToRender.map(subject => ({
+            ...subject,
+            average: calculateSubjectAverage(subject)
+        }));
 
         let needsDataSave = false;
         subjectsToRender.forEach(subject => {
@@ -147,16 +138,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const overallAverage = calculateSubjectAverage(overallSubject);
 
             if (overallAverage !== null) {
-                if (updateAverageHistory(subject.code, overallAverage)) {
-                    needsDataSave = true;
-                }
+                if (updateAverageHistory(subject.code, overallAverage)) needsDataSave = true;
             }
 
-            // --- NEW: Auto-append newly graded assignments to the custom order ---
-            const mode = mbsData.settings.historyMode[subject.code];
-            if (mode === 'assignment') {
-                const allGradedAssignments = overallSubject.competencies
-                    .flatMap((c, i) => c.assignments.map((a, j) => ({ ...a, uniqueId: `${subject.code}-${i}-${j}` })))
+            if (mbsData.settings.historyMode[subject.code] === 'assignment') {
+                const allGradedAssignments = (overallSubject.competencies || [])
+                    .flatMap((c, i) => (c.assignments || []).map((a, j) => ({ ...a, uniqueId: `${subject.code}-${i}-${j}` })))
                     .filter(a => getNumericGrade(a.result) !== null);
 
                 const currentOrder = mbsData.settings.assignmentOrder[subject.code] || [];
@@ -164,21 +151,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 const newAssignments = allGradedAssignments.filter(a => !currentOrderSet.has(a.uniqueId));
 
                 if (newAssignments.length > 0) {
-                    const newOrder = [...currentOrder, ...newAssignments.map(a => a.uniqueId)];
-                    mbsData.settings.assignmentOrder[subject.code] = newOrder;
+                    mbsData.settings.assignmentOrder[subject.code] = [...currentOrder, ...newAssignments.map(a => a.uniqueId)];
                     needsDataSave = true;
-                    console.log(`Appended ${newAssignments.length} new assignment(s) to the order for ${subject.code}.`);
                 }
             }
-            // --- END NEW ---
 
             const averageHistory = (mbsData.historique[subject.code] || []).filter(h => h !== null);
             let trend;
             if (averageHistory.length < 2) {
                 trend = { direction: '—', change: '0.00%', class: 'neutral' };
             } else {
-                const currentAvg = averageHistory[averageHistory.length - 1];
-                const previousAvg = averageHistory[averageHistory.length - 2];
+                const [previousAvg, currentAvg] = averageHistory.slice(-2);
                 const change = currentAvg - previousAvg;
                 trend = change < 0 
                     ? { direction: '▼', change: `${change.toFixed(2)}%`, class: 'down' }
@@ -190,14 +173,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const chartCanvasId = `dist-chart-${subject.code.replace(/\s+/g, '')}-${etapeKey}`;
             
             widget.innerHTML = `
-                <div class="widget-top-section">
+                <div class="widget-top-section" data-subject-code="${subject.code}">
                     <div class="widget-info">
                         <h3 class="widget-title">${subject.name}</h3>
                         <p class="widget-average">${subject.average.toFixed(2)}%</p>
-                        <div class="widget-trend ${trend.class}">
-                            <span>${trend.direction}</span>
-                            <span>${trend.change}</span>
-                        </div>
+                        <div class="widget-trend ${trend.class}"><span>${trend.direction}</span><span>${trend.change}</span></div>
                     </div>
                     <div class="gauge-container"><canvas id="gauge-${chartCanvasId}"></canvas></div>
                 </div>
@@ -206,7 +186,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="histogram-container" data-canvas-id="${chartCanvasId}"><canvas id="${chartCanvasId}"></canvas></div>`;
             
-            widget.querySelector('.widget-top-section').addEventListener('click', () => openDetailsModal(overallSubject, etapeKey));
             widgetGrid.appendChild(widget);
             
             renderGauge(`gauge-${chartCanvasId}`, subject.average, mbsData.settings.objectives[subject.code]);
@@ -219,6 +198,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
+        document.querySelectorAll('.widget-top-section').forEach(section => {
+            section.addEventListener('click', () => {
+                const subjectCode = section.dataset.subjectCode;
+                const overallSubject = allSubjectsAcrossEtapes.get(subjectCode);
+                openDetailsModal(overallSubject);
+            });
+        });
+
         document.querySelectorAll('.chart-toggle-btn').forEach(button => {
             button.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -234,13 +221,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const canvasId = container.dataset.canvasId;
                 const subjectCode = canvasId.split('-')[2];
                 const overallSubject = allSubjectsAcrossEtapes.get(subjectCode);
-
+                
                 const currentView = mbsData.settings.chartViewPrefs[subjectCode] || 'histogram';
                 const newView = currentView === 'histogram' ? 'line' : 'histogram';
                 mbsData.settings.chartViewPrefs[subjectCode] = newView;
                 needsDataSave = true;
 
                 if (activeWidgetCharts[canvasId]) activeWidgetCharts[canvasId].destroy();
+                
                 if (newView === 'line') {
                     renderLineGraph(canvasId, overallSubject);
                 } else {
@@ -249,9 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        if (needsDataSave) {
-            localStorage.setItem('mbsData', JSON.stringify(mbsData));
-        }
+        if (needsDataSave) localStorage.setItem('mbsData', JSON.stringify(mbsData));
     }
 
     function renderLineGraph(canvasId, subject) {
@@ -261,20 +247,16 @@ document.addEventListener('DOMContentLoaded', () => {
         let chartData, chartTitle;
 
         if (mode === 'assignment') {
-            const allAssignments = subject.competencies
-                .flatMap((c, i) => c.assignments.map((a, j) => ({ ...a, uniqueId: `${subject.code}-${i}-${j}` })));
+            const allAssignments = (subject.competencies || [])
+                .flatMap((c, i) => (c.assignments || []).map((a, j) => ({ ...a, uniqueId: `${subject.code}-${i}-${j}` })));
             
-            const gradedAssignments = allAssignments.filter(a => getNumericGrade(a.result) !== null);
+            let gradedAssignments = allAssignments.filter(a => getNumericGrade(a.result) !== null);
 
             const order = mbsData.settings.assignmentOrder[subject.code] || [];
-            const orderMap = new Map(order.map((id, index) => [id, index]));
-            
-            // Sort according to the user-defined order
-            gradedAssignments.sort((a, b) => {
-                const posA = orderMap.get(a.uniqueId) ?? Infinity;
-                const posB = orderMap.get(b.uniqueId) ?? Infinity;
-                return posA - posB;
-            });
+            if (order.length > 0) {
+                const orderMap = new Map(order.map((id, index) => [id, index]));
+                gradedAssignments.sort((a, b) => (orderMap.get(a.uniqueId) ?? Infinity) - (orderMap.get(b.uniqueId) ?? Infinity));
+            }
             
             chartData = {
                 labels: gradedAssignments.map(a => a.work.replace('<br>', ' ')),
@@ -288,7 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             const history = (mbsData.historique[subject.code] || []).filter(h => h !== null);
             chartData = {
-                labels: history.map((_, i) => `Point ${i + 1}`),
+                labels: history.map((_, i) => `Moyenne ${i + 1}`),
                 datasets: [{ 
                     label: 'Moyenne', 
                     data: history, 
@@ -300,43 +282,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
         activeWidgetCharts[canvasId] = new Chart(ctx, {
             type: 'line', data: chartData,
-options: {
-    responsive: true, maintainAspectRatio: false,
-    scales: {
-        x: { // Hides the labels on the x-axis
-            ticks: {
-                display: false
-            },
-            grid: {
-                display: false // Optional: also hides vertical grid lines
-            }
-        },
-        y: { 
-            suggestedMin: 50, 
-            suggestedMax: 100 
-        }
-    },
-    plugins: { legend: { display: false }, title: { display: true, text: chartTitle } }
-}
+            options: { 
+                responsive: true, maintainAspectRatio: false, 
+                scales: { 
+                    y: { suggestedMin: 50, suggestedMax: 100 },
+                    // --- MODIFICATION: Hide X-axis labels ---
+                    x: { ticks: { display: false }, grid: { display: false } }
+                },
+                plugins: { 
+                    legend: { display: false }, 
+                    title: { display: true, text: chartTitle }
+                }
             }
         });
     }
 
-    /**
-     * --- NEW: Intuitive Drag-and-Drop Order Editor ---
-     */
     function openOrderEditor(subject) {
         const modal = document.createElement('div');
         modal.id = 'order-editor-modal';
         modal.className = 'modal-overlay active';
 
-        const allAssignments = subject.competencies
-            .flatMap((c, i) => c.assignments.map((a, j) => ({ ...a, uniqueId: `${subject.code}-${i}-${j}` })))
+        const allAssignments = (subject.competencies || [])
+            .flatMap((c, i) => (c.assignments || []).map((a, j) => ({ ...a, uniqueId: `${subject.code}-${i}-${j}` })))
             .filter(a => getNumericGrade(a.result) !== null);
 
         const currentOrder = mbsData.settings.assignmentOrder[subject.code] || [];
-        const orderMap = new Map(currentOrder.map((id, index) => [id, index]));
-        allAssignments.sort((a, b) => (orderMap.get(a.uniqueId) ?? Infinity) - (orderMap.get(b.uniqueId) ?? Infinity));
+        if (currentOrder.length > 0) {
+            const orderMap = new Map(currentOrder.map((id, index) => [id, index]));
+            allAssignments.sort((a, b) => (orderMap.get(a.uniqueId) ?? Infinity) - (orderMap.get(b.uniqueId) ?? Infinity));
+        }
         
         modal.innerHTML = `
             <div class="order-editor-content">
@@ -362,25 +336,21 @@ options: {
         document.body.appendChild(modal);
 
         const list = modal.querySelector('#order-list');
-        let draggedItem = null;
-
-        list.addEventListener('dragstart', (e) => {
-            draggedItem = e.target;
+        list.addEventListener('dragstart', e => {
             setTimeout(() => e.target.classList.add('dragging'), 0);
         });
-        
-        list.addEventListener('dragend', (e) => {
-            e.target.classList.remove('dragging');
-        });
-
-        list.addEventListener('dragover', (e) => {
+        list.addEventListener('dragend', e => e.target.classList.remove('dragging'));
+        list.addEventListener('dragover', e => {
             e.preventDefault();
-            const afterElement = getDragAfterElement(list, e.clientY);
-            const currentlyDragged = document.querySelector('.dragging');
-            if (afterElement == null) {
-                list.appendChild(currentlyDragged);
-            } else {
-                list.insertBefore(currentlyDragged, afterElement);
+            const afterElement = [...list.querySelectorAll('li:not(.dragging)')].reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = e.clientY - box.top - box.height / 2;
+                return (offset < 0 && offset > closest.offset) ? { offset, element: child } : closest;
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+            const dragging = document.querySelector('.dragging');
+            if (dragging) {
+                if (afterElement == null) list.appendChild(dragging);
+                else list.insertBefore(dragging, afterElement);
             }
         });
 
@@ -392,14 +362,14 @@ options: {
         modal.querySelector('#save-order').addEventListener('click', () => {
             const newOrder = [...list.querySelectorAll('li')].map(li => li.dataset.id);
             mbsData.settings.assignmentOrder[subject.code] = newOrder;
-            mbsData.settings.historyMode[subject.code] = 'assignment'; // Activate mode
+            mbsData.settings.historyMode[subject.code] = 'assignment';
             localStorage.setItem('mbsData', JSON.stringify(mbsData));
             closeModal();
         });
 
         modal.querySelector('#reset-mode-btn').addEventListener('click', () => {
             delete mbsData.settings.assignmentOrder[subject.code];
-            delete mbsData.settings.historyMode[subject.code]; // Revert to average mode
+            delete mbsData.settings.historyMode[subject.code];
             localStorage.setItem('mbsData', JSON.stringify(mbsData));
             closeModal();
         });
@@ -407,22 +377,9 @@ options: {
         modal.querySelector('#close-order-editor').addEventListener('click', closeModal);
     }
     
-    function getDragAfterElement(container, y) {
-        const draggableElements = [...container.querySelectorAll('li:not(.dragging)')];
-        return draggableElements.reduce((closest, child) => {
-            const box = child.getBoundingClientRect();
-            const offset = y - box.top - box.height / 2;
-            if (offset < 0 && offset > closest.offset) {
-                return { offset: offset, element: child };
-            } else {
-                return closest;
-            }
-        }, { offset: Number.NEGATIVE_INFINITY }).element;
-    }
+    // --- Unchanged Functions (Histogram, Gauge, Details Modal, etc.) ---
 
-    // --- Unchanged Functions Below ---
     function renderGauge(canvasId, value, goal) {
-        // ... (this function remains unchanged)
         const ctx = document.getElementById(canvasId).getContext('2d');
         const gradient = ctx.createLinearGradient(0, 0, 120, 0);
         gradient.addColorStop(0, '#e74c3c');
@@ -439,18 +396,16 @@ options: {
                     const cx = chartArea.left + chartArea.width / 2;
                     const cy = chartArea.top + chartArea.height;
                     const needleRadius = chart.getDatasetMeta(0).data[0].outerRadius;
-                    ctx.save();
-                    ctx.translate(cx, cy); ctx.rotate(angle); ctx.beginPath();
+                    ctx.save(); ctx.translate(cx, cy); ctx.rotate(angle); ctx.beginPath();
                     ctx.moveTo(0, -5); ctx.lineTo(needleRadius - 10, 0); ctx.lineTo(0, 5);
-                    ctx.fillStyle = 'var(--secondary-color)'; ctx.fill();
+                    ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#e0e0e0' : '#2c3e50'; ctx.fill();
                     ctx.restore();
                     if (goal) {
                         const goalAngle = Math.PI + (goal / 100) * Math.PI;
                         const innerRadius = chart.getDatasetMeta(0).data[0].innerRadius;
-                        ctx.save();
-                        ctx.translate(cx, cy); ctx.rotate(goalAngle); ctx.beginPath();
+                        ctx.save(); ctx.translate(cx, cy); ctx.rotate(goalAngle); ctx.beginPath();
                         ctx.moveTo(innerRadius, 0); ctx.lineTo(needleRadius, 0);
-                        ctx.strokeStyle = 'var(--danger-color)'; ctx.lineWidth = 3; ctx.stroke();
+                        ctx.strokeStyle = '#e74c3c'; ctx.lineWidth = 3; ctx.stroke();
                         ctx.restore();
                     }
                 }
@@ -459,12 +414,9 @@ options: {
     }
 
     function renderHistogram(canvasId, subject) {
-        // ... (this function remains unchanged)
         const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-        const colors = isDarkMode
-            ? ['#ff5252', '#ff9800', '#cddc39', '#4caf50']
-            : ['#e74c3c', '#f39c12', '#a0c800', '#27ae60'];
-        const grades = subject.competencies.flatMap(comp => comp.assignments.map(a => getNumericGrade(a.result)).filter(g => g !== null));
+        const colors = isDarkMode ? ['#ff5252', '#ff9800', '#cddc39', '#4caf50'] : ['#e74c3c', '#f39c12', '#a0c800', '#27ae60'];
+        const grades = (subject.competencies || []).flatMap(comp => (comp.assignments || []).map(a => getNumericGrade(a.result)).filter(g => g !== null));
         const bins = { 'Echec (<60)': 0, 'C (60-69)': 0, 'B (70-89)': 0, 'A (90+)': 0 };
         grades.forEach(g => {
             if (g < 60) bins['Echec (<60)']++; else if (g < 70) bins['C (60-69)']++;
@@ -478,7 +430,34 @@ options: {
         });
     }
 
-    function openDetailsModal(subject, etapeKey) {
-        // ... (this function remains unchanged, left for goal planning)
+    function openDetailsModal(subject) {
+        const modalContent = document.getElementById('modal-content');
+        modalContent.innerHTML = `
+            <div class="modal-header"><h2 class="modal-title">${subject.name} (${subject.code})</h2></div>
+            <div class="modal-body">
+                <div class="competency-widgets"></div>
+                <!-- Other content like calculator can go here -->
+            </div>`;
+        const competencyContainer = modalContent.querySelector('.competency-widgets');
+        const uniqueCompetencies = new Map();
+        (subject.competencies || []).forEach(comp => {
+            if (!uniqueCompetencies.has(comp.name)) uniqueCompetencies.set(comp.name, { name: comp.name, assignments: [] });
+            uniqueCompetencies.get(comp.name).assignments.push(...(comp.assignments || []));
+        });
+
+        Array.from(uniqueCompetencies.values()).forEach(comp => {
+            const compResult = calculateAverage(comp.assignments);
+            if (!compResult) return;
+            const compWidget = document.createElement('div');
+            compWidget.className = 'comp-widget';
+            compWidget.innerHTML = `<h4>${comp.name}</h4><div class="avg">${compResult.average.toFixed(1)}%</div>`;
+            competencyContainer.appendChild(compWidget);
+        });
+
+        detailsModal.classList.add('active');
+    }
+    
+    function closeDetailsModal() {
+        detailsModal.classList.remove('active');
     }
 });
