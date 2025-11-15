@@ -289,6 +289,284 @@
 </head>
 <body>
 
+
+<a id="open-help-btn" class="help-btn" title="Comment ça marche ?">
+    <i class="fa-solid fa-question"></i>
+</a>
+
+<div id="help-modal" class="modal">
+    <div class="modal-content">
+        <span id="close-help-modal" class="modal-close">&times;</span>
+        <h2 class="help-title">Guide Détaillé de l'Analyseur</h2>
+        
+        <p>Cet outil analyse votre <b>tendance</b> (votre "élan") et votre <b>volatilité</b> (votre stabilité) pour prédire vos performances. Voici ce que chaque terme signifie en détail.</p>
+
+        <h3 class="help-section-title">Section Spéciale : La Régression Linéaire (Le Cœur de l'IA)</h3>
+        
+        <h4>Qu'est-ce que c'est ?</h4>
+        <p>Le "Moteur de Découverte (IA)" utilise un outil statistique appelé <b>Régression Linéaire</b>. Son but est de trouver la "ligne de tendance" (la ligne droite de meilleur ajustement) qui passe au milieu d'un nuage de points de données. 
+
+[Image of a scatter plot with a positive trend line]
+</p>
+        <p>L'IA n'analyse pas seulement vos notes, elle analyse la <b>relation</b> entre deux variables. L'application effectue 3 analyses de régression distinctes :</p>
+        
+        <ol class="detailed-list">
+            <li><b>Modèle 1 : TENDANCE (Note vs. Temps)</b>
+                <ul>
+                    <li><b>(Axe X) :</b> Le temps (Devoir 1, Devoir 2, Devoir 3...)</li>
+                    <li><b>(Axe Y) :</b> La note obtenue (85%, 88%, 87%...)</li>
+                    <li><b>Ce qu'elle cherche :</b> "Est-ce que vos notes <b>montent</b> ou <b>baissent</b> avec le temps ?" C'est votre élan, ou "pente". C'est ce qui alimente le "Facteur de Tendance Globale".</li>
+                </ul>
+            </li>
+            <li><b>Modèle 2 : FOCUS (Note vs. Pondération du Devoir)</b>
+                <ul>
+                    <li><b>(Axe X) :</b> L'importance du devoir (Ex: 5%, 10%, 40%...)</li>
+                    <li><b>(Axe Y) :</b> La note obtenue (95%, 90%, 82%...)</li>
+                    <li><b>Ce qu'elle cherche :</b> "Avez-vous tendance à mieux réussir les <b>petits devoirs</b> ou les <b>gros examens</b> ?" Une pente négative ici est un signal d'alarme : cela signifie que plus un examen est important, plus votre note a tendance à baisser.</li>
+                </ul>
+            </li>
+            <li><b>Modèle 3 : PRIORITÉ (Note vs. Pondération de la Compétence)</b>
+                <ul>
+                    <li><b>(Axe X) :</b> L'importance de la compétence (Ex: 30%, 40%, 60%...)</li>
+                    <li><b>(Axe Y) :</b> La note obtenue dans cette compétence (90%, 85%, 80%...)</li>
+                    <li><b>Ce qu'elle cherche :</b> "Êtes-vous meilleur dans les compétences mineures ou majeures ?"</li>
+                </ul>
+            </li>
+        </ol>
+
+        <h4>Ce qui INFLUENCE la Régression (Votre question)</h4>
+        <p>La "ligne de tendance" est comme une balançoire. Ce qui l'influence le plus, ce sont les <b>points aberrants (Outliers)</b> et la <b>dispersion</b> de vos notes.</p>
+        <ul>
+            <li><b>Les Points Aberrants (Outliers) :</b> C'est l'influence n°1. Si vous avez une moyenne de 90% mais que vous tombez malade et obtenez <b>20%</b> à un examen, ce seul point tirera la "ligne de tendance" <b>massivement</b> vers le bas. L'IA verra cela comme une forte tendance négative. De même, un 100% facile sur un devoir tirera la ligne vers le haut.</li>
+            <li><b>La Fiabilité (Le R²) :</b> C'est le "Niveau de Confiance" de l'IA. C'est la statistique la plus importante que l'IA regarde.
+                <ul>
+                    <li>Un <b>R² élevé (ex: 0.8 ou 80%)</b> signifie que vos notes sont très proches de la ligne de tendance. Le schéma est <b>fiable</b>. L'IA peut affirmer avec certitude "Vous êtes en hausse".</li>
+                    <li>Un <b>R² faible (ex: 0.1 ou 10%)</b> signifie que vos notes sont "erratiques" et totalement dispersées autour de la ligne. Le schéma est <b>non fiable</b>. C'est à ce moment que l'IA vous dit : <b>"Je n'ai trouvé aucun schéma fiable"</b>, car la tendance qu'elle a trouvée n'explique que 10% de vos résultats.</li>
+                </ul>
+            </li>
+            <li><b>Le Nombre de Points (N) :</b> Une tendance sur 3 devoirs ne veut rien dire. Une tendance sur 30 devoirs est un schéma très fort. C'est pourquoi l'IA ignore les matières avec moins de 5 notes.</li>
+        </ul>
+
+        <h3 class="help-section-title">Panneau Principal (Gauche)</h3>
+        
+        <h4>Prédiction Globale Stochastique (Tendance MC)</h4>
+        <p>"MC" signifie <b>Monte Carlo</b>. L'outil simule <b>100 000 scénarios possibles</b> pour l'Étape 3. Chaque simulation est un "jet de dé" basé sur :</p>
+        <ol>
+            <li><b>Votre moyenne projetée</b> (basée sur la <b>Pente</b> de votre Régression Linéaire "Tendance").</li>
+            <li><b>Votre volatilité</b> (votre <b>Écart-Type</b>, ou "StdDev"). Un étudiant stable (faible volatilité) aura des simulations groupées (ex: 88-92%). Un étudiant erratique (haute volatilité) aura des simulations dispersées (ex: 70-100%).</li>
+        </ol>
+        <p>Le score affiché est le <b>P50 (Médian)</b> : le point exact où 50 000 simulations ont fait pire et 50 000 ont fait mieux. C'est le résultat le plus probable.</p>
+
+        <h4>Jauge de Performance (P5 à P95)</h4>
+        <p>C'est la carte complète des 100 000 simulations :</p>
+        <ul>
+            <li><b>P5 (Pessimiste) :</b> 95 000 simulations ont donné un meilleur score. C'est votre "pire" scénario probable.</li>
+            <li><b>P50 (Médian) :</b> Le centre, identique à la prédiction "Tendance MC".</li>
+            <li><b>P95 (Optimiste) :</b> Seulement 5 000 simulations ont fait mieux. C'est le scénario "rêvé".</li>
+        </ul>
+
+        <h4>Indices de Risque Dynamique</h4>
+        <ul>
+            <li><b>Indice de Consistance :</b> C'est l'inverse de votre <b>Volatilité (Écart-Type)</b>. Un score de 100 signifie un Écart-Type de 0 (ex: 90%, 90%, 90%). Un score bas signifie que vos notes sont très dispersées (ex: 60%, 100%, 75%).</li>
+            <li><b>Risque de Burnout :</b> Score (sur 100) basé sur 4 facteurs : <b>1.</b> Volatilité (l'instabilité est stressante), <b>2.</b> Tendance (une pente négative est un signe de difficulté), <b>3.</b> Charge de travail (Unités), <b>4.</b> Absentéisme.</li>
+            <li><b>Facteur de Tendance Globale :</b> C'est la <b>Pente (Slope)</b> de votre Régression "Tendance" x 10. (Ex: Pente de +0.2 = +2.0% F.T.G. = Vous gagnez 0.2 points par devoir, ou 2 points tous les 10 devoirs).</li>
+        </ul>
+
+        <h3 class="help-section-title">Analyse Détaillée (Droite)</h3>
+
+        <h4>Analyse de Déséquilibre (Mismatch)</h4>
+        <p>Cette section identifie les matières "risquées". Le "Score Mismatch" est élevé si une matière a :</p>
+        <ul>
+            <li><b>1. Une haute Volatilité (Écart-Type) :</b> Vos notes sont très dispersées.</li>
+            <li><b>2. Une faible Consistance :</b> Vos notes sont imprévisibles.</li>
+        </ul>
+        <p>Une matière "Rouge" (Mismatch élevé) est une bombe à retardement. C'est là que vous devez vous concentrer pour <b>stabiliser</b> vos résultats (ex: visez des 80-90 constants plutôt que des 70-100 alternés).</p>
+
+        <h4>Analyse de Chemin (Probabilités)</h4>
+        <p>Cette section vous donne un plan d'action. Elle répond à deux questions : <b>1.</b> "De quelle moyenne ai-je besoin ?" et <b>2.</b> "Quelles sont mes chances de l'obtenir ?"</p>
+        <ul>
+            <li><b>Moyenne Requise E2/E3 :</b> C'est un calcul algébrique simple pour déterminer la note exacte que vous devez obtenir à l'étape 2 (ou 3) pour atteindre un objectif global.</li>
+            <li><b>Probabilité (%) :</b> C'est la partie la plus importante. L'outil utilise la <b>Distribution Normale (CDF)</b>. Il compare la "Moyenne Requise" à votre "Jauge de Performance (P5-P95)".</li>
+            <li><b>Exemple :</b> Si votre "Moyenne Requise" est de <b>80%</b>, mais que votre jauge P5-P95 est entre 85% et 95%, votre probabilité de l'atteindre sera très élevée (ex: 99%), car 80% est en dessous de votre "pire" scénario. Si la "Moyenne Requise" est de <b>96%</b>, elle est au-dessus de votre P95, donc la probabilité sera très faible (ex: <5%).</li>
+        </ul>
+    </div>
+</div>
+
+<style>
+    /* Bouton d'aide flottant */
+    .help-btn {
+        position: fixed;
+        bottom: 10px;
+        left: 1370px;
+        width: 30px;
+        height: 30px;
+        background-color: #000000; 
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem; 
+        text-decoration: none;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        z-index: 999;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .help-btn:hover {
+        transform: translateY(-2px) scale(1.05);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        background-color: #6D28D9; /* Violet-600 */
+    }
+
+    /* Ajustements pour la modale d'aide */
+    #help-modal .modal-content {
+        /* Plus large pour le texte détaillé */
+        width: 750px; 
+        max-width: 95%;
+        /* Permet le défilement */
+        max-height: 90vh;
+        overflow-y: auto; 
+        text-align: left; 
+    }
+
+    /* Style pour le texte d'aide */
+    .help-title {
+        font-size: 1.5rem; /* 24px */
+        font-weight: 700;
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+        text-align: left;
+    }
+
+    .help-section-title {
+        font-size: 1.25rem; /* 20px */
+        font-weight: 600;
+        color: var(--primary-color);
+        margin-top: 1.5rem;
+        border-bottom: 2px solid var(--primary-color);
+        padding-bottom: 4px;
+        margin-bottom: 1rem;
+    }
+
+    #help-modal h4 {
+        font-size: 1.0rem; /* 16px */
+        font-weight: 700;
+        color: #1f2937; /* gray-800 */
+        margin-top: 1.25rem;
+        margin-bottom: 0.25rem;
+    }
+
+    #help-modal p, #help-modal li {
+        font-size: 0.95rem; /* ~15px */
+        color: #374151; /* gray-700 */
+        line-height: 1.6;
+        margin-top: 0.5rem;
+    }
+
+    #help-modal ul {
+        list-style-type: disc;
+        padding-left: 2rem;
+        margin-top: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    #help-modal ol.detailed-list {
+         list-style-type: decimal;
+         padding-left: 1.5rem;
+    }
+    #help-modal ol.detailed-list > li {
+        font-weight: 600;
+        color: #1f2937;
+        margin-top: 1rem;
+    }
+     #help-modal ol.detailed-list > li > ul {
+         margin-top: 0.25rem;
+         font-weight: normal;
+     }
+
+    #help-modal b {
+        font-weight: 600;
+        color: #1f2937; /* gray-800 */
+    }
+
+    #help-modal .modal-close {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        font-size: 2em;
+        cursor: pointer;
+        color: #aaa;
+        line-height: 1;
+        z-index: 1001; 
+    }
+</style>
+
+<script>
+    (function() {
+        const helpModal = document.getElementById('help-modal');
+        const openHelpBtn = document.getElementById('open-help-btn');
+        const closeHelpBtn = document.getElementById('close-help-modal');
+
+        if (openHelpBtn && helpModal) {
+            openHelpBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                helpModal.classList.add('active');
+            });
+        }
+
+        if (closeHelpBtn && helpModal) {
+            closeHelpBtn.addEventListener('click', () => {
+                helpModal.classList.remove('active');
+            });
+        }
+
+        if (helpModal) {
+            helpModal.addEventListener('click', (e) => {
+                if (e.target === helpModal) {
+                    helpModal.classList.remove('active');
+                }
+            });
+        }
+    })();
+</script>
+
+
+    
+<style>
+    .back-to-main-btn {
+        position: fixed;
+        /* Positionné un peu plus haut et à gauche */
+        top: 10px;
+        left: 30px;
+        /* Plus petit */
+        width: 20px;
+        height: 20px;
+        background-color: var(--primary-color); 
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        /* Fonte ajustée pour la nouvelle taille */
+        font-size: 1.0rem; 
+        text-decoration: none;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        z-index: 999; 
+        transition: all 0.2s ease-in-out;
+    }
+
+    .back-to-main-btn:hover {
+        transform: translateY(-2px) scale(1.05);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        background-color: #6D28D9; /* Violet-600 */
+    }
+</style>
+
+<a href="main.html" class="back-to-main-btn" title="Retour à la page principale">
+    <i class="fa-solid fa-arrow-left"></i>
+</a>
     <div class="main-container">
 
         <div class="side-panel lg:sticky lg:top-4">
@@ -894,8 +1172,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /**
      * ===================================================================
-     * NEW: AI DISCOVERY ENGINE (V9 - Clarity Engine)
-     * This version adds the average to the insight to resolve user confusion.
+     * NEW: AI DISCOVERY ENGINE (V10 - Specificity & Advice Engine)
+     * This version adds subject name specificity and actionable advice.
      * ===================================================================
      */
     function generateAndRenderInsights(analysis) {
@@ -936,18 +1214,25 @@ document.addEventListener('DOMContentLoaded', () => {
             goodModels.slice(0, 3).forEach(m => {
                 let text = '';
                 let riskClass = 'insight-good';
-                // NEW: Get the average for this data slice
                 const avg = m.data.grades.reduce((a, b) => a + b, 0) / m.data.grades.length;
                 
-                // NEW: Formats name like "Tendance (Temps) en Chimie"
+                // MODIFICATION: Format name with specific subjects
                 const [category, type] = m.name.split(' (');
                 const modelType = type.replace(')', '');
-                const name = (category === 'Global') ? `${modelType}` : `${modelType} en ${category}`;
+                let name = '';
+
+                if (category === 'Global') {
+                    name = `${modelType} Globale`;
+                } else if (subjectGroups[category]) { // It's a group like STEM
+                    const subjectNames = m.data.codes.map(c => subjectList[c] || c).join(', ');
+                    name = `${modelType} en ${category} (${subjectNames})`; // Ex: "Tendance en STEM (Math SN, Physique)"
+                } else { // It's an individual subject
+                    name = `${modelType} en ${category}`; // Ex: "Tendance en Physique"
+                }
 
                 if (m.model.slope > 0.1) {
                     text = `**${name} (Moy: ${avg.toFixed(0)}%)**: Vous avez une **tendance positive claire**. (Confiance: ${(m.model.r2 * 100).toFixed(0)}%)`;
                 } else if (m.model.slope < -0.1) {
-                    // This is the fix for the user's "97% and negative" confusion
                     text = `**${name} (Moy: ${avg.toFixed(0)}%)**: Tendance **négative**. Vos notes baissent, même si votre moyenne est élevée. (Confiance: ${(m.model.r2 * 100).toFixed(0)}%)`;
                     riskClass = ''; // warning
                 } else {
@@ -955,6 +1240,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 insights.push({ text: text, type: `${m.type} ${riskClass}` });
             });
+            
+            // --- NEW: Actionable Advice Section (Trend-Based) ---
+            const negativeTrends = goodModels.filter(m => m.model.slope < -0.1);
+            if (negativeTrends.length > 0) {
+                const worstTrend = negativeTrends.sort((a, b) => a.model.slope - b.model.slope)[0];
+                const [category, ] = worstTrend.name.split(' (');
+                insights.push({ 
+                    text: `<b>Action Requise:</b> Votre tendance la plus négative est en <b>${category}</b>. C'est votre priorité #1. Même si la moyenne est haute, la tendance à la baisse est un signal de risque.`,
+                    type: '' // warning
+                });
+            }
+            
+            const positiveTrends = goodModels.filter(m => m.model.slope > 0.1);
+            if (positiveTrends.length > 0 && negativeTrends.length === 0) { // Only if no negative trends
+                const bestTrend = positiveTrends.sort((a, b) => b.model.slope - a.model.slope)[0];
+                const [category, ] = bestTrend.name.split(' (');
+                insights.push({ 
+                    text: `<b>Bon Travail:</b> Votre élan est excellent, surtout en <b>${category}</b>. Maintenez cette méthode de travail, elle fonctionne.`,
+                    type: 'insight-good'
+                });
+            }
+            
+            if (positiveTrends.length === 0 && negativeTrends.length === 0) { // All stable
+                 insights.push({ 
+                    text: `<b>Profil Stable:</b> Vos schémas sont très constants, sans hausse ni baisse majeure. C'est un profil mature. Le focus est de maintenir cette constance.`,
+                    type: 'insight-info'
+                });
+            }
+            // --- End New Advice Section ---
 
         } else {
             // --- PROFILE: ERRATIC ---
@@ -965,6 +1279,11 @@ document.addEventListener('DOMContentLoaded', () => {
             insights.push({
                 text: `Cette imprévisibilité est le principal facteur de votre B-Risk. Votre Volatilité (StdDev) est de **${globalStdDev.toFixed(1)}** (Idéal: < 10). La priorité #1 est la constance.`,
                 type: '' // warning
+            });
+            // NEW: Advice for Erratic profile
+            insights.push({ 
+                text: "<b>Conseil:</b> Votre focus ne doit pas être sur une matière, mais sur la <b>stabilité</b>. Visez à ce que vos 5 prochains devoirs aient un écart max de 10-15 points (ex: 80% et 95%) au lieu de 40 points (ex: 60% et 100%).", 
+                type: 'insight-focus' 
             });
         }
 
@@ -1232,11 +1551,12 @@ document.addEventListener('DOMContentLoaded', () => {
         let allSubjectStats = {}; 
         let allSubjectOverallStats = {}; 
         
+        // MODIFICATION: Utilisation de Set() pour suivre les codes uniques
         let aiDataStore = {
-            'Global': { grades: [], pondérations: [], compWeights: [], codes: [] }
+            'Global': { grades: [], pondérations: [], compWeights: [], codes: new Set() }
         };
         Object.keys(subjectGroups).forEach(groupName => {
-            aiDataStore[groupName] = { grades: [], pondérations: [], compWeights: [], codes: [] };
+            aiDataStore[groupName] = { grades: [], pondérations: [], compWeights: [], codes: new Set() };
         });
 
         // 1. Calculate Averages and Stats per Subject/Etape
@@ -1250,6 +1570,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const { subjectAverage, allGrades, allPondérations, allCompWeights, overallConsistency, stdDev, competencyAverages } = 
                     calculateSubjectAverageAndStats(subject, etape);
 
+                // MODIFICATION: Ajout du code au Set()
+                aiDataStore['Global'].codes.add(codePrefix);
                 aiDataStore['Global'].grades.push(...allGrades);
                 aiDataStore['Global'].pondérations.push(...allPondérations); 
                 aiDataStore['Global'].compWeights.push(...allCompWeights);
@@ -1259,6 +1581,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         aiDataStore[groupName].grades.push(...allGrades);
                         aiDataStore[groupName].pondérations.push(...allPondérations); 
                         aiDataStore[groupName].compWeights.push(...allCompWeights);
+                        aiDataStore[groupName].codes.add(codePrefix); // MODIFICATION: Ajout du code au Set() du groupe
                         break; 
                     }
                 }
@@ -1288,7 +1611,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (totalNumGrades > 0) {
-                 aiDataStore[subjectList[code] || code] = { grades: grades, pondérations: pondérations, compWeights: compWeights, codes: [code] };
+                 // MODIFICATION: Utilisation de Set() pour la cohérence
+                 aiDataStore[subjectList[code] || code] = { grades: grades, pondérations: pondérations, compWeights: compWeights, codes: new Set([code]) };
             }
 
             const overallStdDev = calculateStdDev(grades);
@@ -1329,23 +1653,26 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = aiDataStore[categoryName];
             if (data.grades.length < 5) continue; 
 
+            // MODIFICATION: Conversion du Set() en Array pour le stockage
+            const codesArray = Array.from(data.codes);
+
             aiModels.push({
                 name: `${categoryName} (Tendance)`,
                 type: 'insight-trend',
                 model: linearRegression(data.grades.map((g, i) => i), data.grades),
-                data: data 
+                data: { ...data, codes: codesArray } // Passe la liste des codes
             });
             aiModels.push({
                 name: `${categoryName} (Focus)`,
                 type: 'insight-focus',
                 model: linearRegression(data.pondérations, data.grades),
-                data: data 
+                data: { ...data, codes: codesArray } // Passe la liste des codes
             });
             aiModels.push({
                 name: `${categoryName} (Priorité)`,
                 type: 'insight-priority',
                 model: linearRegression(data.compWeights, data.grades),
-                data: data 
+                data: { ...data, codes: codesArray } // Passe la liste des codes
             });
         }
         
