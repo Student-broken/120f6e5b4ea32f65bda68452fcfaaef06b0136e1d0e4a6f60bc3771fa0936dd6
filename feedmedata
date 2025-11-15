@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moteur IA (Pathfinder V3)</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    
+    <style>
+        :root {
+            --primary-color: #5B21B6; /* Violet-700 */
+            --secondary-color: #059669; /* Green-600 */
+            --warning-color: #F59E0B; /* Amber */
+            --danger-color: #DC2626; /* Red */
+            --bg-color: #f9fafb;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: #1f2937;
+        }
+        .main-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        .side-panel {
+            width: 100%;
+            max-width: 380px; 
+            background-color: white;
+            padding: 1.5rem;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            border-radius: 0.75rem;
+            margin: 1rem;
+            height: fit-content;
+        }
+        @media (max-width: 1024px) {
+            .main-container { flex-direction: column; }
+            .side-panel { max-width: 100%; }
+        }
+        .content-area {
+            flex-grow: 1;
+            padding: 1rem;
+        }
+        .content-box {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            margin-bottom: 1.5rem;
+        }
+        .btn-primary {
+            width: 100%;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-primary:hover {
+            background-color: #4c1d95;
+        }
+        .btn-primary:disabled {
+            background-color: #a78bfa;
+            cursor: not-allowed;
+        }
+        .btn-primary .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid white;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 0.75rem;
+        }
+        .btn-primary.loading .loading-spinner {
+            display: block;
+        }
+        .btn-primary.loading span {
+            display: none;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .ai-status-box {
+            background-color: #f3f4f6;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            font-size: 0.875rem;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+        }
+        .ai-status-box pre {
+            background-color: #1f2937;
+            color: #d1d5db;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            max-height: 150px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.8rem;
+            line-height: 1.4;
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #374151;
+        }
+        .form-select, .form-input {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .ai-result-card {
+            background-color: #f5f3ff;
+            border-left: 4px solid var(--primary-color);
+            padding: 1rem;
+            border-radius: 0.25rem;
+            margin-top: 1rem;
+        }
+        .ai-result-card .score {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            text-align: center;
+        }
+        .ai-result-card .desc {
+            text-align: center;
+            font-weight: 500;
+            color: #4c1d95;
+        }
+        .back-to-main-btn {
+            position: fixed; top: 10px; left: 30px; width: 20px; height: 20px;
+            background-color: var(--primary-color); color: white; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.0rem; text-decoration: none; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            z-index: 999; transition: all 0.2s ease-in-out;
+        }
+        .back-to-main-btn:hover {
+            transform: translateY(-2px) scale(1.05);
+            background-color: #6D28D9;
+        }
+    </style>
+</head>
+<body>
+
+    <a href="main.html" class="back-to-main-btn" title="Retour à la page principale">
+        <i class="fa-solid fa-arrow-left"></i>
+    </a>
+    
+    <div class="main-container">
+
+        <div class="side-panel lg:sticky lg:top-4">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800 border-b pb-2">Moteur IA V3 (Apprentissage)</h2>
+            
+            <div class="mb-4">
+                <button id="train-button" class="btn-primary">
+                    <div class="loading-spinner"></div>
+                    <span>🧠 Entraîner l'IA</span>
+                </button>
+            </div>
+
+            <div class="ai-status-box">
+                <h3 class="font-semibold text-gray-800 mb-2">Statut de l'IA</h3>
+                <p id="ai-status" class="mb-2">Prêt à apprendre de vos données. L'IA a trouvé <strong id="data-points">0</strong> points de données.</p>
+                <h4 class="font-semibold text-xs text-gray-600 mt-3">Journal d'entraînement :</h4>
+                <pre id="training-log">L'entraînement commencera lorsque vous cliquerez sur le bouton...</pre>
+            </div>
+
+            <div class="mt-6 border-t pt-4">
+                <h3 class="text-lg font-semibold text-gray-800 mb-3">Modèle IA</h3>
+                <p class="text-sm text-gray-600">Le modèle de l'IA est sauvegardé dans votre navigateur. Il devient plus intelligent chaque fois que vous l'entraînez.</p>
+                <button id="clear-model-button" class="w-full text-center text-sm text-red-600 hover:text-red-800 mt-2">Réinitialiser le modèle IA</button>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <h1 class="text-3xl font-bold mb-4 text-gray-800">Prédictions et Analyse IA</h1>
+
+            <div class="content-box">
+                <h2 class="text-2xl font-bold mb-4 text-primary-color">Prédiction de Note</h2>
+                <p class="text-gray-600 mb-6">Utilisez l'IA entraînée pour prédire votre performance sur un futur devoir. L'IA analyse votre tendance, votre focus sur la pondération et votre gestion de la priorité des compétences.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="subject-select" class="form-label">Matière</label>
+                        <select id="subject-select" class="form-select">
+                            <option value="">-- Choisir une matière --</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="pond-input" class="form-label">Pondération du Devoir (%)</label>
+                        <input type="number" id="pond-input" class="form-input" placeholder="Ex: 20">
+                    </div>
+
+                    <div>
+                        <label for="comp-input" class="form-label">Poids de la Compétence (%)</label>
+                        <input type="number" id="comp-input" class="form-input" placeholder="Ex: 40">
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <button id="predict-button" class="btn-primary" disabled>
+                        <span>🔮 Lancer la Prédiction</span>
+                    </button>
+                </div>
+
+                <div id="prediction-result" class="hidden mt-6">
+                    <div class="ai-result-card">
+                        <p class="desc">L'IA prédit que vous obtiendrez environ :</p>
+                        <div id="prediction-score" class="score">--%</div>
+                        <p id="prediction-context" class="text-center text-sm text-gray-600 mt-2"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- UI Elements ---
+            const trainButton = document.getElementById('train-button');
+            const clearButton = document.getElementById('clear-model-button');
+            const predictButton = document.getElementById('predict-button');
+            const statusEl = document.getElementById('ai-status');
+            const logEl = document.getElementById('training-log');
+            const dataPointsEl = document.getElementById('data-points');
+            const subjectSelect = document.getElementById('subject-select');
+            const pondInput = document.getElementById('pond-input');
+            const compInput = document.getElementById('comp-input');
+            const predictionResultEl = document.getElementById('prediction-result');
+            const predictionScoreEl = document.getElementById('prediction-score');
+            const predictionContextEl = document.getElementById('prediction-context');
+
+            // --- AI & Data State ---
+            const MODEL_STORAGE_PATH = 'localstorage://student-ai-model-v1';
+            const gradeMap = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 85, 'B': 80, 'B-': 75, 'C+': 70, 'C': 65, 'C-': 60, 'D+': 55, 'D': 50, 'E': 45 };
+            let allAssignments = []; // Our entire dataset
+            let subjectDataMap = {}; // For tracking subject-specific data
+            let tfModel = null;
+            let mbsData = {};
+
+            // ==========================================================
+            // 1. DATA EXTRACTION & PRE-PROCESSING
+            // (Uses logic from your main-functions.js and projection.html)
+            // ==========================================================
+
+            /**
+             * This function is from your projection (2).html file.
+             * It's robust and perfect for this.
+             */
+            function getNumericGrade(result) {
+                if (!result) return null;
+                const trimmed = result.trim().toLowerCase();
+                if (trimmed === 'absent' || trimmed === 'abs' || trimmed === '0' || trimmed === '0%') return 0;
+                if (trimmed === 'exempt' || trimmed === 'n/a' || trimmed === 'retard' || trimmed === 'remis' || trimmed === '') return null;
+                const originalTrimmed = result.trim();
+                if (gradeMap[originalTrimmed]) return gradeMap[originalTrimmed];
+                const percentageMatch = trimmed.match(/(\d+[,.]?\d*)\s*%/);
+                if (percentageMatch) return parseFloat(percentageMatch[1].replace(',', '.'));
+                const scoreMatch = trimmed.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/);
+                if (scoreMatch) {
+                    const score = parseFloat(scoreMatch[1].replace(',', '.'));
+                    const max = parseFloat(scoreMatch[2].replace(',', '.'));
+                    return (max > 0) ? (score / max) * 100 : null;
+                }
+                const plainNumber = parseFloat(trimmed);
+                if (!isNaN(plainNumber) && plainNumber >= 0 && plainNumber <= 110) {
+                    return plainNumber;
+                }
+                return null; 
+            }
+
+            /**
+             * New function to parse all data from mbsData into a flat list
+             * for the AI to learn from.
+             */
+            function extractAllAssignments() {
+                let flatData = [];
+                let subjectCounters = {}; // Tracks the 'time' feature for each subject
+                let subjectsFound = new Set();
+                subjectDataMap = {};
+
+                try {
+                    mbsData = JSON.parse(localStorage.getItem('mbsData')) || {};
+                    if (!mbsData.valid) {
+                        statusEl.innerHTML = '<strong class="text-red-600">Erreur: mbsData non valide ou non trouvé.</strong>';
+                        return;
+                    }
+
+                    ['etape1', 'etape2', 'etape3'].forEach(etapeKey => {
+                        if (mbsData[etapeKey]) {
+                            mbsData[etapeKey].forEach(subject => {
+                                const subjectCode = subject.code.substring(0, 3);
+                                subjectsFound.add(subjectCode);
+                                if (!subjectCounters[subjectCode]) {
+                                    subjectCounters[subjectCode] = 0;
+                                    subjectDataMap[subjectCode] = { time: [], compWeights: [] };
+                                }
+
+                                subject.competencies.forEach(comp => {
+                                    const compWeightMatch = comp.name.match(/\((\d+)%\)/);
+                                    const compWeight = compWeightMatch ? parseFloat(compWeightMatch[1]) : 0;
+
+                                    comp.assignments.forEach(assign => {
+                                        const grade = getNumericGrade(assign.result);
+                                        const pond = parseFloat(assign.pond || 0);
+                                        
+                                        // We only learn from valid data points
+                                        if (grade !== null && !isNaN(grade) && pond > 0 && compWeight > 0) {
+                                            const time = ++subjectCounters[subjectCode];
+                                            flatData.push({
+                                                // --- FEATURES (Inputs) ---
+                                                time: time,       // Tendance (Feature 1)
+                                                pond: pond,       // Focus (Feature 2)
+                                                compWeight: compWeight, // Priorité (Feature 3)
+                                                
+                                                // --- LABEL (Output) ---
+                                                grade: grade      
+                                            });
+                                            subjectDataMap[subjectCode].time.push(time);
+                                            subjectDataMap[subjectCode].compWeights.push(compWeight);
+                                        }
+                                    });
+                                });
+                            });
+                        }
+                    });
+
+                    allAssignments = flatData;
+                    dataPointsEl.textContent = allAssignments.length;
+                    
+                    // Populate the dropdown
+                    subjectSelect.innerHTML = '<option value="">-- Choisir une matière --</option>';
+                    subjectsFound.forEach(code => {
+                        const opt = document.createElement('option');
+                        opt.value = code;
+                        opt.textContent = mbsData.settings.subjectList[code] || code; // Assuming subjectList is in settings
+                        subjectSelect.appendChild(opt);
+                    });
+                     // Fallback if subjectList is not in settings
+                    if (subjectsFound.size > 0 && subjectSelect.options.length === 1) {
+                        subjectsFound.forEach(code => {
+                            const opt = document.createElement('option');
+                            opt.value = code;
+                            opt.textContent = code;
+                            subjectSelect.appendChild(opt);
+                        });
+                    }
+
+
+                } catch (e) {
+                    console.error("Failed to load or parse mbsData:", e);
+                    statusEl.innerHTML = '<strong class="text-red-600">Erreur au chargement des données.</strong>';
+                }
+            }
+
+            // ==========================================================
+            // 2. TENSORFLOW.JS MODEL MANAGEMENT
+            // ==========================================================
+
+            /**
+             * Creates a new, untrained Neural Network model.
+             */
+            function createNewModel() {
+                const model = tf.sequential();
+                
+                // --- Model Architecture ---
+                // We have 3 input features: [time, pond, compWeight]
+                
+                // 1. Normalization Layer: This is CRITICAL. It scales all inputs
+                //    to be in a similar range (e.t., 0-1), which helps the
+                //    model learn *much* faster and more reliably.
+                model.add(tf.layers.normalization({ inputShape: [3] }));
+
+                // 2. Hidden Layer: This layer finds complex patterns.
+                model.add(tf.layers.dense({ units: 32, activation: 'relu' }));
+                model.add(tf.layers.dropout({ rate: 0.1 })); // Prevents overfitting
+                model.add(tf.layers.dense({ units: 16, activation: 'relu' }));
+
+                // 3. Output Layer: This layer outputs a single number: the predicted grade.
+                model.add(tf.layers.dense({ units: 1, activation: 'linear' }));
+
+                // --- Compilation ---
+                // We tell the model *how* to learn.
+                model.compile({
+                    optimizer: tf.train.adam(0.001), // 'adam' is a smart optimizer
+                    loss: 'meanSquaredError'      // We want to minimize the error in our grade predictions
+                });
+                
+                logToScreen("Nouveau modèle IA créé.");
+                return model;
+            }
+
+            /**
+             * Tries to load the model from localStorage. If it fails, creates a new one.
+             */
+            async function loadOrCreateTfModel() {
+                try {
+                    const model = await tf.loadLayersModel(MODEL_STORAGE_PATH);
+                    tfModel = model;
+                    logToScreen("Modèle IA existant chargé depuis le stockage local.");
+                    predictButton.disabled = false;
+                } catch (e) {
+                    logToScreen("Aucun modèle trouvé. Création d'un nouveau modèle...");
+                    tfModel = createNewModel();
+                }
+            }
+            
+            /**
+             * The "Self-Learning" function.
+             */
+            async function trainModel() {
+                if (allAssignments.length < 20) {
+                    logToScreen(`Pas assez de données (${allAssignments.length}). Minimum 20 points de données requis pour l'entraînement.`);
+                    return;
+                }
+
+                // 1. Convert our data into Tensors (the format TF.js needs)
+                const { inputs, labels, inputTensor, labelTensor } = tf.tidy(() => {
+                    tf.util.shuffle(allAssignments); // Shuffle data for better training
+
+                    const inputs = allAssignments.map(d => [d.time, d.pond, d.compWeight]);
+                    const labels = allAssignments.map(d => d.grade);
+
+                    const inputTensor = tf.tensor2d(inputs, [inputs.length, 3]);
+                    const labelTensor = tf.tensor2d(labels, [labels.length, 1]);
+
+                    return { inputs, labels, inputTensor, labelTensor };
+                });
+
+                // 2. Adapt the Normalization Layer (Layer 0)
+                // This "learns" the min/max of our *current* data
+                logToScreen("Adaptation de la couche de normalisation...");
+                await tfModel.layers[0].adapt(inputTensor);
+
+                // 3. Start the Training (Fine-tuning)
+                logToScreen("Début de l'entraînement... (Ceci peut prendre un moment)");
+                trainButton.classList.add('loading');
+                trainButton.disabled = true;
+
+                await tfModel.fit(inputTensor, labelTensor, {
+                    epochs: 50,
+                    batchSize: 16,
+                    validationSplit: 0.2, // Use 20% of data to check our work
+                    callbacks: {
+                        onEpochEnd: (epoch, logs) => {
+                            const valLoss = logs.val_loss.toFixed(2);
+                            logToScreen(`Époque ${epoch + 1}/50 - Perte: ${logs.loss.toFixed(2)} - Perte Val: ${valLoss}`);
+                            if (epoch === 49) {
+                                logToScreen(`Entraînement terminé ! Perte finale : ${valLoss}`);
+                            }
+                        }
+                    }
+                });
+                
+                // 4. Save the newly-trained, "smarter" model
+                await tfModel.save(MODEL_STORAGE_PATH);
+                logToScreen("Modèle intelligent sauvegardé dans le stockage local !");
+                
+                trainButton.classList.remove('loading');
+                trainButton.disabled = false;
+                predictButton.disabled = false;
+
+                // 5. Clean up Tensors from memory
+                inputTensor.dispose();
+                labelTensor.dispose();
+            }
+
+            // ==========================================================
+            // 3. UI & EVENT LISTENERS
+            // ==========================================================
+
+            /**
+             * Runs a prediction using the trained model.
+             */
+            function runPrediction() {
+                const subjectCode = subjectSelect.value;
+                const pond = parseFloat(pondInput.value);
+                const compWeight = parseFloat(compInput.value);
+
+                if (!subjectCode || isNaN(pond) || isNaN(compWeight)) {
+                    alert("Veuillez sélectionner une matière et entrer une pondération et un poids de compétence valides.");
+                    return;
+                }
+
+                // Find the *next* time step for this subject
+                const subjectTimes = subjectDataMap[subjectCode]?.time || [0];
+                const nextTime = Math.max(0, ...subjectTimes) + 1;
+                
+                // Get the average competency weight for this subject if none is provided
+                // This is a small improvement, but let's stick to the user's input for clarity.
+
+                // Create the input tensor for prediction
+                const input = tf.tensor2d([[nextTime, pond, compWeight]], [1, 3]);
+
+                // Run the prediction
+                const prediction = tfModel.predict(input);
+                
+                prediction.data().then(data => {
+                    let predictedGrade = data[0];
+                    if (predictedGrade > 100) predictedGrade = 100;
+                    if (predictedGrade < 40) predictedGrade = 40;
+                    
+                    predictionScoreEl.textContent = `${predictedGrade.toFixed(1)}%`;
+                    predictionContextEl.textContent = `Prédiction pour ${subjectCode} (Devoir #${nextTime}, Pond: ${pond}%, Comp: ${compWeight}%)`;
+                    predictionResultEl.classList.remove('hidden');
+                });
+                
+                input.dispose();
+                prediction.dispose();
+            }
+
+            /**
+             * Helper to log to the on-screen console
+             */
+            function logToScreen(message) {
+                console.log(message);
+                logEl.textContent = message + '\n' + logEl.textContent;
+            }
+
+            // --- Attach Event Listeners ---
+            trainButton.addEventListener('click', trainModel);
+            predictButton.addEventListener('click', runPrediction);
+
+            clearButton.addEventListener('click', async () => {
+                if (confirm("Voulez-vous vraiment effacer le modèle IA ? L'IA devra tout réapprendre.")) {
+                    await tf.io.removeModel(MODEL_STORAGE_PATH);
+                    tfModel = createNewModel();
+                    logToScreen("Modèle IA réinitialisé.");
+                    predictButton.disabled = true;
+                }
+            });
+
+            /**
+             * Main initialization function
+             */
+            async function init() {
+                logToScreen("Initialisation de l'onglet IA...");
+                extractAllAssignments(); // Load and parse data
+                await loadOrCreateTfModel(); // Load or create the AI model
+                logToScreen("Système prêt.");
+            }
+
+            init();
+        });
+    </script>
+</body>
+</html>
