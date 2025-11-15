@@ -4,291 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analyseur Dynamique V10 (Pathfinder V2)</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* [All the CSS from the previous file remains exactly the same] */
-        :root {
-            --primary-color: #5B21B6; /* Violet-700 */
-            --secondary-color: #059669; /* Green-600 */
-            --warning-color: #F59E0B; /* Amber */
-            --danger-color: #DC2626; /* Red */
-            --bg-color: #f9fafb;
-        }
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
-            color: #1f2937;
-        }
-        .main-container {
-            display: flex;
-            min-height: 100vh;
-        }
-        .side-panel {
-            width: 100%;
-            max-width: 380px; 
-            background-color: white;
-            padding: 1.5rem;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-            border-radius: 0.75rem;
-            margin: 1rem;
-            height: fit-content;
-        }
-        @media (max-width: 1024px) {
-            .main-container { flex-direction: column; }
-            .side-panel { max-width: 100%; }
-        }
-        .content-area {
-            flex-grow: 1;
-            padding: 1rem;
-        }
-        .tab-btn {
-            padding: 0.75rem 1.5rem;
-            font-weight: 600;
-            border-radius: 0.375rem 0.375rem 0 0;
-            border-bottom: 2px solid transparent;
-            cursor: pointer;
-            transition: all 0.2s;
-            background-color: #eef2ff; /* Violet-50 */
-            color: #4c1d95; /* Violet-900 */
-            margin-right: 0.25rem;
-        }
-        .tab-btn.active {
-            background-color: white;
-            border-bottom: 2px solid var(--primary-color);
-            color: var(--primary-color);
-            box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.05);
-        }
-        .tab-content {
-            background-color: white;
-            padding: 1.5rem;
-            border-radius: 0 0.75rem 0.75rem 0.75rem;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-        }
-        .tab-content:not(.active) { display: none; }
-        .subject-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1.5rem;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-            border-radius: 0.5rem;
-            overflow: hidden;
-            margin-bottom: 1.5rem; 
-        }
-        .subject-table thead th {
-            padding: 0.75rem;
-            text-align: left;
-            background-color: var(--primary-color);
-            color: white;
-            font-weight: 700;
-        }
-        .subject-table thead tr:first-child th {
-            font-size: 1.125rem;
-            text-align: center;
-        }
-        .subject-table tbody tr:nth-child(even) { background-color: #f3f4f6; }
-        .subject-table td {
-            padding: 0.5rem 0.75rem;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        .grade-percentage {
-            font-weight: 700;
-            color: var(--primary-color);
-        }
-        .subject-analysis {
-            background-color: #f5f3ff; /* Purple-50 */
-            border: 1px solid #e9d5ff; /* Purple-200 */
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin-top: -1rem; 
-            margin-bottom: 1.5rem;
-        }
-        .analysis-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            margin-right: 0.5rem;
-        }
-        .badge-green { background-color: #D1FAE5; color: #065F46; } 
-        .badge-yellow { background-color: #FEF3C7; color: #92400E; } 
-        .badge-red { background-color: #FEE2E2; color: #991B1B; } 
-        .badge-violet { background-color: #E9D5FF; color: #5B21B6; }
-        .badge-blue { background-color: #DBEAFE; color: #1E40AF; }
-        .badge-orange { background-color: #FFEDD5; color: #C2410C; }
-        .prediction-card {
-            background-color: #f7f7f7;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            border-left: 4px solid;
-            margin-bottom: 1rem;
-            transition: all 0.2s;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        .card-green { border-left-color: var(--secondary-color); }
-        .card-violet { border-left-color: var(--primary-color); }
-        .card-yellow { border-left-color: var(--warning-color); }
-        .card-red { border-left-color: var(--danger-color); }
-        .card-score {
-            font-size: 1.875rem; 
-            font-weight: 800;
-            margin-top: 0.25rem;
-        }
-        .probability-table th, .probability-table td {
-            padding: 0.5rem;
-            text-align: center;
-            border: 1px solid #e5e7eb;
-        }
-        .prob-high { background-color: #D1FAE5; color: #065F46; font-weight: 700;}
-        .prob-medium { background-color: #FEF3C7; color: #92400E; }
-        .prob-low { background-color: #FEE2E2; color: #991B1B; }
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            transition: opacity 0.3s ease-out;
-            opacity: 0;
-            pointer-events: none;
-        }
-        .modal.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-        .modal-content {
-            background: white;
-            padding: 2rem;
-            border-radius: 0.75rem;
-            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
-            max-width: 90%;
-            width: 500px;
-        }
-        .score-card {
-            display: flex;
-            align-items: center;
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            background-color: #f3f4f6;
-            transition: all 0.15s;
-        }
-        .score-card strong {
-            font-size: 1.5rem;
-        }
-        .score-icon {
-            font-size: 1.5rem;
-            margin-right: 1rem;
-        }
-        .effort-needed {
-            font-size: 1.25rem;
-            font-weight: 700;
-        }
-        .slider-label {
-             font-weight: 600;
-             margin-top: 1rem;
-        }
-        .ai-insight-box {
-            background-color: #f5f3ff;
-            border: 1px solid #ddd6fe;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            margin-top: 0.75rem;
-        }
-        .ai-insight-box h4 {
-            display: flex;
-            align-items: center;
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--primary-color);
-            margin-bottom: 0.75rem;
-        }
-        .ai-insight-box h4 span {
-            font-size: 1.25rem;
-            margin-right: 0.5rem;
-        }
-        .ai-insight-box ul {
-            list-style-type: none;
-            padding-left: 0;
-            font-size: 0.875rem;
-        }
-        .ai-insight-box li {
-            position: relative;
-            padding-left: 1.5rem;
-            margin-bottom: 0.5rem;
-            color: #374151;
-            line-height: 1.4;
-        }
-        .ai-insight-box li::before {
-            content: '⚠️';
-            font-size: 0.75rem;
-            position: absolute;
-            left: 0;
-            top: 4px;
-        }
-         .ai-insight-box li.insight-good::before {
-            content: '✅';
-        }
-        .ai-insight-box li.insight-info::before {
-            content: 'ℹ️';
-        }
-         .ai-insight-box li.insight-trend::before {
-            content: '📈';
-        }
-         .ai-insight-box li.insight-focus::before {
-            content: '🎯';
-        }
-         .ai-insight-box li.insight-priority::before {
-            content: '🧠';
-        }
-        .ai-insight-box li.insight-erratic::before {
-            content: '⚡';
-        }
-
-        /* Performance Gauge */
-        .gauge-container {
-            width: 100%;
-            padding: 0.5rem 0;
-            margin-top: 0.5rem;
-            margin-bottom: 1rem;
-        }
-        .gauge-bar {
-            width: 100%;
-            height: 12px;
-            background: linear-gradient(90deg, var(--danger-color), var(--warning-color), var(--secondary-color));
-            border-radius: 6px;
-            position: relative;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .gauge-needle {
-            position: absolute;
-            top: -4px;
-            width: 4px;
-            height: 20px;
-            background-color: #1f2937;
-            border-radius: 2px;
-            border: 1px solid white;
-            box-shadow: 0 0 5px rgba(0,0,0,0.5);
-            transform: translateX(-50%);
-            transition: left 0.5s ease-out;
-        }
-        .gauge-labels {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #4b5563;
-            margin-top: 0.5rem;
-        }
-    </style>
+    <!-- Custom Compressed CSS -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Font Awesome (for icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-
 
 <a id="open-help-btn" class="help-btn" title="Comment ça marche ?">
     <i class="fa-solid fa-question"></i>
@@ -392,1550 +115,185 @@
     </div>
 </div>
 
-<style>
-    /* Bouton d'aide flottant */
-    .help-btn {
-        position: fixed;
-        top: 10px;     /* MODIFIED */
-        right: 10px;    /* MODIFIED */
-        width: 30px;
-        height: 30px;
-        background-color: #000000;  
-        color: white;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.1rem;  
-        text-decoration: none;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        z-index: 999;
-        cursor: pointer;
-        transition: all 0.2s ease-in-out;
-    }
-
-    .help-btn:hover {
-        transform: translateY(-2px) scale(1.05);
-        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
-        background-color: #6D28D9; /* Violet-600 */
-    }
-
-    /* Ajustements pour la modale d'aide */
-    #help-modal .modal-content {
-        /* Plus large pour le texte détaillé */
-        width: 750px;  
-        max-width: 95%;
-        /* Permet le défilement */
-        max-height: 90vh;
-        overflow-y: auto;  
-        text-align: left;  
-    }
-
-    /* Style pour le texte d'aide */
-    .help-title {
-        font-size: 1.5rem; /* 24px */
-        font-weight: 700;
-        color: var(--primary-color);
-        margin-bottom: 1rem;
-        text-align: left;
-    }
-
-    .help-section-title {
-        font-size: 1.25rem; /* 20px */
-        font-weight: 600;
-        color: var(--primary-color);
-        margin-top: 1.5rem;
-        border-bottom: 2px solid var(--primary-color);
-        padding-bottom: 4px;
-        margin-bottom: 1rem;
-    }
-
-    #help-modal h4 {
-        font-size: 1.0rem; /* 16px */
-        font-weight: 700;
-        color: #1f2937; /* gray-800 */
-        margin-top: 1.25rem;
-        margin-bottom: 0.25rem;
-    }
-
-    #help-modal p, #help-modal li {
-        font-size: 0.95rem; /* ~15px */
-        color: #374151; /* gray-700 */
-        line-height: 1.6;
-        margin-top: 0.5rem;
-    }
-
-    #help-modal ul {
-        list-style-type: disc;
-        padding-left: 2rem;
-        margin-top: 0.5rem;
-        margin-bottom: 1rem;
-    }
-    
-    #help-modal ol.detailed-list {
-         list-style-type: decimal;
-         padding-left: 1.5rem;
-    }
-    #help-modal ol.detailed-list > li {
-        font-weight: 600;
-        color: #1f2937;
-        margin-top: 1rem;
-    }
-     #help-modal ol.detailed-list > li > ul {
-         margin-top: 0.25rem;
-         font-weight: normal;
-     }
-
-    #help-modal b {
-        font-weight: 600;
-        color: #1f2937; /* gray-800 */
-    }
-
-    #help-modal .modal-close {
-        position: absolute;
-        top: 10px;
-        right: 15px;
-        font-size: 2em;
-        cursor: pointer;
-        color: #aaa;
-        line-height: 1;
-        z-index: 1001;  
-    }
-</style>
-
-<script>
-    (function() {
-        const helpModal = document.getElementById('help-modal');
-        const openHelpBtn = document.getElementById('open-help-btn');
-        const closeHelpBtn = document.getElementById('close-help-modal');
-
-        if (openHelpBtn && helpModal) {
-            openHelpBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                helpModal.classList.add('active');
-            });
-        }
-
-        if (closeHelpBtn && helpModal) {
-            closeHelpBtn.addEventListener('click', () => {
-                helpModal.classList.remove('active');
-            });
-        }
-
-        if (helpModal) {
-            helpModal.addEventListener('click', (e) => {
-                if (e.target === helpModal) {
-                    helpModal.classList.remove('active');
-                }
-            });
-        }
-    })();
-</script>
-
-
-    
-<style>
-    .back-to-main-btn {
-        position: fixed;
-        /* Positionné un peu plus haut et à gauche */
-        top: 10px;
-        left: 30px;
-        /* Plus petit */
-        width: 20px;
-        height: 20px;
-        background-color: var(--primary-color); 
-        color: white;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        /* Fonte ajustée pour la nouvelle taille */
-        font-size: 1.0rem; 
-        text-decoration: none;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        z-index: 999; 
-        transition: all 0.2s ease-in-out;
-    }
-
-    .back-to-main-btn:hover {
-        transform: translateY(-2px) scale(1.05);
-        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
-        background-color: #6D28D9; /* Violet-600 */
-    }
-</style>
-
 <a href="main.html" class="back-to-main-btn" title="Retour à la page principale">
     <i class="fa-solid fa-arrow-left"></i>
 </a>
-    <div class="main-container">
 
-        <div class="side-panel lg:sticky lg:top-4">
-            <h2 class="text-2xl font-bold mb-4 text-gray-800 border-b pb-2">Moteur Stochastique V10 (Fix)</h2>
+<div class="main-container">
 
-            <div class="bg-violet-100 p-4 rounded-lg mb-4 border-l-4 border-violet-600">
-                <p class="text-sm font-medium text-gray-700">Prédiction Globale Stochastique (Tendance MC)</p>
-                <strong id="moyenne-prediction" class="text-4xl font-extrabold text-violet-700">--</strong>
+    <div class="side-panel lg:sticky lg:top-4">
+        <h2 class="text-2xl font-bold mb-4 text-gray-800 border-b pb-2">Moteur Stochastique V10 (Fix)</h2>
+
+        <div class="bg-violet-100 p-4 rounded-lg mb-4 border-l-4 border-violet-600">
+            <p class="text-sm font-medium text-gray-700">Prédiction Globale Stochastique (Tendance MC)</p>
+            <strong id="moyenne-prediction" class="text-4xl font-extrabold text-violet-700">--</strong>
+        </div>
+
+        <h3 class="text-lg font-semibold text-gray-800">Jauge de Performance (P5 à P95)</h3>
+        <div class="gauge-container">
+            <div class="gauge-bar">
+                <div id="gauge-needle" class="gauge-needle" style="left: 50%;"></div>
+            </div>
+            <div class="gauge-labels">
+                <span id="gauge-label-p5">P5: --%</span>
+                <strong id="gauge-label-p50" class="text-primary-color">P50: --%</strong>
+                <span id="gauge-label-p95">P95: --%</span>
+            </div>
+        </div>
+        
+        <h3 class="text-lg font-semibold mt-6 mb-3 text-gray-800 border-b pb-2">Indices de Risque Dynamique</h3>
+        <div id="deep-analysis-scorecard" class="space-y-3 mb-6">
+            <div class="score-card score-high" id="consistency-score">
+                <span class="score-icon text-gray-600">🎯</span>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Indice de Consistance/Volatilité (100 = Parfait)</p>
+                    <strong class="text-xl text-gray-800">--</strong>
+                </div>
+            </div>
+            <div class="score-card score-low" id="burnout-risk-score">
+                <span class="score-icon text-red-600">🔥</span>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Score de Risque de Burnout (100 = Risque Maximal pour Perte de Contrôle)</p>
+                    <strong class="text-xl text-red-600">--</strong>
+                </div>
             </div>
 
-            <h3 class="text-lg font-semibold text-gray-800">Jauge de Performance (P5 à P95)</h3>
-            <div class="gauge-container">
-                <div class="gauge-bar">
-                    <div id="gauge-needle" class="gauge-needle" style="left: 50%;"></div>
-                </div>
-                <div class="gauge-labels">
-                    <span id="gauge-label-p5">P5: --%</span>
-                    <strong id="gauge-label-p50" class="text-primary-color">P50: --%</strong>
-                    <span id="gauge-label-p95">P95: --%</span>
-                </div>
+            <div class="ai-insight-box" id="ai-insight-container">
+                <h4><span>🔎</span> Moteur de Découverte (IA)</h4>
+                <p class="text-xs text-gray-500 -mt-2 mb-3">L'IA a scanné vos données et a trouvé les corrélations les plus fortes (R² > 0.25) :</p>
+                <ul id="ai-insights-list">
+                    </ul>
             </div>
             
-            <h3 class="text-lg font-semibold mt-6 mb-3 text-gray-800 border-b pb-2">Indices de Risque Dynamique</h3>
-            <div id="deep-analysis-scorecard" class="space-y-3 mb-6">
-                <div class="score-card score-high" id="consistency-score">
-                    <span class="score-icon text-gray-600">🎯</span>
-                    <div>
-                        <p class="text-sm font-medium text-gray-500">Indice de Consistance/Volatilité (100 = Parfait)</p>
-                        <strong class="text-xl text-gray-800">--</strong>
-                    </div>
-                </div>
-                <div class="score-card score-low" id="burnout-risk-score">
-                    <span class="score-icon text-red-600">🔥</span>
-                    <div>
-                        <p class="text-sm font-medium text-gray-500">Score de Risque de Burnout (100 = Risque Maximal pour Perte de Contrôle)</p>
-                        <strong class="text-xl text-red-600">--</strong>
-                    </div>
-                </div>
-
-                <div class="ai-insight-box" id="ai-insight-container">
-                    <h4><span>🔎</span> Moteur de Découverte (IA)</h4>
-                    <p class="text-xs text-gray-500 -mt-2 mb-3">L'IA a scanné vos données et a trouvé les corrélations les plus fortes (R² > 0.25) :</p>
-                    <ul id="ai-insights-list">
-                        </ul>
-                </div>
-                
-                <div class="score-card score-low" id="dff-score">
-                    <span class="score-icon text-orange-600">📉</span>
-                    <div>
-                        <p class="text-sm font-medium text-gray-500">Facteur de Tendance Globale (Pente / 10 devoirs)</p>
-                        <strong class="text-xl text-orange-600">--</strong>
-                    </div>
+            <div class="score-card score-low" id="dff-score">
+                <span class="score-icon text-orange-600">📉</span>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Facteur de Tendance Globale (Pente / 10 devoirs)</p>
+                    <strong class="text-xl text-orange-600">--</strong>
                 </div>
             </div>
+        </div>
 
-            <h3 class="text-lg font-semibold mt-4 mb-2 text-gray-700 border-t pt-3">Paramètres Actuels</h3>
-            <div class="space-y-3 mb-6 text-sm">
-                <div>
-                    <label for="niveau-secondaire" class="block text-sm font-medium text-gray-700">Niveau Secondaire</label>
-                    <select id="niveau-secondaire" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm py-2 px-3 focus:ring-primary-500 focus:border-primary-500">
-                        <option value="">Sélectionner</option>
-                        <option value="sec4">Secondaire 4</option>
-                        <option value="sec5">Secondaire 5</option>
+        <h3 class="text-lg font-semibold mt-4 mb-2 text-gray-700 border-t pt-3">Paramètres Actuels</h3>
+        <div class="space-y-3 mb-6 text-sm">
+            <div>
+                <label for="niveau-secondaire" class="block text-sm font-medium text-gray-700">Niveau Secondaire</label>
+                <select id="niveau-secondaire" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm py-2 px-3 focus:ring-primary-500 focus:border-primary-500">
+                    <option value="">Sélectionner</option>
+                    <option value="sec4">Secondaire 4</option>
+                    <option value="sec5">Secondaire 5</option>
+                </select>
+            </div>
+            <div>
+                <label class="slider-label block text-sm font-medium text-gray-700">Taux d'Absentéisme/Désengagement</label>
+                <input type="range" id="absence-rate-slider" min="0" max="25" step="0.5" value="5" class="w-full mt-1">
+                <p class="text-xs text-gray-500 mt-1">Impact sur B-Risk : <span id="absence-rate-value">5.0%</span></p>
+            </div>
+
+            <div>
+                <label for="unites-mode" class="block text-sm font-medium text-gray-700">Mode Unités (Pondération)</label>
+                <div class="flex space-x-2">
+                    <select id="unites-mode" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm py-2 px-3 focus:ring-primary-500 focus:border-primary-500">
+                        <option value="defaut">Défaut (Officiel)</option>
+                        <option value="sans">Sans Unités (Moy. Simple)</option>
+                        <option value="perso">Personnalisé</option>
                     </select>
-                </div>
-                <div>
-                    <label class="slider-label block text-sm font-medium text-gray-700">Taux d'Absentéisme/Désengagement</label>
-                    <input type="range" id="absence-rate-slider" min="0" max="25" step="0.5" value="5" class="w-full mt-1">
-                    <p class="text-xs text-gray-500 mt-1">Impact sur B-Risk : <span id="absence-rate-value">5.0%</span></p>
-                </div>
-
-                <div>
-                    <label for="unites-mode" class="block text-sm font-medium text-gray-700">Mode Unités (Pondération)</label>
-                    <div class="flex space-x-2">
-                        <select id="unites-mode" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm py-2 px-3 focus:ring-primary-500 focus:border-primary-500">
-                            <option value="defaut">Défaut (Officiel)</option>
-                            <option value="sans">Sans Unités (Moy. Simple)</option>
-                            <option value="perso">Personnalisé</option>
-                        </select>
-                        <button id="unites-btn" class="bg-gray-200 text-gray-600 rounded-md px-3 hover:bg-gray-300 transition duration-150 text-sm">Éditer</button>
-                    </div>
+                    <button id="unites-btn" class="bg-gray-200 text-gray-600 rounded-md px-3 hover:bg-gray-300 transition duration-150 text-sm">Éditer</button>
                 </div>
             </div>
-
-            <h3 class="text-lg font-semibold mt-4 mb-2 text-gray-700 border-t pt-3">Moyennes par Matière (<span id="active-etape-name">1</span>)</h3>
-            <ul id="subject-averages-list" class="space-y-2 text-base">
-                </ul>
-
         </div>
 
-        <div class="content-area">
-            <h1 class="text-3xl font-bold mb-4 text-gray-800">Détails de Performance & Prédictions</h1>
+        <h3 class="text-lg font-semibold mt-4 mb-2 text-gray-700 border-t pt-3">Moyennes par Matière (<span id="active-etape-name">1</span>)</h3>
+        <ul id="subject-averages-list" class="space-y-2 text-base">
+            </ul>
 
-            <div class="flex border-b border-gray-200 mb-4">
-                <button class="tab-btn active" data-tab="etape1">Étape 1 - Analyse</button>
-                <button class="tab-btn" data-tab="etape2">Étape 2 - Analyse</button>
-                <button class="tab-btn" data-tab="etape3">Étape 3 - Projection</button>
-                <button class="tab-btn" data-tab="simulation">Monte Carlo & Probabilités</button>
-            </div>
+    </div>
 
-            <div id="tab-contents">
-                <div id="etape1" class="tab-content active">
-                    </div>
-                <div id="etape2" class="tab-content">
-                    </div>
-                <div id="etape3" class="tab-content">
-                    </div>
+    <div class="content-area">
+        <h1 class="text-3xl font-bold mb-4 text-gray-800">Détails de Performance & Prédictions</h1>
 
-                <div id="simulation" class="tab-content">
-                    <h2 class="text-2xl font-bold mb-4 text-primary-color">Analyse Prédictive Stochastique (100,000 Scénarios)</h2>
-                    <p class="text-gray-600 mb-6 border-b pb-4">
-                        *Le modèle utilise la **Régression Linéaire** pour la tendance de base et projette la performance. Les probabilités sont calculées à l'aide d'une **CDF Normale** basée sur la tendance et la volatilité (StdDev) de vos notes. Ces données sont des estimations statistiques.*
-                    </p>
+        <div class="flex border-b border-gray-200 mb-4">
+            <button class="tab-btn active" data-tab="etape1">Étape 1 - Analyse</button>
+            <button class="tab-btn" data-tab="etape2">Étape 2 - Analyse</button>
+            <button class="tab-btn" data-tab="etape3">Étape 3 - Projection</button>
+            <button class="tab-btn" data-tab="simulation">Monte Carlo & Probabilités</button>
+        </div>
 
-                    <h3 class="text-xl font-semibold mb-3 mt-4 text-gray-700">Prédictions de Moyenne Finale Globale (Intervalles de Confiance)</h3>
-                    <div id="global-predictions" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-                        </div>
-
-                    <h3 class="text-xl font-semibold mb-3 mt-8 text-gray-700 border-t pt-4">Analyse de Déséquilibre Volatilité / Effort (Mismatch)</h3>
-                    <div id="mismatch-analysis" class="space-y-4">
-                        </div>
-
-                    <h3 class="text-xl font-semibold mb-3 mt-8 text-gray-700 border-t pt-4">Analyse de Chemin : Moyenne Requise à l'Étape 2</h3>
-                    <p class="text-sm text-gray-600 mb-4">Moyenne exacte que vous devez obtenir à l'**Étape 2** (basé sur E1 et la projection E3) pour atteindre chaque objectif global.</p>
-                    <table class="probability-table w-full rounded-lg overflow-hidden">
-                        <thead>
-                            <tr class="bg-gray-100">
-                                <th>Objectif Global (%)</th>
-                                <th>Moyenne Requise E2 (%)</th>
-                                <th>Probabilité (%)</th>
-                                <th>Analyse du Risque</th>
-                            </tr>
-                        </thead>
-                        <tbody id="probability-table-body-e2">
-                            </tbody>
-                    </table>
-
-                    <h3 class="text-xl font-semibold mb-3 mt-8 text-gray-700 border-t pt-4">Analyse de Chemin : Moyenne Requise à l'Étape 3</h3>
-                    <p class="text-sm text-gray-600 mb-4">Moyenne exacte que vous devez obtenir à l'**Étape 3** (basé sur E1+E2) pour atteindre chaque objectif global.</p>
-                    <table class="probability-table w-full rounded-lg overflow-hidden">
-                        <thead>
-                            <tr class="bg-gray-100">
-                                <th>Objectif Global (%)</th>
-                                <th>Moyenne Requise E3 (%)</th>
-                                <th>Probabilité (%)</th>
-                                <th>Analyse du Risque</th>
-                            </tr>
-                        </thead>
-                        <tbody id="probability-table-body-e3">
-                            </tbody>
-                    </table>
-
-                     <h3 class="text-xl font-semibold mb-3 mt-8 text-gray-700 border-t pt-4">Prédictions Tendancielles Détaillées par Matière</h3>
-                    <p class="text-sm text-gray-600 mb-4">Prédiction de note finale (E1+E2+E3) basée sur la **Tendance par Régression Linéaire**. **Plafondé au Max. Historique + 5%**.</p>
-                    <div id="subject-predictions-list" class="space-y-3">
-                        </div>
+        <div id="tab-contents">
+            <div id="etape1" class="tab-content active">
                 </div>
+            <div id="etape2" class="tab-content">
+                </div>
+            <div id="etape3" class="tab-content">
+                </div>
+
+            <div id="simulation" class="tab-content">
+                <h2 class="text-2xl font-bold mb-4 text-primary-color">Analyse Prédictive Stochastique (100,000 Scénarios)</h2>
+                <p class="text-gray-600 mb-6 border-b pb-4">
+                    *Le modèle utilise la **Régression Linéaire** pour la tendance de base et projette la performance. Les probabilités sont calculées à l'aide d'une **CDF Normale** basée sur la tendance et la volatilité (StdDev) de vos notes. Ces données sont des estimations statistiques.*
+                </p>
+
+                <h3 class="text-xl font-semibold mb-3 mt-4 text-gray-700">Prédictions de Moyenne Finale Globale (Intervalles de Confiance)</h3>
+                <div id="global-predictions" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                    </div>
+
+                <h3 class="text-xl font-semibold mb-3 mt-8 text-gray-700 border-t pt-4">Analyse de Déséquilibre Volatilité / Effort (Mismatch)</h3>
+                <div id="mismatch-analysis" class="space-y-4">
+                    </div>
+
+                <h3 class="text-xl font-semibold mb-3 mt-8 text-gray-700 border-t pt-4">Analyse de Chemin : Moyenne Requise à l'Étape 2</h3>
+                <p class="text-sm text-gray-600 mb-4">Moyenne exacte que vous devez obtenir à l'**Étape 2** (basé sur E1 et la projection E3) pour atteindre chaque objectif global.</p>
+                <table class="probability-table w-full rounded-lg overflow-hidden">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th>Objectif Global (%)</th>
+                            <th>Moyenne Requise E2 (%)</th>
+                            <th>Probabilité (%)</th>
+                            <th>Analyse du Risque</th>
+                        </tr>
+                    </thead>
+                    <tbody id="probability-table-body-e2">
+                        </tbody>
+                </table>
+
+                <h3 class="text-xl font-semibold mb-3 mt-8 text-gray-700 border-t pt-4">Analyse de Chemin : Moyenne Requise à l'Étape 3</h3>
+                <p class="text-sm text-gray-600 mb-4">Moyenne exacte que vous devez obtenir à l'**Étape 3** (basé sur E1+E2) pour atteindre chaque objectif global.</p>
+                <table class="probability-table w-full rounded-lg overflow-hidden">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th>Objectif Global (%)</th>
+                            <th>Moyenne Requise E3 (%)</th>
+                            <th>Probabilité (%)</th>
+                            <th>Analyse du Risque</th>
+                        </tr>
+                    </thead>
+                    <tbody id="probability-table-body-e3">
+                        </tbody>
+                </table>
+
+                 <h3 class="text-xl font-semibold mb-3 mt-8 text-gray-700 border-t pt-4">Prédictions Tendancielles Détaillées par Matière</h3>
+                <p class="text-sm text-gray-600 mb-4">Prédiction de note finale (E1+E2+E3) basée sur la **Tendance par Régression Linéaire**. **Plafondé au Max. Historique + 5%**.</p>
+                <div id="subject-predictions-list" class="space-y-3">
+                    </div>
             </div>
         </div>
     </div>
+</div>
 
-    <div id="unites-modal" class="modal">
-        <div class="modal-content">
-            <h3 class="text-xl font-bold mb-4">Unités par Matière</h3>
-            <p class="text-sm text-gray-500 mb-4">Ajustez les unités pour chaque matière si le mode 'Personnalisé' est sélectionné.</p>
-            <div id="unites-list" class="max-h-80 overflow-y-auto border p-3 rounded-md space-y-2">
-                </div>
-            <div class="mt-6 flex justify-end">
-                <button id="close-unites-modal" class="bg-primary-color text-white px-4 py-2 rounded-md hover:bg-violet-700 transition">Fermer & Appliquer</button>
+<div id="unites-modal" class="modal">
+    <div class="modal-content">
+        <h3 class="text-xl font-bold mb-4">Unités par Matière</h3>
+        <p class="text-sm text-gray-500 mb-4">Ajustez les unités pour chaque matière si le mode 'Personnalisé' est sélectionné.</p>
+        <div id="unites-list" class="max-h-80 overflow-y-auto border p-3 rounded-md space-y-2">
             </div>
+        <div class="mt-6 flex justify-end">
+            <button id="close-unites-modal" class="bg-primary-color text-white px-4 py-2 rounded-md hover:bg-violet-700 transition">Fermer & Appliquer</button>
         </div>
     </div>
+</div>
 
-    <script>
-document.addEventListener('DOMContentLoaded', () => {
+<script src="js/projected-averages.js"></script> 
+<script src="js/projection.js"></script>
 
-    // --- CONSTANTS AND STATE ---
-    const gradeMap = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 85, 'B': 80, 'B-': 75, 'C+': 70, 'C': 65, 'C-': 60, 'D+': 55, 'D': 50, 'E': 45 };
-    const defaultUnits = {
-        sec4: { 'ART': 2, 'MUS': 2, 'DRM': 2, 'FRA': 6, 'ELA': 4, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 6, 'ST': 4, 'STE': 4, 'HQC': 4, 'CCQ': 2, 'EPS': 2, 'ENT': 2, 'INF': 2, 'PSY': 2, 'SN': 6 },
-        sec5: { 'ART': 2, 'MUS': 2, 'DRM': 2, 'CAT': 4, 'FRA': 6, 'ELA': 6, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 4, 'MED': 4, 'PSY': 4, 'ENT': 4, 'FIN': 4, 'CHI': 4, 'PHY': 4, 'MON': 2, 'HQC': 4, 'CCQ': 2, 'EPS': 2, 'SN': 6 }
-    };
-    const subjectList = { 'ART': "Arts Plastiques", 'MUS': "Musique", 'DRM': "Art Dramatique", 'CAT': "Conception et Application Technologique", 'FRA': "Français", 'ELA': "English Language Arts", 'EESL': "Anglais enrichi", 'ESL': "Anglais langue seconde", 'SN': "Math SN", 'CST': "Math CST", 'ST': "Science et Technologie", 'STE': "Science et Tech. Env.", 'HQC': "Histoire", 'CCQ': "Culture et Citoyenneté", 'EPS': "Éducation Physique", 'CHI': "Chimie", 'PHY': "Physique", 'MON': "Monde Contemporain", 'MED': "Média", 'ENT': "Entrepreneuriat", 'INF': "Informatique", 'PSY': "Psychologie", 'FIN': "Éducation Financière" };
-    
-    // AI KNOWLEDGE BASE (V8)
-    const subjectGroups = {
-        'STEM': ['MAT', 'CST', 'SN', 'ST', 'STE', 'CHI', 'PHY', 'CAT', 'INF', 'FIN'],
-        'Langues': ['FRA', 'ELA', 'EESL', 'ESL'],
-        'Sciences Humaines': ['HQC', 'CCQ', 'MON', 'PSY', 'ENT', 'MED'],
-        'Arts & Autre': ['ART', 'MUS', 'DRM', 'EPS']
-    };
-    
-    const TERM_WEIGHTS = { etape1: 0.20, etape2: 0.20, etape3: 0.60 };
-
-    let mbsData = {};
-    let activeTab = 'etape1';
-    let cachedAnalysis = null;
-    const NUM_MONTE_CARLO_RUNS = 100000; 
-    const KNOWN_ETAPE_KEYS = ['etape1', 'etape2']; 
-    const AI_R2_THRESHOLD = 0.25; 
-
-    // --- INITIALIZATION ---
-    function init() {
-        try {
-            mbsData = JSON.parse(localStorage.getItem('mbsData')) || { 
-                valid: false, nom: 'Étudiant', settings: { niveau: 'sec5', unitesMode: 'defaut', absenceRate: '5' } 
-            };
-        } catch (e) {
-            console.error("Failed to parse mbsData from localStorage", e);
-            mbsData = { valid: false };
-        }
-        if (!mbsData.valid || !mbsData.nom) {
-            document.querySelector('.main-container').innerHTML = `<p style="text-align:center; width:100%; padding: 4rem;">Données non chargées. Veuillez vous assurer que les données sont enregistrées sous 'mbsData' dans le Local Storage.</p>`;
-            return;
-        }
-        loadSettings();
-        calculateAndCacheAnalysis();
-        renderAll();
-        setupEventListeners();
-    }
-
-    // --- DATA & SETTINGS MANAGEMENT ---
-    // [This section is IDENTICAL to V8]
-    function loadSettings() {
-        const settings = mbsData.settings || {};
-        document.getElementById('niveau-secondaire').value = settings.niveau || '';
-        document.getElementById('unites-mode').value = settings.unitesMode || 'defaut';
-        const absenceRate = settings.absenceRate !== undefined ? settings.absenceRate : '5';
-        document.getElementById('absence-rate-slider').value = absenceRate;
-        document.getElementById('absence-rate-value').textContent = `${parseFloat(absenceRate).toFixed(1)}%`;
-    }
-    function saveSettings() {
-        mbsData.settings = mbsData.settings || {};
-        mbsData.settings.niveau = document.getElementById('niveau-secondaire').value;
-        mbsData.settings.unitesMode = document.getElementById('unites-mode').value;
-        mbsData.settings.absenceRate = document.getElementById('absence-rate-slider').value;
-        mbsData.settings.customUnites = mbsData.settings.customUnites || {};
-        localStorage.setItem('mbsData', JSON.stringify(mbsData));
-        calculateAndCacheAnalysis();
-        renderAll();
-    }
-    function saveCustomUnits() {
-        const unitesModeEl = document.getElementById('unites-mode');
-        if (unitesModeEl.value !== 'perso') return;
-        let customUnites = {};
-        document.querySelectorAll('.unite-item input').forEach(input => {
-            customUnites[input.dataset.code] = parseFloat(input.value) || 1;
-        });
-        mbsData.settings = mbsData.settings || {};
-        mbsData.settings.customUnites = customUnites;
-        saveSettings();
-    }
-
-    // --- RENDERING FUNCTIONS ---
-    function renderAll() {
-        renderTermTables();
-        const analysis = cachedAnalysis;
-        renderSidePanel(analysis);
-        renderDeepAnalysis(analysis);
-        generateAndRenderInsights(analysis); 
-        renderPerformanceGauge(analysis); // Render the gauge
-        renderMonteCarlo(analysis);
-        renderMismatchAnalysis(analysis);
-    }
-    
-    // [renderTermTables, renderTermData, renderSubjectTable, renderSubjectAnalysis, renderMismatchAnalysis are IDENTICAL to V8]
-    function renderTermTables() {
-        ['etape1', 'etape2', 'etape3'].forEach(key => {
-            const container = document.getElementById(key);
-            if (container) renderTermData(mbsData[key], container, key, cachedAnalysis);
-        });
-    }
-
-    function renderTermData(termData, container, etapeKey, analysis) {
-        if (!container) return; 
-        const allSubjectsInTerm = Object.keys(analysis.subjectStats).filter(code => analysis.subjectStats[code]?.[etapeKey]);
-        if (allSubjectsInTerm.length === 0) {
-            container.innerHTML = `<p class="no-data text-gray-500">Aucune matière avec données dans cette étape.</p>`;
-            return;
-        }
-        container.innerHTML = '';
-        allSubjectsInTerm.forEach(codePrefix => {
-            const subject = mbsData[etapeKey].find(s => s.code.startsWith(codePrefix));
-            const subjStats = analysis.subjectStats[codePrefix]?.[etapeKey];
-            const subjPrediction = analysis.predictions.subjects[codePrefix];
-            if (subject && subjStats) {
-                container.appendChild(renderSubjectTable(subject, etapeKey, subjStats, analysis));
-                if (subjPrediction) {
-                    container.appendChild(renderSubjectAnalysis(codePrefix, etapeKey, analysis));
-                }
-            }
-        });
-    }
-
-    function renderSubjectTable(subject, etapeKey, subjStats, analysis) {
-        const table = document.createElement('table');
-        table.className = 'subject-table';
-        const codePrefix = subject.code.substring(0, 3);
-        const subjectName = subjectList[codePrefix] || subject.name;
-        const numAssignments = subjStats.allGrades.length;
-        table.innerHTML = `
-            <thead>
-                <tr><th colspan="3">${codePrefix} - ${subjectName}</th></tr>
-                <tr>
-                    <th>Compétence</th>
-                    <th>Moyenne Actuelle</th>
-                    <th>Pas d'Analyse (Notes Comptées)</th>
-                </tr>
-            </thead>
-            <tbody></tbody>`;
-        const tbody = table.querySelector('tbody');
-        subjStats.competencyAverages.forEach((comp, compIndex) => {
-            const compAvg = comp.avg;
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${subject.competencies[compIndex].name}</td>
-                <td>${compAvg !== null ? `<span class="grade-percentage">${compAvg.toFixed(2)}%</span>` : '<span class="no-data">N/D</span>'}</td>
-                <td>${comp.numAssignments}</td>
-            `;
-            if (tbody) tbody.appendChild(row);
-        });
-        const summaryRow = document.createElement('tr');
-        summaryRow.className = 'bg-gray-100 font-semibold';
-        summaryRow.innerHTML = `
-            <td>TOTAL/GLOBAL</td>
-            <td>${analysis.subjectAverages[etapeKey]?.[codePrefix]?.average !== null ? `<span class"grade-percentage text-lg">${analysis.subjectAverages[etapeKey]?.[codePrefix]?.average.toFixed(2)}%</span>` : '<span class="no-data text-lg">N/D</span>'}</td>
-            <td>${numAssignments}</td>
-        `;
-        if (tbody) tbody.appendChild(summaryRow);
-        return table;
-    }
-
-    function renderSubjectAnalysis(subjectCode, etapeKey, analysis) {
-        const analysisDiv = document.createElement('div');
-        analysisDiv.className = 'subject-analysis';
-        const subjAvg = analysis.subjectAverages[etapeKey]?.[subjectCode]?.average;
-        const subjOverallStats = analysis.subjectOverallStats[subjectCode];
-        const trend = subjOverallStats?.trend;
-        const prediction = analysis.predictions.subjects[subjectCode];
-        if (subjAvg === null || subjAvg === undefined || !prediction) {
-            analysisDiv.innerHTML = `<p class="text-sm text-gray-500">Aucune donnée pour l'analyse de ${subjectList[subjectCode]}.</p>`;
-            return analysisDiv;
-        }
-        let overallConsistency = subjOverallStats?.overallConsistency || 0;
-        let consistencyBadge = { label: 'Volatilité Max', class: 'badge-red', icon: '❌' };
-        if (overallConsistency >= 90) consistencyBadge = { label: 'Très Stable', class: 'badge-green', icon: '✅' };
-        else if (overallConsistency >= 70) consistencyBadge = { label: 'Stable', class: 'badge-yellow', icon: '⚠️' };
-        const fsp = prediction.fsp;
-        let volatilityBadge = { label: `StdDev: ${fsp.toFixed(1)}`, class: 'badge-violet', icon: '♼' };
-        if (fsp > 10) volatilityBadge.class = 'badge-red';
-        else if (fsp > 5) volatilityBadge.class = 'badge-yellow';
-        else volatilityBadge.class = 'badge-green';
-        let trendBadge = { label: 'N/A', class: 'badge-violet', icon: ' ' };
-        if (trend) {
-            const slope = trend.slope;
-            if (slope > 1) trendBadge = { label: `Forte Hausse (+${slope.toFixed(1)}%)`, class: 'badge-green', icon: '⬆️' };
-            else if (slope < -1) trendBadge = { label: `Baisse Importante (${slope.toFixed(1)}%)`, class: 'badge-red', icon: '⬇️' };
-            else trendBadge = { label: 'Stable', class: 'badge-yellow', icon: '↔️' };
-        }
-        const mpp = prediction.mpp;
-        let mppBadge = { label: `Ratio: x${mpp.toFixed(2)}`, class: 'badge-blue', icon: '⚙️' };
-        if (mpp > 1.02) mppBadge.class = 'badge-green';
-        else if (mpp < 0.98) mppBadge.class = 'badge-red';
-        else mppBadge.class = 'badge-yellow';
-        const nd = prediction.nd;
-        let ndBadge = { label: `ND: ${nd.toFixed(0)}`, class: 'badge-red', icon: '⚡' };
-        if (nd <= 30) ndBadge = { label: `ND: ${nd.toFixed(0)}% (Faible)`, class: 'badge-green', icon: '✨' };
-        else if (nd <= 60) ndBadge = { label: `ND: ${nd.toFixed(0)}% (Modéré)`, class: 'badge-yellow', icon: '💪' };
-        analysisDiv.innerHTML = `
-            <div class="flex items-center mb-2 flex-wrap gap-2">
-                <span class="text-lg font-semibold text-gray-800 mr-4">${subjectList[subjectCode]}</span>
-                <span class="analysis-badge ${consistencyBadge.class}">${consistencyBadge.icon} Consistance E/C: ${overallConsistency.toFixed(0)}/100</span>
-                <span class="analysis-badge ${volatilityBadge.class}">${volatilityBadge.icon} ${volatilityBadge.label}</span>
-                ${trend ? `<span class="analysis-badge ${trendBadge.class}">${trendBadge.icon} Tendance: ${trendBadge.label}</span>` : ''}
-                <span class="analysis-badge ${mppBadge.class}">${mppBadge.icon} ${mppBadge.label}</span>
-                <span class="analysis-badge ${ndBadge.class}">${ndBadge.icon} ${ndBadge.label}</span>
-                <span class="analysis-badge badge-orange">Moyenne: ${prediction.drsTrendAvg.toFixed(1)}%</span>
-            </div>
-            <p class="text-sm text-gray-700 mt-2">MPP = Ratio de Tendance (Prédiction / Moyenne Actuelle). ND = Niveau de Difficulté (distance à 100% ajustée par la volatilité).</p>
-        `;
-        return analysisDiv;
-    }
-
-    function renderMismatchAnalysis(analysis) {
-        const container = document.getElementById('mismatch-analysis');
-        if (!container) return;
-        let mismatchHtml = '';
-        const sortedSubjects = Object.entries(analysis.predictions.subjects).sort(([, a], [, b]) => b.mismatchScore - a.mismatchScore);
-        sortedSubjects.forEach(([code, subjPred]) => {
-            const subjName = subjectList[code] || code;
-            const consistency = subjPred.consistency;
-            const fsp = subjPred.fsp;
-            const nd = subjPred.nd;
-            const mismatch = subjPred.mismatchScore; 
-            let color = 'border-blue-500';
-            let summary = 'Équilibre correct. Faible StdDev et bonne consistance.';
-            if (mismatch > 40) {
-                color = 'border-red-500';
-                summary = '❌ **Volatilité Critique**. La performance est très imprévisible.';
-            } else if (mismatch > 20) {
-                color = 'border-yellow-500';
-                summary = '⚠️ **Volatilité Modérée**. Consistance sous surveillance. Matière à risque d\'imprévu.';
-            } else if (mismatch < 5) {
-                color = 'border-green-500';
-                summary = '✅ **Excellent Alignement**. Faible volatilité et haute consistance. Stabilité assurée.';
-            }
-            mismatchHtml += `
-                <div class="p-3 rounded-lg border-l-4 ${color} bg-white shadow-sm">
-                    <div class="flex justify-between items-center text-gray-800">
-                        <strong class="text-lg">${subjName}</strong>
-                        <span class="text-sm font-semibold">Score Mismatch: ${mismatch.toFixed(1)}</span>
-                    </div>
-                    <p class="text-sm text-gray-600 mt-1">${summary}</p>
-                    <p class="text-xs text-gray-500 mt-1">Consistance: ${consistency.toFixed(0)}/100 | StdDev: ${fsp.toFixed(1)} | ND: ${nd.toFixed(0)}%</p>
-                </div>
-            `;
-        });
-        container.innerHTML = mismatchHtml;
-    }
-
-    function renderSidePanel(analysis) {
-        const formatAvg = (avg) => avg !== null ? `<span class="grade-percentage">${avg.toFixed(2)}%</span>` : '--';
-        const mcTrend = analysis.predictions.global?.trend;
-        document.getElementById('moyenne-prediction').innerHTML = formatAvg(mcTrend);
-        document.getElementById('active-etape-name').textContent = activeTab.replace('etape', '');
-        const subjectListEl = document.getElementById('subject-averages-list');
-        subjectListEl.innerHTML = '';
-        const activeTermSubjects = analysis.subjectAverages[activeTab];
-        if (activeTermSubjects && Object.keys(activeTermSubjects).length > 0) {
-            const listItems = Object.entries(activeTermSubjects)
-                .filter(([code, subj]) => subj.average !== null)
-                .map(([code, subj]) => {
-                    return `<li class="flex justify-between"><span>${subj.name}</span><strong>${formatAvg(subj.average)}</strong></li>`;
-                })
-                .join('');
-            subjectListEl.innerHTML = listItems || '<li class="no-data text-gray-500">Aucune moyenne calculée pour cette étape</li>';
-        } else {
-            subjectListEl.innerHTML = '<li class="no-data text-gray-500">Aucune matière pour cette étape</li>';
-        }
-    }
-
-    function renderDeepAnalysis(analysis) {
-        const { globalConsistencyScore, burnoutRiskScore, aiModels } = analysis;
-        const consistencyEl = document.getElementById('consistency-score');
-        if (consistencyEl) {
-            consistencyEl.className = 'score-card';
-            consistencyEl.querySelector('strong').textContent = globalConsistencyScore.toFixed(0) + ' / 100';
-            if (globalConsistencyScore < 70) consistencyEl.classList.add('card-red');
-            else if (globalConsistencyScore < 90) consistencyEl.classList.add('card-violet');
-            else consistencyEl.classList.add('card-green');
-        }
-        const riskEl = document.getElementById('burnout-risk-score');
-        if (riskEl) {
-            riskEl.className = 'score-card';
-            riskEl.querySelector('strong').textContent = burnoutRiskScore.toFixed(0) + ' / 100';
-            if (burnoutRiskScore > 70) riskEl.classList.add('card-red');
-            else if (burnoutRiskScore > 40) riskEl.classList.add('card-yellow');
-            else riskEl.classList.add('card-green');
-        }
-        const dffEl = document.getElementById('dff-score');
-        if (dffEl && aiModels) {
-            const globalTrend = aiModels.find(m => m.name === 'Global (Tendance)');
-            dffEl.className = 'score-card';
-            const slope = globalTrend ? globalTrend.model.slope : 0;
-            const score = (slope * 10).toFixed(1);
-            dffEl.querySelector('strong').textContent = score + "%";
-            dffEl.querySelector('strong').className = score < -1 ? 'text-xl text-red-600' : (score > 1 ? 'text-xl text-green-600' : 'text-xl text-yellow-600');
-            dffEl.querySelector('p').textContent = `Facteur de Tendance Globale (Pente / 10 devoirs)`;
-        }
-    }
-
-    /**
-     * ===================================================================
-     * NEW: Performance Gauge Renderer
-     * ===================================================================
-     */
-    function renderPerformanceGauge(analysis) {
-        const { p5, p50, p95 } = analysis.predictions.global;
-        if (p5 === null || p50 === null || p95 === null) return;
-
-        const needle = document.getElementById('gauge-needle');
-        const p5Label = document.getElementById('gauge-label-p5');
-        const p50Label = document.getElementById('gauge-label-p50');
-        const p95Label = document.getElementById('gauge-label-p95');
-
-        p5Label.textContent = `P5: ${p5.toFixed(1)}%`;
-        p50Label.textContent = `P50: ${p50.toFixed(1)}%`;
-        p95Label.textContent = `P95: ${p95.toFixed(1)}%`;
-
-        const range = p95 - p5;
-        if (range <= 0) {
-            needle.style.left = '50%';
-            return;
-        }
-
-        const position = (p50 - p5) / range;
-        const needlePosition = Math.max(0, Math.min(100, position * 100));
-        
-        needle.style.left = `${needlePosition}%`;
-    }
-
-
-    /**
-     * ===================================================================
-     * NEW: Monte Carlo Renderer (V9)
-     * Now renders TWO path analysis tables.
-     * ===================================================================
-     */
-    function renderMonteCarlo(analysis) {
-        const { predictions, probabilityAnalysisE2, probabilityAnalysisE3 } = analysis;
-        
-        // --- 1. Global Predictions (P5-P95) ---
-        const globalPredEl = document.getElementById('global-predictions');
-        if (!globalPredEl) return;
-        const predictionScenarios = [
-            { name: "1. Tendance Pessimiste (P5)", key: 'p5', desc: '95% de chance d\'obtenir au moins ce score. Marge de sécurité.', class: 'card-red', effort: 'Modéré/Ciblé' },
-            { name: "2. Quartile Inférieur (P25)", key: 'p25', desc: 'Limite basse du 25% des simulations.', class: 'card-yellow', effort: 'Modéré/Soutenu' },
-            { name: "3. Médian (P50) - Le Plus Probable", key: 'p50', desc: 'Score médian. 50% de chance d\'être au-dessus. TENDANCE ACTUELLE.', class: 'card-violet', effort: 'Maintenir l\'Équilibre' },
-            { name: "4. Quartile Supérieur (P75)", key: 'p75', desc: 'Limite haute du 25% des simulations. Nécessite un effort SOUTENU.', class: 'card-violet', effort: 'Soutenu' },
-            { name: "5. Tendance Optimiste (P95)", key: 'p95', desc: '5% de chance d\'être meilleur que ce score. Nécessite un effort INTÉGRAL/MAXIMAL.', class: 'card-green', effort: 'Maximal' },
-        ];
-        globalPredEl.innerHTML = predictionScenarios.map(scenario => {
-            const value = predictions.global?.[scenario.key];
-            const display = value !== null ? (value > 100 ? '>100%' : `${value.toFixed(2)}%`) : '--';
-            const colorClass = scenario.class;
-            return `
-                <div class="prediction-card ${colorClass}">
-                    <p class="font-bold text-gray-700">${scenario.name}</p>
-                    <p class="text-sm text-gray-500">${scenario.desc}</p>
-                    <div class="flex justify-between items-center mt-2">
-                        <div class="card-score text-gray-900">${display}</div>
-                        <span class="effort-needed text-sm text-gray-600">${scenario.effort}</span>
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        // --- 2. Path Analysis Tables (E2 and E3) ---
-        const targets = [95, 92, 90, 88, 85, 80, 75, 70, 60];
-        const probTableEl_E2 = document.getElementById('probability-table-body-e2');
-        const probTableEl_E3 = document.getElementById('probability-table-body-e3');
-        
-        // Helper function to render a table body
-        const renderProbTable = (analysisData) => {
-            if (!analysisData) return '';
-            return targets.map(target => {
-                const data = analysisData[target];
-                if (!data) return '';
-                const { requiredAvg, prob } = data;
-                
-                let probClass = 'prob-low';
-                let effort = 'Effort Extrême (Statistiquement Improbable)';
-                if (prob >= 80) { probClass = 'prob-high'; effort = 'Maintenir Consistance (Très Faisable)'; }
-                else if (prob >= 50) { probClass = 'prob-medium'; effort = 'Effort Modéré/Ciblé (Faisable)'; }
-                else if (prob >= 20) { probClass = 'prob-low'; effort = 'Effort Intégral (Difficile)'; }
-                else if (prob < 5) { probClass = 'prob-low'; effort = 'Statistiquement Très Improbable'; }
-                let requiredAvgDisplay = requiredAvg !== null ? (requiredAvg > 100 ? 'IMPOSSIBLE (100+)' : `${requiredAvg.toFixed(2)}%`) : '--';
-                if (requiredAvg !== null && requiredAvg < 60) requiredAvgDisplay = `<span class="text-green-600">FAIBLE (${requiredAvg.toFixed(2)}%)</span>`;
-                else if (requiredAvg !== null && requiredAvg > 100) requiredAvgDisplay = `<span class="text-red-600">IMPOSSIBLE (100+%)</span>`;
-                
-                return `
-                    <tr class="${probClass}">
-                        <td>${target}%</td>
-                        <td>${requiredAvgDisplay}</td>
-                        <td>${prob.toFixed(1)}%</td>
-                        <td>${effort}</td>
-                    </tr>
-                `;
-            }).join('');
-        };
-        
-        if (probTableEl_E2) {
-            probTableEl_E2.innerHTML = renderProbTable(probabilityAnalysisE2);
-        }
-        if (probTableEl_E3) {
-            probTableEl_E3.innerHTML = renderProbTable(probabilityAnalysisE3);
-        }
-        
-        // --- 3. Subject Predictions ---
-        const subjPredEl = document.getElementById('subject-predictions-list');
-        if (!subjPredEl) return;
-        const sortedSubjects = Object.entries(predictions.subjects).sort(([codeA], [codeB]) => {
-            return (subjectList[codeA] || codeA).localeCompare(subjectList[codeB] || codeB);
-        });
-        subjPredEl.innerHTML = sortedSubjects.map(([code, subjPred]) => {
-            const prediction = subjPred.predictionFinal;
-            const cardClass = prediction >= 90 ? 'card-green' : (prediction >= 80 ? 'card-violet' : 'card-red');
-            return `
-                <div class="prediction-card ${cardClass}">
-                    <div class="flex justify-between items-center">
-                        <p class="font-bold text-lg text-gray-800">${subjectList[code] || code}</p>
-                        <div class="text-sm text-gray-500">
-                            Ratio: x${subjPred.mpp.toFixed(2)} | StdDev: ${subjPred.fsp.toFixed(1)} | Moy: ${subjPred.drsTrendAvg.toFixed(1)}%
-                        </div>
-                    </div>
-                    <p class="text-sm text-gray-500">Prédiction Stochastique Finale (E1+E2+E3) **Plafondé à ${subjPred.e3PredictionCap.toFixed(1)}%**</p>
-                    <div class="card-score text-gray-900">${prediction !== null ? prediction.toFixed(2) + '%' : '--'}</div>
-                </div>
-            `;
-        }).join('');
-    }
-
-
-    /**
-     * ===================================================================
-     * NEW: AI DISCOVERY ENGINE (V10 - Specificity & Advice Engine)
-     * This version adds subject name specificity and actionable advice.
-     * ===================================================================
-     */
-    function generateAndRenderInsights(analysis) {
-        const { burnoutRiskScore, aiModels, globalStdDev } = analysis;
-        const container = document.getElementById('ai-insights-list');
-        if (!container) return;
-
-        let insights = [];
-        
-        // --- 1. The Headline (B-Risk) ---
-        let riskLabel = "faible";
-        let riskClass = "insight-good";
-        if (burnoutRiskScore > 70) {
-            riskLabel = "Élevé";
-            riskClass = ""; // Default (warning)
-        } else if (burnoutRiskScore > 45) {
-            riskLabel = "Modéré";
-            riskClass = "insight-info";
-        }
-        insights.push({ 
-            text: `Mon diagnostic global est un **risque de burnout ${riskLabel} (${burnoutRiskScore.toFixed(0)}/100)**.`,
-            type: riskClass
-        });
-
-        // --- 2. The "AI Discovery" Engine ---
-        const goodModels = aiModels
-            .filter(m => m.model.r2 > AI_R2_THRESHOLD) // Use the global threshold
-            .sort((a, b) => b.model.r2 - a.model.r2); // Sort by strongest correlation
-
-        if (goodModels.length > 0) {
-            // --- PROFILE: TREND-BASED ---
-            insights.push({ 
-                text: `J'ai scanné ${aiModels.length} combinaisons et **trouvé ${goodModels.length} schéma(s) fiable(s)** dans votre performance :`,
-                type: 'insight-info'
-            });
-
-            // Report the Top 3 strongest patterns
-            goodModels.slice(0, 3).forEach(m => {
-                let text = '';
-                let riskClass = 'insight-good';
-                const avg = m.data.grades.reduce((a, b) => a + b, 0) / m.data.grades.length;
-                
-                // MODIFICATION: Format name with specific subjects
-                const [category, type] = m.name.split(' (');
-                const modelType = type.replace(')', '');
-                let name = '';
-
-                if (category === 'Global') {
-                    name = `${modelType} Globale`;
-                } else if (subjectGroups[category]) { // It's a group like STEM
-                    const subjectNames = m.data.codes.map(c => subjectList[c] || c).join(', ');
-                    name = `${modelType} en ${category} (${subjectNames})`; // Ex: "Tendance en STEM (Math SN, Physique)"
-                } else { // It's an individual subject
-                    name = `${modelType} en ${category}`; // Ex: "Tendance en Physique"
-                }
-
-                if (m.model.slope > 0.1) {
-                    text = `**${name} (Moy: ${avg.toFixed(0)}%)**: Vous avez une **tendance positive claire**. (Confiance: ${(m.model.r2 * 100).toFixed(0)}%)`;
-                } else if (m.model.slope < -0.1) {
-                    text = `**${name} (Moy: ${avg.toFixed(0)}%)**: Tendance **négative**. Vos notes baissent, même si votre moyenne est élevée. (Confiance: ${(m.model.r2 * 100).toFixed(0)}%)`;
-                    riskClass = ''; // warning
-                } else {
-                    text = `**${name} (Moy: ${avg.toFixed(0)}%)**: Votre performance est **stable et constante**. (Confiance: ${(m.model.r2 * 100).toFixed(0)}%)`;
-                }
-                insights.push({ text: text, type: `${m.type} ${riskClass}` });
-            });
-            
-            // --- NEW: Actionable Advice Section (Trend-Based) ---
-            const negativeTrends = goodModels.filter(m => m.model.slope < -0.1);
-            if (negativeTrends.length > 0) {
-                const worstTrend = negativeTrends.sort((a, b) => a.model.slope - b.model.slope)[0];
-                const [category, ] = worstTrend.name.split(' (');
-                insights.push({ 
-                    text: `<b>Action Requise:</b> Votre tendance la plus négative est en <b>${category}</b>. C'est votre priorité #1. Même si la moyenne est haute, la tendance à la baisse est un signal de risque.`,
-                    type: '' // warning
-                });
-            }
-            
-            const positiveTrends = goodModels.filter(m => m.model.slope > 0.1);
-            if (positiveTrends.length > 0 && negativeTrends.length === 0) { // Only if no negative trends
-                const bestTrend = positiveTrends.sort((a, b) => b.model.slope - a.model.slope)[0];
-                const [category, ] = bestTrend.name.split(' (');
-                insights.push({ 
-                    text: `<b>Bon Travail:</b> Votre élan est excellent, surtout en <b>${category}</b>. Maintenez cette méthode de travail, elle fonctionne.`,
-                    type: 'insight-good'
-                });
-            }
-            
-            if (positiveTrends.length === 0 && negativeTrends.length === 0) { // All stable
-                 insights.push({ 
-                    text: `<b>Profil Stable:</b> Vos schémas sont très constants, sans hausse ni baisse majeure. C'est un profil mature. Le focus est de maintenir cette constance.`,
-                    type: 'insight-info'
-                });
-            }
-            // --- End New Advice Section ---
-
-        } else {
-            // --- PROFILE: ERRATIC ---
-            insights.push({ 
-                text: `Mon diagnostic principal est que votre performance est **erratique**. Je n'ai trouvé **aucun schéma fiable** (R² < ${(AI_R2_THRESHOLD * 100).toFixed(0)}%) sur les ${aiModels.length} combinaisons analysées.`,
-                type: 'insight-erratic'
-            });
-            insights.push({
-                text: `Cette imprévisibilité est le principal facteur de votre B-Risk. Votre Volatilité (StdDev) est de **${globalStdDev.toFixed(1)}** (Idéal: < 10). La priorité #1 est la constance.`,
-                type: '' // warning
-            });
-            // NEW: Advice for Erratic profile
-            insights.push({ 
-                text: "<b>Conseil:</b> Votre focus ne doit pas être sur une matière, mais sur la <b>stabilité</b>. Visez à ce que vos 5 prochains devoirs aient un écart max de 10-15 points (ex: 80% et 95%) au lieu de 40 points (ex: 60% et 100%).", 
-                type: 'insight-focus' 
-            });
-        }
-
-        // Render
-        container.innerHTML = insights.map(insight => {
-            return `<li class="${insight.type || ''}">${insight.text}</li>`;
-        }).join('');
-    }
-
-
-    // --- CALCULATION LOGIC ---
-
-    // ===================================================================
-    // AI LOGIC: Linear Regression
-    // ===================================================================
-    function linearRegression(x_values, y_values) {
-        let x_sum = 0;
-        let y_sum = 0;
-        let xy_sum = 0;
-        let x2_sum = 0;
-        let n = x_values.length;
-        if (n === 0 || n !== y_values.length) return { slope: 0, r2: 0, intercept: 0 };
-        if (n < 2) return { slope: 0, r2: 0, intercept: y_values[0] || 0 };
-
-        for (let i = 0; i < n; i++) {
-            const x = x_values[i];
-            const y = y_values[i];
-            x_sum += x;
-            y_sum += y;
-            xy_sum += x * y;
-            x2_sum += x * x;
-        }
-        const m_numerator = (n * xy_sum - x_sum * y_sum);
-        const m_denominator = (n * x2_sum - x_sum * x_sum);
-        const m = (m_denominator === 0) ? 0 : m_numerator / m_denominator;
-        const b = (y_sum - m * x_sum) / n;
-        let ss_total = 0;
-        let ss_res = 0;
-        const y_mean = y_sum / n;
-        for (let i = 0; i < n; i++) {
-            const y_pred = m * x_values[i] + b;
-            ss_res += Math.pow(y_values[i] - y_pred, 2);
-            ss_total += Math.pow(y_values[i] - y_mean, 2);
-        }
-        const r2 = (ss_total === 0) ? 1 : 1 - (ss_res / ss_total);
-        return { slope: m, intercept: b, r2: r2 };
-    }
-
-    // ===================================================================
-    // REAL PROBABILITY LOGIC: Standard Normal CDF
-    // ===================================================================
-    function standardNormalCDF(z) {
-        function erf(x) {
-            const p = 0.3275911;
-            const a1 = 0.254829592;
-            const a2 = -0.284496736;
-            const a3 = 1.421413741;
-            const a4 = -1.453152027;
-            const a5 = 1.061405429;
-            const sign = (x >= 0) ? 1 : -1;
-            const t = 1 / (1 + p * Math.abs(x));
-            const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
-            return sign * y;
-        }
-        return 0.5 * (1 + erf(z / Math.sqrt(2)));
-    }
-
-
-    // ===================================================================
-    // ROBUST GRADE PARSING LOGIC
-    // ===================================================================
-    function getNumericGrade(result) {
-        if (!result) return null;
-        const trimmed = result.trim().toLowerCase();
-        if (trimmed === 'absent' || trimmed === 'abs' || trimmed === '0' || trimmed === '0%') return 0;
-        if (trimmed === 'exempt' || trimmed === 'n/a' || trimmed === 'retard' || trimmed === 'remis' || trimmed === '') return null;
-        const originalTrimmed = result.trim();
-        if (gradeMap[originalTrimmed]) return gradeMap[originalTrimmed];
-        const percentageMatch = trimmed.match(/(\d+[,.]?\d*)\s*%/);
-        if (percentageMatch) return parseFloat(percentageMatch[1].replace(',', '.'));
-        const scoreMatch = trimmed.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/);
-        if (scoreMatch) {
-            const score = parseFloat(scoreMatch[1].replace(',', '.'));
-            const max = parseFloat(scoreMatch[2].replace(',', '.'));
-            return (max > 0) ? (score / max) * 100 : null;
-        }
-        const plainNumber = parseFloat(trimmed);
-        if (!isNaN(plainNumber) && plainNumber >= 0 && plainNumber <= 110) {
-            return plainNumber;
-        }
-        return null; 
-    }
-    
-    function getUnits() {
-        const { niveau, unitesMode, customUnites } = mbsData.settings || {};
-        if (unitesMode === 'sans') return new Proxy({}, { get: () => 1 });
-        if (unitesMode === 'perso') return customUnites || {};
-        return (niveau && defaultUnits[niveau]) ? defaultUnits[niveau] : {};
-    }
-    
-    function calculateAndCacheAnalysis() {
-        cachedAnalysis = calculateAllAnalysis();
-    }
-
-    // ===================================================================
-    // UPGRADED: Extracts all data vectors for AI analysis
-    // ===================================================================
-    function extractAssignmentData(subject) {
-        let allGrades = [];
-        let allPondérations = [];
-        let allCompWeights = []; 
-
-        subject.competencies.forEach((comp) => {
-            const compWeightMatch = comp.name.match(/\((\d+)%\)/);
-            const compWeight = compWeightMatch ? parseFloat(compWeightMatch[1]) : 0;
-
-            comp.assignments.forEach(assign => {
-                const grade = getNumericGrade(assign.result);
-                const pondération = parseFloat(assign.pond || 0);
-
-                if (grade !== null && !isNaN(grade) && pondération > 0 && compWeight > 0) {
-                    allGrades.push(grade);
-                    allPondérations.push(pondération);
-                    allCompWeights.push(compWeight); 
-                }
-            });
-        });
-        return { allGrades, allPondérations, allCompWeights }; 
-    }
-
-
-    function calculateSubjectAverageAndStats(subject, etapeKey) {
-        let totalWeightedGrade = 0;
-        let totalCompetencyWeight = 0;
-        let competencyAverages = [];
-        
-        const { allGrades, allPondérations, allCompWeights } = extractAssignmentData(subject);
-
-        subject.competencies.forEach((comp, compIndex) => {
-            const compWeightMatch = comp.name.match(/\((\d+)%\)/);
-            const compWeight = compWeightMatch ? parseFloat(compWeightMatch[1]) : 0;
-            if (compWeight === 0) return;
-
-            let totalAssignmentGrade = 0;
-            let totalAssignmentWeight = 0;
-            let numAssignments = 0;
-
-            comp.assignments.forEach(assign => {
-                const grade = getNumericGrade(assign.result);
-                let weight = parseFloat(assign.pond || 0);
-
-                if (grade !== null && !isNaN(grade) && !isNaN(weight) && weight > 0) {
-                    totalAssignmentGrade += grade * weight;
-                    totalAssignmentWeight += weight;
-                    numAssignments++;
-                }
-            });
-
-            let compAvg = null;
-            if (totalAssignmentWeight > 0) {
-                compAvg = totalAssignmentGrade / totalAssignmentWeight;
-                totalWeightedGrade += compAvg * (compWeight / 100);
-                totalCompetencyWeight += (compWeight / 100);
-            }
-
-            competencyAverages.push({ avg: compAvg, numAssignments });
-        });
-
-        const subjectAverage = totalCompetencyWeight > 0 ? (totalWeightedGrade / totalCompetencyWeight) : null;
-        const overallConsistency = allGrades.length >= 2 ? calculateConsistencyScore(allGrades) : 100;
-        const stdDev = allGrades.length >= 2 ? calculateStdDev(allGrades) : 0;
-        
-        return { subjectAverage, allGrades, allPondérations, allCompWeights, overallConsistency, stdDev, competencyAverages };
-    }
-
-    function calculateConsistencyScore(grades) {
-        const stdDev = calculateStdDev(grades);
-        return Math.max(0, 100 - (stdDev * 2));
-    }
-    
-    function calculateStdDev(grades) {
-        if (grades.length < 2) return 0;
-        const mean = grades.reduce((a, b) => a + b) / grades.length;
-        const variance = grades.reduce((sum, grade) => sum + Math.pow(grade - mean, 2), 0) / (grades.length - 1); // Sample StdDev
-        return Math.sqrt(variance); 
-    }
-
-    function calculateWeightedFinalAvg(etape1Avg, etape2Avg, etape3Avg) {
-        let weightedSum = 0;
-        let totalWeight = 0;
-        if (etape1Avg !== null) { weightedSum += etape1Avg * TERM_WEIGHTS.etape1; totalWeight += TERM_WEIGHTS.etape1; }
-        if (etape2Avg !== null) { weightedSum += etape2Avg * TERM_WEIGHTS.etape2; totalWeight += TERM_WEIGHTS.etape2; }
-        if (etape3Avg !== null) { weightedSum += etape3Avg * TERM_WEIGHTS.etape3; totalWeight += TERM_WEIGHTS.etape3; }
-        return totalWeight > 0 ? weightedSum / totalWeight : null;
-    }
-    
-    /**
-     * ===================================================================
-     * NEW: Path Analysis Function (V10 - LOGIC FIX)
-     * This now correctly calculates the required average for E2 and E3.
-     * ===================================================================
-     */
-    function calculatePathAnalysis(targetEtapeKey, allTermAverages, predictedMean, predictedStdDev) {
-        const probabilityAnalysis = {};
-        const targets = [95, 92, 90, 88, 85, 80, 75, 70, 60];
-        
-        let currentKnownGlobalSum = 0;
-        let knownWeight = 0;
-        let remainingWeight = 0;
-
-        const totalWeight = TERM_WEIGHTS.etape1 + TERM_WEIGHTS.etape2 + TERM_WEIGHTS.etape3; // Should be 1.0
-
-        if (targetEtapeKey === 'etape2') {
-            // This roadmap calculates what you need in E2, assuming E3 performs at the projected mean
-            if (allTermAverages.etape1 !== null) {
-                currentKnownGlobalSum = allTermAverages.etape1 * TERM_WEIGHTS.etape1;
-                knownWeight = TERM_WEIGHTS.etape1;
-            }
-            // Add the *projected* E3 weight
-            currentKnownGlobalSum += predictedMean * TERM_WEIGHTS.etape3;
-            remainingWeight = TERM_WEIGHTS.etape2;
-
-        } else { // 'etape3'
-            // This roadmap calculates what you need in E3, based on known E1 and E2
-            if (allTermAverages.etape1 !== null) {
-                currentKnownGlobalSum += allTermAverages.etape1 * TERM_WEIGHTS.etape1;
-                knownWeight += TERM_WEIGHTS.etape1;
-            }
-            if (allTermAverages.etape2 !== null) {
-                currentKnownGlobalSum += allTermAverages.etape2 * TERM_WEIGHTS.etape2;
-                knownWeight += TERM_WEIGHTS.etape2;
-            }
-            remainingWeight = TERM_WEIGHTS.etape3;
-        }
-
-        if (remainingWeight <= 0) {
-             targets.forEach(t => {
-                probabilityAnalysis[t] = { requiredAvg: null, prob: 0 };
-             });
-             return probabilityAnalysis;
-        }
-
-        targets.forEach(target => {
-            // (TargetGlobal * TotalWeight - KnownSum) / RemainingWeight
-            const requiredAvg = (target * totalWeight - currentKnownGlobalSum) / remainingWeight;
-            
-            // The "probability" is the chance of you hitting this *required* average,
-            // based on your *projected* performance (mean) and volatility (stddev).
-            const prob = calculateProbability(predictedMean, predictedStdDev, requiredAvg);
-            probabilityAnalysis[target] = { requiredAvg: requiredAvg, prob: prob };
-        });
-
-        return probabilityAnalysis;
-    }
-
-
-    // ===================================================================
-    // UPGRADED ANALYSIS FUNCTION (V10)
-    // ===================================================================
-    function calculateAllAnalysis() {
-        const units = getUnits();
-        const niveau = mbsData.settings?.niveau;
-        let allTermAverages = { etape1: null, etape2: null, etape3: null };
-        let allSubjectAverages = {};
-        let allSubjectStats = {}; 
-        let allSubjectOverallStats = {}; 
-        
-        // MODIFICATION: Utilisation de Set() pour suivre les codes uniques
-        let aiDataStore = {
-            'Global': { grades: [], pondérations: [], compWeights: [], codes: new Set() }
-        };
-        Object.keys(subjectGroups).forEach(groupName => {
-            aiDataStore[groupName] = { grades: [], pondérations: [], compWeights: [], codes: new Set() };
-        });
-
-        // 1. Calculate Averages and Stats per Subject/Etape
-        KNOWN_ETAPE_KEYS.forEach(etape => {
-            if (!mbsData[etape]) return;
-            allSubjectAverages[etape] = {};
-
-            mbsData[etape].forEach((subject) => {
-                const codePrefix = subject.code.substring(0, 3);
-                
-                const { subjectAverage, allGrades, allPondérations, allCompWeights, overallConsistency, stdDev, competencyAverages } = 
-                    calculateSubjectAverageAndStats(subject, etape);
-
-                // MODIFICATION: Ajout du code au Set()
-                aiDataStore['Global'].codes.add(codePrefix);
-                aiDataStore['Global'].grades.push(...allGrades);
-                aiDataStore['Global'].pondérations.push(...allPondérations); 
-                aiDataStore['Global'].compWeights.push(...allCompWeights);
-
-                for (const groupName in subjectGroups) {
-                    if (subjectGroups[groupName].includes(codePrefix)) {
-                        aiDataStore[groupName].grades.push(...allGrades);
-                        aiDataStore[groupName].pondérations.push(...allPondérations); 
-                        aiDataStore[groupName].compWeights.push(...allCompWeights);
-                        aiDataStore[groupName].codes.add(codePrefix); // MODIFICATION: Ajout du code au Set() du groupe
-                        break; 
-                    }
-                }
-                
-                allSubjectAverages[etape][codePrefix] = { name: subjectList[codePrefix] || subject.name, average: subjectAverage };
-                allSubjectStats[codePrefix] = allSubjectStats[codePrefix] || {};
-                allSubjectStats[codePrefix][etape] = { overallConsistency, stdDev, competencyAverages, allGrades, allPondérations, allCompWeights, numGrades: allGrades.length };
-            });
-        });
-
-        // 1.5 Calculate Overall Subject Stats (across all known terms)
-        Object.keys(allSubjectStats).forEach(code => {
-            let grades = [];
-            let pondérations = [];
-            let compWeights = [];
-            let allConsistencies = [];
-            let totalNumGrades = 0;
-
-            KNOWN_ETAPE_KEYS.forEach(etape => {
-                if (allSubjectStats[code][etape]) {
-                    grades.push(...allSubjectStats[code][etape].allGrades);
-                    pondérations.push(...allSubjectStats[code][etape].allPondérations);
-                    compWeights.push(...allSubjectStats[code][etape].allCompWeights);
-                    allConsistencies.push(allSubjectStats[code][etape].overallConsistency);
-                    totalNumGrades += allSubjectStats[code][etape].numGrades;
-                }
-            });
-
-            if (totalNumGrades > 0) {
-                 // MODIFICATION: Utilisation de Set() pour la cohérence
-                 aiDataStore[subjectList[code] || code] = { grades: grades, pondérations: pondérations, compWeights: compWeights, codes: new Set([code]) };
-            }
-
-            const overallStdDev = calculateStdDev(grades);
-            const overallConsistency = allConsistencies.length > 0 ? allConsistencies.reduce((a, b) => a + b) / allConsistencies.length : 100;
-            const trend = linearRegression(grades.map((g, i) => i), grades); 
-            
-            allSubjectOverallStats[code] = { allGrades: grades, allPondérations: pondérations, allCompWeights: compWeights, stdDev: overallStdDev, overallConsistency, numGrades: totalNumGrades, trend: trend };
-        });
-        
-        // 2. Global Averages
-        let globalWeightedSum = 0;
-        let totalKnownWeight = 0;
-        KNOWN_ETAPE_KEYS.forEach(etape => {
-            let termWeightedSum = 0;
-            let termUnitSum = 0;
-            Object.keys(allSubjectAverages[etape] || {}).forEach(codePrefix => {
-                const avg = allSubjectAverages[etape][codePrefix].average;
-                if (avg !== null && niveau) {
-                    const unit = units[codePrefix] || 2;
-                    termWeightedSum += avg * unit;
-                    termUnitSum += unit;
-                }
-            });
-            allTermAverages[etape] = termUnitSum > 0 ? termWeightedSum / termUnitSum : null;
-            if (allTermAverages[etape] !== null) {
-                globalWeightedSum += allTermAverages[etape] * TERM_WEIGHTS[etape];
-                totalKnownWeight += TERM_WEIGHTS[etape];
-            }
-        });
-        const globalAverageKnown = totalKnownWeight > 0 ? globalWeightedSum / totalKnownWeight : null;
-
-        // 3. Global Statistics & AI DISCOVERY ENGINE
-        const globalStdDev = calculateStdDev(aiDataStore['Global'].grades);
-        const globalConsistencyScore = calculateConsistencyScore(aiDataStore['Global'].grades);
-        
-        let aiModels = [];
-        for (const categoryName in aiDataStore) {
-            const data = aiDataStore[categoryName];
-            if (data.grades.length < 5) continue; 
-
-            // MODIFICATION: Conversion du Set() en Array pour le stockage
-            const codesArray = Array.from(data.codes);
-
-            aiModels.push({
-                name: `${categoryName} (Tendance)`,
-                type: 'insight-trend',
-                model: linearRegression(data.grades.map((g, i) => i), data.grades),
-                data: { ...data, codes: codesArray } // Passe la liste des codes
-            });
-            aiModels.push({
-                name: `${categoryName} (Focus)`,
-                type: 'insight-focus',
-                model: linearRegression(data.pondérations, data.grades),
-                data: { ...data, codes: codesArray } // Passe la liste des codes
-            });
-            aiModels.push({
-                name: `${categoryName} (Priorité)`,
-                type: 'insight-priority',
-                model: linearRegression(data.compWeights, data.grades),
-                data: { ...data, codes: codesArray } // Passe la liste des codes
-            });
-        }
-        
-        // 4. Subject Trends
-        let subjectTrends = {}; 
-        Object.keys(allSubjectOverallStats).forEach(code => {
-            subjectTrends[code] = allSubjectOverallStats[code].trend;
-        });
-        
-        // 5. Burnout Risk
-        const globalTrendModel = aiModels.find(m => m.name === 'Global (Tendance)');
-        const globalTrend = globalTrendModel ? globalTrendModel.model : { slope: 0, r2: 0 };
-        let burnoutRiskScore = calculateBurnoutRisk(niveau, globalStdDev, allSubjectOverallStats, units, globalTrend);
-
-        // 6. Monte Carlo Predictions
-        const { predictions, predictedE3SMean, predictedE3SSigma } = runMonteCarloSimulation(globalAverageKnown, allTermAverages, allSubjectAverages, subjectTrends, allSubjectOverallStats, units, globalStdDev, burnoutRiskScore);
-
-        // 7. NEW: Path Analysis
-        // This was the bug fix. Pass the projected E3 mean/sigma to *both* functions.
-        const probabilityAnalysisE2 = calculatePathAnalysis('etape2', allTermAverages, predictedE3SMean, predictedE3SSigma);
-        const probabilityAnalysisE3 = calculatePathAnalysis('etape3', allTermAverages, predictedE3SMean, predictedE3SSigma);
-
-        return { 
-            subjectAverages: allSubjectAverages, 
-            termAverages: allTermAverages, 
-            globalAverage: globalAverageKnown, 
-            globalStdDev, 
-            globalConsistencyScore,
-            aiModels: aiModels, 
-            subjectStats: allSubjectStats,
-            subjectOverallStats: allSubjectOverallStats,
-            subjectTrends,
-            burnoutRiskScore,
-            predictions,
-            probabilityAnalysisE2, // NEW
-            probabilityAnalysisE3  // NEW
-        };
-    }
-    
-    // ===================================================================
-    // Transparent Burnout Risk Score
-    // ===================================================================
-    function calculateBurnoutRisk(niveau, globalStdDev, allSubjectOverallStats, units, globalTrend) {
-        if (!niveau) return 0;
-        const absenceRate = parseFloat(mbsData.settings.absenceRate || 5) / 100; 
-        let totalUnits = Object.values(units).reduce((sum, u) => sum + (u || 0), 0);
-        let workloadScore = Math.min(100, (totalUnits / 32) * 100);
-        let volatilityScore = Math.min(100, (globalStdDev / 15) * 100);
-        let trendScore = Math.min(100, Math.max(0, (globalTrend.slope / -2) * 100));
-        let absenceScore = Math.min(100, (absenceRate / 0.15) * 100);
-        const finalScore = (workloadScore * 0.20) + 
-                           (volatilityScore * 0.35) + 
-                           (trendScore * 0.35) +      
-                           (absenceScore * 0.10);     
-        return Math.min(100, Math.max(0, finalScore));
-    }
-    
-    // ===================================================================
-    // MONTE CARLO CORE LOGIC (V10)
-    // ===================================================================
-    function runMonteCarloSimulation(globalAverageKnown, termAverages, subjectAverages, subjectTrends, subjectOverallStats, units, globalStdDev, burnoutRiskScore) {
-        // [This function is IDENTICAL to V9]
-        
-        const globalPred = { p5: null, p25: null, p50: null, p75: null, p95: null };
-        const subjectPreds = {};
-        
-        const avg1 = termAverages.etape1;
-        const avg2 = termAverages.etape2;
-
-        let currentKnownGlobalSum = 0;
-        let totalKnownWeight = 0;
-        
-        if (avg1 !== null) {
-            currentKnownGlobalSum += avg1 * TERM_WEIGHTS.etape1;
-            totalKnownWeight += TERM_WEIGHTS.etape1;
-        }
-        if (avg2 !== null) {
-            currentKnownGlobalSum += avg2 * TERM_WEIGHTS.etape2;
-            totalKnownWeight += TERM_WEIGHTS.etape2;
-        }
-        
-        const totalWeight = TERM_WEIGHTS.etape1 + TERM_WEIGHTS.etape2 + TERM_WEIGHTS.etape3;
-        const remainingWeight = totalWeight - totalKnownWeight;
-        
-        let predictedE3SMean = globalAverageKnown || 75;
-        let predictedE3SSigma = globalStdDev || 5;
-
-        if (remainingWeight <= 0) {
-             globalPred.p5 = globalPred.p25 = globalPred.p50 = globalPred.p75 = globalPred.p95 = globalAverageKnown;
-             globalPred.trend = globalAverageKnown;
-             return { predictions: { global: globalPred, subjects: subjectPreds }, predictedE3SMean, predictedE3SSigma };
-        }
-        
-        const relevantSubjects = Object.keys(subjectOverallStats).filter(code => units[code] && subjectOverallStats[code].numGrades > 0);
-        
-        if (relevantSubjects.length === 0) {
-             return { predictions: { global: globalPred, subjects: subjectPreds }, predictedE3SMean, predictedE3SSigma };
-        }
-        
-        let sMeanWeightedSum = 0;
-        let sMeanUnitSum = 0;
-        let sSigmaSquaredWeightedSum = 0; 
-        let sSigmaUnitSum = 0; 
-
-        relevantSubjects.forEach(code => {
-            const subjStats = subjectOverallStats[code];
-            const unit = units[code] || 2;
-            let fsp = subjStats.stdDev;
-            if (subjStats.numGrades < 3) fsp = Math.max(fsp, 3.0); 
-            fsp = Math.min(20, Math.max(0.5, fsp)); 
-            const trend = subjStats.trend;
-            const n = subjStats.allGrades.length;
-            let projectedGrade = trend.intercept + trend.slope * (n + 1);
-            const currentMean = n > 0 ? subjStats.allGrades.reduce((a, b) => a + b, 0) / n : (termAverages.etape2?.[code] || termAverages.etape1?.[code] || 75);
-            const confidence = (trend.r2 > 0.1) ? trend.r2 : 0;
-            let adjustedMean = (projectedGrade * confidence) + (currentMean * (1 - confidence));
-            if (n === 0) {
-                 adjustedMean = termAverages.etape2?.[code] !== undefined ? termAverages.etape2?.[code] : (termAverages.etape1?.[code] !== undefined ? termAverages.etape1?.[code] : 75);
-            }
-            const historicalMax = subjStats.allGrades.length > 0 ? Math.max(...subjStats.allGrades) : 100;
-            const e3PredictionCap = Math.min(100, Math.max(80, historicalMax * 1.05)); 
-            const finalAdjustedMeanE3 = Math.min(e3PredictionCap, Math.max(40, adjustedMean)); 
-            let nd = (100 - currentMean) * (1 + fsp / 10);
-            nd = Math.min(100, Math.max(0, nd));
-            subjectPreds[code] = { 
-                mpp: (currentMean > 0) ? (finalAdjustedMeanE3 / currentMean) : 1, 
-                fsp: fsp, 
-                consistency: subjStats.overallConsistency,
-                drsTrendAvg: currentMean, 
-                adjustedMean: finalAdjustedMeanE3, 
-                e3PredictionCap: e3PredictionCap,
-                nd: nd,
-                mismatchScore: fsp * (100 - subjStats.overallConsistency) / 10, 
-                predictionFinal: null 
-            };
-            sMeanWeightedSum += finalAdjustedMeanE3 * unit; 
-            sMeanUnitSum += unit;
-            sSigmaSquaredWeightedSum += Math.pow(fsp, 2) * unit; 
-            sSigmaUnitSum += unit;
-        });
-        
-        predictedE3SMean = sMeanUnitSum > 0 ? sMeanWeightedSum / sMeanUnitSum : globalAverageKnown || 75;
-        const predictedE3SVariance = sSigmaUnitSum > 0 ? sSigmaSquaredWeightedSum / sSigmaUnitSum : Math.pow(globalStdDev, 2) || 25;
-        predictedE3SSigma = Math.sqrt(predictedE3SVariance);
-        
-        let finalGlobalGrades = [];
-        for (let i = 0; i < NUM_MONTE_CARLO_RUNS; i++) {
-            const u1 = Math.random();
-            const u2 = Math.random();
-            let z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
-            let predictedE3AvgGlobal = Math.min(100, Math.max(0, predictedE3SMean + z * predictedE3SSigma));
-            const finalGlobalGrade = (currentKnownGlobalSum + predictedE3AvgGlobal * remainingWeight) / totalWeight;
-            finalGlobalGrades.push(finalGlobalGrade);
-            
-            if (i === 0) {
-                 relevantSubjects.forEach(code => {
-                    const subjPred = subjectPreds[code];
-                    const subjAvg1 = subjectAverages.etape1?.[code]?.average || null;
-                    const subjAvg2 = subjectAverages.etape2?.[code]?.average || null;
-                    let predictedE3Avg = subjPred.adjustedMean; 
-                    const finalGrade = calculateWeightedFinalAvg(subjAvg1, subjAvg2, predictedE3Avg);
-                    subjPred.predictionFinal = finalGrade;
-                 });
-            }
-        }
-
-        finalGlobalGrades.sort((a, b) => a - b);
-        globalPred.p5 = finalGlobalGrades[Math.floor(NUM_MONTE_CARLO_RUNS * 0.05)] || 0;
-        globalPred.p25 = finalGlobalGrades[Math.floor(NUM_MONTE_CARLO_RUNS * 0.25)] || 0;
-        globalPred.p50 = finalGlobalGrades[Math.floor(NUM_MONTE_CARLO_RUNS * 0.50)] || 0;
-        globalPred.p75 = finalGlobalGrades[Math.floor(NUM_MONTE_CARLO_RUNS * 0.75)] || 0;
-        globalPred.p95 = finalGlobalGrades[Math.floor(NUM_MONTE_CARLO_RUNS * 0.95)] || 0;
-        globalPred.trend = finalGlobalGrades.reduce((a, b) => a + b) / NUM_MONTE_CARLO_RUNS;
-         Object.keys(subjectPreds).forEach(code => {
-            if (subjectPreds[code].predictionFinal === null) {
-                const subjAvg1 = subjectAverages.etape1?.[code]?.average || null;
-                const subjAvg2 = subjectAverages.etape2?.[code]?.average || null;
-                let trendAvg = subjAvg2 !== null ? subjAvg2 : (subjAvg1 !== null ? subjAvg1 : 75); 
-                subjectPreds[code].predictionFinal = trendAvg;
-            }
-        });
-        
-        return { predictions: { global: globalPred, subjects: subjectPreds }, predictedE3SMean, predictedE3SSigma };
-    }
-
-    // ===================================================================
-    // REAL PROBABILITY LOGIC
-    // ===================================================================
-    function calculateProbability(mean, stdDev, requiredTarget) {
-        if (mean === null) return 0;
-        if (requiredTarget > 100) return 0;
-        if (stdDev <= 0.1) return mean >= requiredTarget ? 100 : 0;
-        const z = (requiredTarget - mean) / stdDev;
-        const prob = 1 - standardNormalCDF(z); 
-        return prob * 100;
-    }
-
-
-    // --- EVENT LISTENERS ---
-    // [This section is IDENTICAL to V8]
-    function setupEventListeners() {
-        document.querySelectorAll('.tab-btn').forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelector('.tab-btn.active')?.classList.remove('active');
-                tab.classList.add('active');
-                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-                activeTab = tab.dataset.tab;
-                document.getElementById(activeTab)?.classList.add('active');
-                renderSidePanel(cachedAnalysis);
-            });
-        });
-        document.getElementById('niveau-secondaire')?.addEventListener('change', saveSettings);
-        document.getElementById('unites-mode')?.addEventListener('change', () => {
-            saveSettings();
-            populateUnitesModal();
-        });
-        const absenceSlider = document.getElementById('absence-rate-slider');
-        const absenceValue = document.getElementById('absence-rate-value');
-        absenceSlider?.addEventListener('input', (e) => {
-            absenceValue.textContent = `${parseFloat(e.target.value).toFixed(1)}%`;
-        });
-        absenceSlider?.addEventListener('change', (e) => {
-             saveSettings();
-        });
-        const unitesModal = document.getElementById('unites-modal');
-        document.getElementById('unites-btn')?.addEventListener('click', () => {
-            populateUnitesModal();
-            unitesModal?.classList.add('active');
-        });
-        document.getElementById('close-unites-modal')?.addEventListener('click', () => {
-            saveCustomUnits();
-            unitesModal?.classList.remove('active');
-        });
-    }
-    
-    function populateUnitesModal() {
-        const unitesListEl = document.getElementById('unites-list');
-        if (!unitesListEl) return;
-        unitesListEl.innerHTML = '';
-        const currentUnits = getUnits();
-        const subjectCodes = new Set();
-        KNOWN_ETAPE_KEYS.forEach(etapeKey => {
-            mbsData[etapeKey]?.forEach(subject => {
-                const codePrefix = subject.code.substring(0, 3);
-                subjectCodes.add(codePrefix);
-            });
-        });
-        Array.from(subjectCodes).sort().forEach(code => {
-            const currentUnitValue = currentUnits[code] || 2; 
-            const li = document.createElement('div');
-            li.className = 'unite-item flex justify-between items-center border-b border-gray-200 py-2';
-            li.innerHTML = `
-                <span class="text-gray-700">${subjectList[code] || code} (${code})</span>
-                <input type="number" class="w-20 text-right p-1 border rounded-md" value="${currentUnitValue}" min="0" max="10" data-code="${code}" onchange="saveCustomUnits()">
-            `;
-            unitesListEl.appendChild(li);
-        });
-        window.saveCustomUnits = saveCustomUnits;
-    }
-
-    // --- START THE APP ---
-    init();
-});
-    </script>
 </body>
 </html>
