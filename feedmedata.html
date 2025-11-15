@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Moteur IA (Pathfinder V3)</title>
+    <title>Moteur IA (Pathfinder V3 - Final)</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -214,7 +214,7 @@
 
                 <div class="mt-6">
                     <button id="predict-button" class="btn-primary" disabled>
-                        <span>🔮 Lancer la Prédiction</span>
+                        <span>📊 Soumettre Données & Prédire</span>
                     </button>
                 </div>
 
@@ -228,10 +228,10 @@
             </div>
         </div>
     </div>
-<script>
+
+    <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- CONSTANTS ---
-            // These constants MUST be defined here, as the script was incorrectly trying to load them from mbsData.
+            // --- CONSTANTS (FIXED) ---
             const gradeMap = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 85, 'B': 80, 'B-': 75, 'C+': 70, 'C': 65, 'C-': 60, 'D+': 55, 'D': 50, 'E': 45 };
             const subjectList = { 'ART': "Arts Plastiques", 'MUS': "Musique", 'DRM': "Art Dramatique", 'CAT': "Conception et Application Technologique", 'FRA': "Français", 'ELA': "English Language Arts", 'EESL': "Anglais enrichi", 'ESL': "Anglais langue seconde", 'SN': "Math SN", 'CST': "Math CST", 'ST': "Science et Technologie", 'STE': "Science et Tech. Env.", 'HQC': "Histoire", 'CCQ': "Culture et Citoyenneté", 'EPS': "Éducation Physique", 'CHI': "Chimie", 'PHY': "Physique", 'MON': "Monde Contemporain", 'MED': "Média", 'ENT': "Entrepreneuriat", 'INF': "Informatique", 'PSY': "Psychologie", 'FIN': "Éducation Financière" };
             const MODEL_STORAGE_PATH = 'localstorage://student-ai-model-v1';
@@ -251,23 +251,15 @@
             const predictionContextEl = document.getElementById('prediction-context');
 
             // --- AI & Data State ---
-            let allAssignments = []; // Our entire dataset
-            let subjectDataMap = {}; // For tracking subject-specific data
+            let allAssignments = [];
+            let subjectDataMap = {};
             let tfModel = null;
             let mbsData = {};
 
-            // --- FIX: Change "Predict" Button Text ---
-            predictButton.querySelector('span').textContent = '📊 Soumettre Données & Prédire';
-
-
             // ==========================================================
             // 1. DATA EXTRACTION & PRE-PROCESSING
-            // (The fix for the "Error loading data" is here)
             // ==========================================================
 
-            /**
-             * Helper function to robustly get the numeric grade.
-             */
             function getNumericGrade(result) {
                 if (!result) return null;
                 const trimmed = result.trim().toLowerCase();
@@ -290,9 +282,6 @@
                 return null; 
             }
 
-            /**
-             * Loads and extracts all assignment data.
-             */
             function extractAllAssignments() {
                 let flatData = [];
                 let subjectCounters = {};
@@ -302,7 +291,6 @@
                 try {
                     mbsData = JSON.parse(localStorage.getItem('mbsData')) || {};
                     
-                    // Critical check: if no data or data is invalid, stop here.
                     if (!mbsData.valid) {
                         statusEl.innerHTML = '<strong class="text-red-600">Erreur au chargement des données. Assurez-vous d\'avoir des données dans le Local Storage.</strong>';
                         return;
@@ -319,7 +307,6 @@
                                 }
 
                                 subject.competencies.forEach(comp => {
-                                    // Robustly extract CompWeight (e.g., "Compétence 1 (40%)")
                                     const compWeightMatch = comp.name.match(/\((\d+)%\)/);
                                     const compWeight = compWeightMatch ? parseFloat(compWeightMatch[1]) : 0;
 
@@ -347,7 +334,6 @@
                     allAssignments = flatData;
                     dataPointsEl.textContent = allAssignments.length;
                     
-                    // Populate the dropdown with found subjects
                     subjectSelect.innerHTML = '<option value="">-- Choisir une matière --</option>';
                     Array.from(subjectsFound).sort().forEach(code => {
                         const opt = document.createElement('option');
@@ -356,7 +342,6 @@
                         subjectSelect.appendChild(opt);
                     });
 
-
                 } catch (e) {
                     console.error("Failed to load or parse mbsData:", e);
                     statusEl.innerHTML = '<strong class="text-red-600">Erreur critique dans la structure des données.</strong>';
@@ -364,11 +349,12 @@
             }
 
             // ==========================================================
-            // 2. TENSORFLOW.JS MODEL MANAGEMENT (Unchanged)
+            // 2. TENSORFLOW.JS MODEL MANAGEMENT
             // ==========================================================
 
             function createNewModel() {
                 const model = tf.sequential();
+                // Normalization is the first layer
                 model.add(tf.layers.normalization({ inputShape: [3] }));
                 model.add(tf.layers.dense({ units: 32, activation: 'relu' }));
                 model.add(tf.layers.dropout({ rate: 0.1 }));
@@ -394,12 +380,14 @@
                 }
             }
             
+            // --- TRAIN MODEL (ROBUST VERSION) ---
             async function trainModel() {
                 if (allAssignments.length < 20) {
                     logToScreen(`Pas assez de données (${allAssignments.length}). Minimum 20 points de données requis pour l'entraînement.`);
                     return;
                 }
 
+                // Create Tensors inside tf.tidy for memory management
                 const { inputTensor, labelTensor } = tf.tidy(() => {
                     tf.util.shuffle(allAssignments);
 
@@ -413,45 +401,61 @@
                 });
 
                 logToScreen("Adaptation de la couche de normalisation...");
-                await tfModel.layers[0].adapt(inputTensor);
-
-                logToScreen("Début de l'entraînement... (Ceci peut prendre un moment)");
                 trainButton.classList.add('loading');
                 trainButton.disabled = true;
 
-                await tfModel.fit(inputTensor, labelTensor, {
-                    epochs: 50,
-                    batchSize: 16,
-                    validationSplit: 0.2,
-                    callbacks: {
-                        onEpochEnd: (epoch, logs) => {
-                            const valLoss = logs.val_loss.toFixed(2);
-                            logToScreen(`Époque ${epoch + 1}/50 - Perte: ${logs.loss.toFixed(2)} - Perte Val: ${valLoss}`);
-                            if (epoch === 49) {
-                                logToScreen(`Entraînement terminé ! Perte finale : ${valLoss}`);
+                try {
+                    // Check for NaN/Infinity before adaptation (critical)
+                    if (inputTensor.some(t => t.isNaN()).dataSync()[0] || inputTensor.some(t => t.isInf()).dataSync()[0]) {
+                        throw new Error("NaNs or Infinity found in input data. Cannot normalize.");
+                    }
+                    
+                    // Reset normalization layer weights before adapting to new data
+                    tfModel.layers[0].setWeights([]);
+                    
+                    // Adapt the normalization layer. This is where low-variance data can cause issues.
+                    await tfModel.layers[0].adapt(inputTensor);
+
+                    logToScreen("Début de l'entraînement... (Ceci peut prendre un moment)");
+
+                    await tfModel.fit(inputTensor, labelTensor, {
+                        epochs: 50,
+                        batchSize: 16,
+                        validationSplit: 0.2,
+                        callbacks: {
+                            onEpochEnd: (epoch, logs) => {
+                                const valLoss = logs.val_loss.toFixed(2);
+                                logToScreen(`Époque ${epoch + 1}/50 - Perte: ${logs.loss.toFixed(2)} - Perte Val: ${valLoss}`);
+                                if (epoch === 49) {
+                                    logToScreen(`Entraînement terminé ! Perte finale : ${valLoss}`);
+                                }
                             }
                         }
-                    }
-                });
-                
-                await tfModel.save(MODEL_STORAGE_PATH);
-                logToScreen("Modèle intelligent sauvegardé dans le stockage local !");
-                
-                trainButton.classList.remove('loading');
-                trainButton.disabled = false;
-                predictButton.disabled = false;
+                    });
+                    
+                    await tfModel.save(MODEL_STORAGE_PATH);
+                    logToScreen("Modèle intelligent sauvegardé dans le stockage local !");
 
-                inputTensor.dispose();
-                labelTensor.dispose();
+                } catch (e) {
+                    let errorMessage = e.message;
+                    if (e.message.includes('Infinities or NaNs')) {
+                         errorMessage = "ÉCHEC: Les données sont trop uniformes (écart-type zéro) ou contiennent des NaN. Veuillez ajouter plus de données variées.";
+                    }
+                    logToScreen(`❌ ÉCHEC DE L'ENTRAÎNEMENT: ${errorMessage}`);
+                } finally {
+                    trainButton.classList.remove('loading');
+                    trainButton.disabled = false;
+                    predictButton.disabled = false;
+                    
+                    inputTensor.dispose();
+                    labelTensor.dispose();
+                }
             }
 
             // ==========================================================
             // 3. UI & EVENT LISTENERS
             // ==========================================================
 
-            /**
-             * Renamed from runPrediction to reflect user intent to submit data.
-             */
             function submitAndPredict() {
                 const subjectCode = subjectSelect.value;
                 const pond = parseFloat(pondInput.value);
@@ -462,7 +466,6 @@
                     return;
                 }
                 
-                // Find the *next* time step for this subject
                 const subjectTimes = subjectDataMap[subjectCode]?.time || [0];
                 const nextTime = Math.max(0, ...subjectTimes) + 1;
                 
