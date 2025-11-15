@@ -1,41 +1,40 @@
 <!DOCTYPE html>
-<html lang="fr" data-theme="light">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analyseur de Performance - Outil MBS</title>
+    <title>Tableau de Bord - Outil MBS</title>
     <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
-    <!-- Font Awesome & Google Fonts -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons (Updated & Reliable CDN Link) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* Theme & Animation */
+            /* Animation Transition */
             --transition-duration: 0.35s;
 
-            /* Light Mode Variables (Analyzer Theme) */
-            --primary-color: #5B21B6; /* Violet from Analyzer */
-            --primary-color-hover: #4C1D95;
-            --secondary-color: #059669; /* Green from Analyzer */
-            --warning-color: #F59E0B; /* Yellow from Analyzer */
-            --danger-color: #DC2626; /* Red from Analyzer */
-
-            --background-color: #f7f9fb;
+            /* Light Mode Variables */
+            --primary-color: #2980b9;
+            --secondary-color: #2c3e50;
             --side-panel-color: #ffffff;
-            --widget-background: #ffffff;
             --widget-darker-color: #f0f4f7;
-            --text-color: #1f2937;
-            --text-muted-color: #4b5563;
-            --heading-color: #111827;
+            --background-color: #f7f9fb;
+            --widget-background: #ffffff;
+            --text-color: #34495e;
             --light-grey: #bdc3c7;
-            --border-color: #e0e6eb;
-
+            --footer-grey: #7f8c8d;
+            --success-color: #27ae60;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
             --shadow-header: 0 2px 4px rgba(0, 0, 0, 0.05);
             --shadow-widget: 0 8px 15px rgba(0, 0, 0, 0.08);
-
-            --btn-secondary-bg: #e0e6eb;
-            --btn-secondary-color: #34495e;
-            --btn-secondary-hover-bg: #d1d8de;
+            --border-color: #e0e6eb;
+            --tab-border-color: #ddd;
+            --input-bg-color: white;
+            /* Button Inversion Colors (Light Mode Base) */
+            --btn-secondary-bg: var(--secondary-color);
+            --btn-secondary-color: white;
+            --btn-secondary-hover-bg: #3a536b;
         }
 
         /* DARK MODE VARIABLES */
@@ -45,457 +44,343 @@
             --widget-background: #1e1e1e;
             --widget-darker-color: #282828;
             --text-color: #e0e0e0;
-            --text-muted-color: #a0a0a0;
-            --heading-color: #ffffff;
+            --secondary-color: #bbbbbb;
             --light-grey: #757575;
+            --footer-grey: #a0a0a0;
+            --shadow-header: 0 2px 5px rgba(255, 255, 255, 0.1);
+            --shadow-widget: 0 5px 10px rgba(0, 0, 0, 0.3);
             --border-color: #333333;
+            --tab-border-color: #444444;
+            --input-bg-color: #282828;
+            /* Button Inversion Colors (Dark Mode Inverted) */
+            --btn-secondary-bg: #bbbbbb; /* Light grey background */
+            --btn-secondary-color: #121212; /* Dark text */
+            --btn-secondary-hover-bg: #d0d0d0;
 
-            --shadow-header: 0 2px 5px rgba(0, 0, 0, 0.2);
-            --shadow-widget: 0 5px 15px rgba(0, 0, 0, 0.3);
-
-            --btn-secondary-bg: #333333;
-            --btn-secondary-color: #e0e0e0;
-            --btn-secondary-hover-bg: #444444;
+            /* Specific element adjustments for dark mode */
+            .site-header { color: var(--text-color); }
+            .nav-arrow { color: var(--text-color); }
+            .moyenne-widget { border-color: #333; }
+            .subject-averages { border-top-color: #333; }
+            .subject-table thead tr:first-child th { background-color: #333; color: white; }
+            .subject-table thead tr:last-child th { background-color: #222; color: var(--text-color); }
+            .subject-table th, .subject-table td { border-bottom-color: #282828; }
+            .competency-row td { background-color: #222; color: var(--secondary-color); }
+            footer { border-top-color: #333; }
+            .modal-content { background-color: var(--side-panel-color); }
+            .unite-item:nth-child(even) { background-color: #222; }
+            .pond-input-field.modified-input, .grade-input-field.modified-input { background-color: #332b1a; border-color: var(--warning-color); }
         }
 
-        /* GLOBAL TRANSITIONS */
-        body, .site-header-container, .side-panel, .content-area, .modal-content, .btn, .tab-btn {
+        /* GLOBAL TRANSITIONS for smooth theme change */
+        body, .site-header-container, .side-panel, .moyenne-widget, .subject-table, .modal-content, .tab-btn, .btn, select, input {
             transition: background-color var(--transition-duration) ease, color var(--transition-duration) ease, border-color var(--transition-duration) ease, box-shadow var(--transition-duration) ease;
         }
-        * { box-sizing: border-box; }
 
-        /* PAGE LOAD ANIMATION */
-        @keyframes fadeInSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        /* SMOOTHER Page Load Animation Keyframes */
+        @keyframes fadeInSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(25px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        /* Initial state and animation application for main elements */
         .site-header-container, .main-container, footer {
             opacity: 0;
-            animation: fadeInSlideUp 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-        }
-        .main-container { animation-delay: 0.1s; }
-        footer { animation-delay: 0.2s; }
-
-        /* GENERAL & LAYOUT */
-        body {
-            margin: 0; font-family: 'Inter', sans-serif;
-            background-color: var(--background-color); color: var(--text-color);
-            font-size: 16px;
+            transform: translateY(25px);
+            /* Smoother easing function and slightly longer duration */
+            animation: fadeInSlideUp 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
         }
         .main-container {
-            display: flex; max-width: 1800px; margin: 0 auto;
-            padding: 0 20px; align-items: flex-start; gap: 30px;
+            animation-delay: 0.2s; /* Stagger the main content */
         }
-        .side-panel {
-            flex: 0 0 380px; position: sticky; top: 20px; background-color: var(--side-panel-color);
-            border-radius: 12px; padding: 25px; box-shadow: var(--shadow-widget);
-            border: 1px solid var(--border-color);
-        }
-        .content-area {
-            flex-grow: 1; background-color: var(--widget-background);
-            border-radius: 12px; padding: 25px; box-shadow: var(--shadow-widget);
-            border: 1px solid var(--border-color);
-        }
-        @media (max-width: 1200px) {
-            .main-container { flex-direction: column; }
-            .side-panel { width: 100%; flex: 0 0 auto; position: static; }
+        footer {
+            animation-delay: 0.4s; /* Stagger the footer */
         }
 
-        /* HEADER */
+        /* General Styles */
+        body {
+            margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background-color); color: var(--text-color);
+        }
         .site-header-container {
             background-color: var(--widget-background); box-shadow: var(--shadow-header);
             border-bottom: 1px solid var(--border-color); padding: 15px 25px;
             display: flex; align-items: center; justify-content: space-between; position: relative; margin-bottom: 20px;
         }
-        .header-left, .header-right { display: flex; align-items: center; gap: 15px; }
+        .header-left { display: flex; align-items: center; }
         .header-center { position: absolute; left: 50%; transform: translateX(-50%); }
+        .header-right { display: flex; align-items: center; gap: 15px; } /* Added align-items for vertical centering */
         .site-header {
-            margin: 0; color: var(--heading-color);
-            font-size: 2em; font-weight: 700; font-family: 'Playfair Display', serif;
+            padding: 0; margin: 0; color: var(--secondary-color);
+            font-size: 2.2em; font-weight: 700; font-family: 'Playfair Display', serif;
         }
         .nav-arrow {
-            font-size: 1.8em; color: var(--text-muted-color); text-decoration: none;
+            font-size: 2em; color: var(--secondary-color); text-decoration: none;
             transition: color 0.2s, transform 0.2s;
         }
         .nav-arrow:hover { color: var(--primary-color); transform: scale(1.05); }
-
-        /* BUTTONS & CONTROLS */
-        .btn, .icon-btn {
-            display: inline-flex; align-items: center; justify-content: center;
-            padding: 10px 18px; border: none; border-radius: 8px;
-            font-size: 0.95em; font-weight: 600; cursor: pointer; text-decoration: none;
-            transition: all 0.2s, box-shadow 0.2s;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
-        .btn-primary { background-color: var(--primary-color); color: white; }
-        .btn-primary:hover { background-color: var(--primary-color-hover); }
-        .btn-secondary { background-color: var(--btn-secondary-bg); color: var(--btn-secondary-color); }
-        .btn-secondary:hover { background-color: var(--btn-secondary-hover-bg); }
-
+        /* Dark Mode Toggle Button Styling */
         .icon-btn {
-            background: none; border: 2px solid var(--light-grey); color: var(--text-muted-color);
-            width: 40px; height: 40px; border-radius: 50%; padding: 0; font-size: 1.1em;
-            box-shadow: none;
+            background: none; border: 2px solid var(--light-grey); color: var(--text-color);
+            width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; font-size: 1.1em;
+            transition: all 0.2s ease, background-color var(--transition-duration);
         }
         .icon-btn:hover {
             border-color: var(--primary-color); color: var(--primary-color);
-            transform: scale(1.1) rotate(5deg);
-        }
-        select, input[type="range"] {
-            width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);
-            background-color: var(--widget-darker-color); color: var(--text-color);
+            transform: scale(1.1);
         }
 
-        /* SIDE PANEL COMPONENTS */
-        .side-panel h2 { font-size: 1.5rem; font-weight: 700; color: var(--heading-color); margin-top:0; }
-        .side-panel h3 { font-size: 1.1rem; font-weight: 600; color: var(--heading-color); margin-top:1.75rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; }
+        .main-container {
+            display: flex; max-width: 1600px; margin: 0 auto;
+            padding: 0 20px; align-items: flex-start; gap: 30px;
+        }
+        .data-section { flex: 3; }
+        .side-panel {
+            flex: 1; position: sticky; top: 20px; background-color: var(--side-panel-color);
+            border-radius: 12px; padding: 25px; box-shadow: var(--shadow-widget);
+        }
+        .moyenne-widgets { display: flex; gap: 15px; margin-bottom: 25px; }
+        .moyenne-widget {
+            flex: 1; background-color: var(--widget-darker-color); border-radius: 10px;
+            padding: 15px; text-align: center; border: 1px solid var(--border-color);
+        }
+        .moyenne-widget h4 { margin: 0 0 8px 0; font-size: 0.85em; color: var(--secondary-color); font-weight: 500; }
+        .moyenne-value { font-size: 2.2em; font-weight: bold; color: var(--primary-color); }
+        .moyenne-value.invalid { color: var(--danger-color); }
+        .control-group { margin-bottom: 20px; }
+        .control-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
+        select {
+            width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd;
+            background-color: var(--input-bg-color); color: var(--text-color); -webkit-appearance: none; appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='5'%3E%3Cpath d='M0 0l5 5 5-5z' fill='%232c3e50'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 15px center; background-size: 10px;
+        }
+        [data-theme="dark"] select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='5'%3E%3Cpath d='M0 0l5 5 5-5z' fill='%23bbbbbb'/%3E%3C/svg%3E");
+        }
+        .subject-averages { margin-top: 25px; padding-top: 15px; border-top: 1px solid var(--border-color); }
+        .subject-averages h4 { margin-top: 0; color: var(--secondary-color); font-size: 1.1em; margin-bottom: 15px; }
+        #subject-averages-list { list-style: none; padding: 0; margin: 0; font-size: 0.9em; }
+        #subject-averages-list li { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dotted var(--border-color); }
+        .btn {
+            display: inline-block; padding: 12px 20px; border: none; border-radius: 8px;
+            font-size: 0.95em; font-weight: 600; cursor: pointer; text-decoration: none;
+            color: white; transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+            text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+        .btn-primary { background-color: var(--primary-color); }
+        .btn-primary:hover { background-color: #3498db; }
         
-        .prediction-main-card {
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-color-hover));
-            color: white; padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem;
+        /* Secondary Button (Inverted in Dark Mode) */
+        .btn-secondary { 
+            background-color: var(--btn-secondary-bg);
+            color: var(--btn-secondary-color); 
         }
-        .prediction-main-card p { margin: 0; font-weight: 500; opacity: 0.9; font-size: 0.9rem;}
-        #moyenne-prediction { font-size: 2.75rem; font-weight: 800; display: block; }
-
-        /* Gauge */
-        .gauge-container { width: 100%; padding: .5rem 0; margin-top: .5rem; margin-bottom: 1rem; }
-        .gauge-bar { width: 100%; height: 12px; background: linear-gradient(90deg, var(--danger-color), var(--warning-color), var(--secondary-color)); border-radius: 6px; position: relative; box-shadow: inset 0 1px 3px rgba(0,0,0,.2); }
-        .gauge-needle { position: absolute; top: -4px; width: 4px; height: 20px; background-color: var(--heading-color); border-radius: 2px; border: 2px solid var(--side-panel-color); box-shadow: 0 0 5px rgba(0,0,0,.5); transform: translateX(-50%); transition: left .5s ease-out; }
-        .gauge-labels { display: flex; justify-content: space-between; font-size: .8rem; font-weight: 600; color: var(--text-muted-color); margin-top: .5rem; }
-        #gauge-label-p50 { color: var(--primary-color); }
-
-        /* Score Cards */
-        .score-card { display: flex; align-items: center; gap: 1rem; padding: 0.75rem; border-radius: 8px; background-color: var(--widget-darker-color); border: 1px solid var(--border-color); }
-        .score-card p { margin: 0; font-size: 0.85rem; color: var(--text-muted-color); }
-        .score-card strong { font-size: 1.5rem; color: var(--heading-color); }
-        .score-icon { font-size: 1.5rem; }
-        #burnout-risk-score strong { color: var(--danger-color); }
-        #dff-score strong { color: var(--warning-color); }
-        
-        /* AI Insight Box */
-        .ai-insight-box { background-color: var(--widget-darker-color); border: 1px solid var(--border-color); border-left: 4px solid var(--primary-color); border-radius: 8px; padding: 1rem; margin-top: 1rem; }
-        .ai-insight-box h4 { display: flex; align-items: center; font-size: 1rem; font-weight: 700; color: var(--primary-color); margin:0 0 .75rem 0; }
-        .ai-insight-box h4 span { font-size: 1.25rem; margin-right: .5rem; }
-        .ai-insight-box ul { list-style-type: none; padding-left: 0; margin: 0; font-size: .875rem; }
-        .ai-insight-box li { position: relative; padding-left: 1.75rem; margin-bottom: .5rem; color: var(--text-color); line-height: 1.5; }
-        .ai-insight-box li::before { font-size: 1rem; position: absolute; left: 0; top: 1px; }
-        .ai-insight-box li.insight-good::before { content: '✅'; } .ai-insight-box li.insight-info::before { content: 'ℹ️'; } .ai-insight-box li.insight-trend::before { content: '📈'; }
-        .ai-insight-box li.insight-focus::before { content: '🎯'; } .ai-insight-box li.insight-priority::before { content: '🧠'; } .ai-insight-box li.insight-erratic::before { content: '⚡'; }
-
-        /* TABS */
-        .tabs { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 20px; }
-        .tab-btn { padding: 12px 20px; cursor: pointer; border: none; background: none; font-size: 1.05em; font-weight: 600; color: var(--text-muted-color); position: relative; border-bottom: 3px solid transparent; }
-        .tab-btn.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
-        .tab-content { display: none; } .tab-content.active { display: block; animation: fadeInSlideUp 0.5s; }
-
-        /* MAIN CONTENT TABLES & CARDS */
-        .content-area h1 { font-size: 2rem; font-weight: 700; margin-top: 0; color: var(--heading-color); }
-        .content-area h2 { font-size: 1.5rem; font-weight: 600; color: var(--primary-color); }
-        .content-area h3 { font-size: 1.25rem; font-weight: 600; color: var(--heading-color); margin-top: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; }
-        .content-area p { color: var(--text-muted-color); line-height: 1.6; }
-
-        .subject-table, .probability-table {
-            width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 1.5rem;
-            background: var(--background-color); box-shadow: var(--shadow-widget); border-radius: 12px; overflow: hidden;
+        .btn-secondary:hover { 
+            background-color: var(--btn-secondary-hover-bg); 
+            color: var(--btn-secondary-color);
         }
-        .subject-table th, .subject-table td, .probability-table th, .probability-table td {
-            padding: 14px 18px; text-align: left; border-bottom: 1px solid var(--border-color);
-        }
-        .subject-table thead th, .probability-table thead th {
-            background-color: var(--widget-darker-color); color: var(--text-muted-color); font-weight: 600; font-size: 0.85em; text-transform: uppercase;
-        }
-        .subject-table tbody tr:last-child td, .probability-table tbody tr:last-child td { border-bottom: none; }
-        .grade-percentage { font-weight: 700; color: var(--primary-color); }
-        .prob-high { background-color: rgba(5, 150, 105, 0.1); color: #065F46; } .prob-medium { background-color: rgba(245, 158, 11, 0.1); color: #92400E; } .prob-low { background-color: rgba(220, 38, 38, 0.1); color: #991B1B; }
-        [data-theme="dark"] .prob-high { color: #A7F3D0; } [data-theme="dark"] .prob-medium { color: #FCD34D; } [data-theme="dark"] .prob-low { color: #FCA5A5; }
 
-        .prediction-card {
-            background-color: var(--widget-darker-color); padding: 1rem; border-radius: 8px;
-            border-left: 4px solid; margin-bottom: 1rem; transition: all .2s;
-            box-shadow: 0 1px 3px rgba(0,0,0,.05); border-top: 1px solid var(--border-color);
-        }
-        .card-green { border-left-color: var(--secondary-color); } .card-violet { border-left-color: var(--primary-color); }
-        .card-yellow { border-left-color: var(--warning-color); } .card-red { border-left-color: var(--danger-color); }
-        .card-score { font-size: 1.875rem; font-weight: 800; margin-top: .25rem; color: var(--heading-color); }
-
-        /* MODAL (HELP & UNITS) */
-        .modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center;
-            z-index: 1000; opacity: 0; visibility: hidden; transition: opacity var(--transition-duration), visibility var(--transition-duration);
-        }
-        .modal.active { opacity: 1; visibility: visible; }
-        .modal-content {
-            background-color: var(--side-panel-color); padding: 30px; border-radius: 12px; width: 90%; max-width: 500px; position: relative;
-            transform: scale(0.9) translateY(-20px);
-            transition: transform var(--transition-duration) cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            max-height: 90vh; overflow-y: auto;
-        }
-        .modal.active .modal-content { transform: scale(1) translateY(0); }
-        .modal-close { position: absolute; top: 10px; right: 15px; font-size: 2em; cursor: pointer; color: var(--light-grey); line-height: 1; }
-        #help-modal .modal-content { max-width: 750px; }
-        .help-title { font-size: 1.5rem; font-weight: 700; color: var(--primary-color); margin:0 0 1rem 0; text-align: left; }
-        .help-section-title { font-size: 1.25rem; font-weight: 600; color: var(--primary-color); margin-top: 1.5rem; border-bottom: 2px solid var(--primary-color); padding-bottom: 4px; margin-bottom: 1rem; }
-
-        /* FOOTER */
-        footer { text-align: center; padding: 25px; font-size: 0.9em; color: var(--text-muted-color); border-top: 1px solid var(--border-color); margin-top: 40px; }
+        .btn-full-width { width: 100%; display: block; }
+        .tabs { display: flex; border-bottom: 2px solid var(--tab-border-color); margin-bottom: 20px; }
+        .tab-btn { padding: 12px 20px; cursor: pointer; border: none; background: none; font-size: 1.05em; font-weight: 600; color: var(--light-grey); position: relative; }
+        .tab-btn.active { color: var(--primary-color); }
+        .tab-btn.active::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 3px; background-color: var(--primary-color); transition: width 0.3s ease; }
+        .tab-content { display: none; transition: opacity 0.3s ease; }
+        .tab-content.active { display: block; }
+        .subject-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 30px; background: var(--widget-background); box-shadow: var(--shadow-widget); border-radius: 12px; overflow: hidden; }
+        .subject-table th, .subject-table td { padding: 14px 18px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        [data-theme="dark"] .subject-table th, [data-theme="dark"] .subject-table td { border-bottom-color: #282828; }
+        .subject-table thead tr:first-child th { background-color: var(--secondary-color); color: white; font-size: 1.1em; }
+        .subject-table thead tr:last-child th { background-color: #f8f9fa; color: var(--text-color); font-size: 0.85em; text-transform: uppercase; }
+        .competency-row td { background-color: #eaf2f8; color: var(--secondary-color); font-weight: bold; font-style: italic; }
+        .no-data { color: var(--light-grey); font-style: italic; text-align: center; padding: 40px; }
+        .grade-percentage { font-weight: 700; color: var(--success-color); }
+        footer { text-align: center; padding: 25px; font-size: 0.9em; color: var(--footer-grey); border-top: 1px solid var(--border-color); margin-top: 40px; }
         footer a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
+        footer a:hover { text-decoration: underline; }
+
+        /* Modal/Popup Animations */
+        .modal-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; 
+            z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-content { 
+            background-color: white; padding: 30px; border-radius: 12px; width: 450px; position: relative; 
+            transform: scale(0.9) translateY(-20px); 
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .modal-overlay.active .modal-content {
+            transform: scale(1) translateY(0);
+        }
+        .modal-close { position: absolute; top: 10px; right: 15px; font-size: 2em; cursor: pointer; color: var(--light-grey); }
+        .unite-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; }
+        .unite-item:nth-child(even) { background-color: #fcfdfe; }
+        .unite-item input { width: 70px; text-align: center; padding: 6px; border: 1px solid #ddd; border-radius: 6px; }
+        .hidden { display: none !important; }
+        .pond-input-field, .grade-input-field { 
+            text-align: center; border-radius: 6px; border: 1px solid #ccc; padding: 6px; width: 60px;
+            background-color: var(--input-bg-color); color: var(--text-color);
+        }
+        .grade-input-field { width: 80px; }
+        .pond-input-field.modified-input, .grade-input-field.modified-input { border-color: var(--warning-color); background-color: #fff9f0; }
+        .grade-display { cursor: pointer; min-height: 30px; display: inline-block; padding: 4px; border-radius: 4px; }
     </style>
 </head>
 <body>
 
     <header class="site-header-container">
         <div class="header-left">
-            <a href="index.html" class="nav-arrow" title="Retour à l'accueil"><i class="fa-solid fa-arrow-left"></i></a>
+            <a href="index.html" class="nav-arrow" title="Retour à l'accueil">←</a>
         </div>
         <div class="header-center">
-            <h1 class="site-header">Analyseur</h1>
+            <h1 class="site-header">Outil MBS</h1>
         </div>
         <div class="header-right">
-            <button id="theme-toggle" class="icon-btn" aria-label="Changer de thème">
+            <button id="theme-toggle" class="icon-btn" aria-label="Changer de thème (Mode Clair/Sombre)">
                 <i class="fa-solid fa-moon"></i>
             </button>
-            <button id="open-help-btn" class="icon-btn" title="Comment ça marche ?">
-                <i class="fa-solid fa-question"></i>
-            </button>
+            <a href="projection.html" class="btn btn-secondary">Projection des résultats</a>
+            <a href="data.html" class="btn btn-secondary">Mise à jour</a>
+            <a href="improve.html" class="btn btn-primary">Analyser</a>
         </div>
     </header>
 
     <main class="main-container">
-
-        <aside class="side-panel">
-            <h2>Moteur Stochastique</h2>
-
-            <div class="prediction-main-card">
-                <p>Prédiction Globale (Tendance MC)</p>
-                <strong id="moyenne-prediction">--</strong>
-            </div>
-
-            <h3>Jauge de Performance (P5 à P95)</h3>
-            <div class="gauge-container">
-                <div class="gauge-bar">
-                    <div id="gauge-needle" class="gauge-needle" style="left: 50%;"></div>
-                </div>
-                <div class="gauge-labels">
-                    <span id="gauge-label-p5">P5: --%</span>
-                    <strong id="gauge-label-p50">P50: --%</strong>
-                    <span id="gauge-label-p95">P95: --%</span>
-                </div>
-            </div>
-            
-            <h3>Indices de Risque Dynamique</h3>
-            <div id="deep-analysis-scorecard" class="space-y-3" style="display: flex; flex-direction: column; gap: 0.75rem;">
-                <div class="score-card" id="consistency-score">
-                    <span class="score-icon">🎯</span>
-                    <div>
-                        <p>Indice de Consistance</p>
-                        <strong>--</strong>
-                    </div>
-                </div>
-                <div class="score-card" id="burnout-risk-score">
-                    <span class="score-icon">🔥</span>
-                    <div>
-                        <p>Risque de Burnout</p>
-                        <strong id="burnout-value">--</strong>
-                    </div>
-                </div>
-                <div class="score-card" id="dff-score">
-                    <span class="score-icon">📉</span>
-                    <div>
-                        <p>Facteur de Tendance Globale</p>
-                        <strong>--</strong>
-                    </div>
-                </div>
-            </div>
-
-            <div class="ai-insight-box" id="ai-insight-container">
-                <h4><span>🔎</span> Moteur de Découverte (IA)</h4>
-                <ul id="ai-insights-list">
-                    <!-- AI insights will be populated here by script -->
-                </ul>
-            </div>
-            
-            <h3>Paramètres</h3>
-            <div class="space-y-3" style="display: flex; flex-direction: column; gap: 1rem;">
-                <div>
-                    <label for="niveau-secondaire">Niveau Secondaire</label>
-                    <select id="niveau-secondaire">
-                        <option value="">Sélectionner</option>
-                        <option value="sec4">Secondaire 4</option>
-                        <option value="sec5">Secondaire 5</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="unites-mode">Mode Unités (Pondération)</label>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <select id="unites-mode" style="flex-grow:1;">
-                            <option value="defaut">Défaut (Officiel)</option>
-                            <option value="sans">Sans Unités</option>
-                            <option value="perso">Personnalisé</option>
-                        </select>
-                        <button id="unites-btn" class="btn btn-secondary">Éditer</button>
-                    </div>
-                </div>
-            </div>
-        </aside>
-
-        <section class="content-area">
-            <h1>Détails de Performance & Prédictions</h1>
-
+        <section class="data-section">
             <div class="tabs">
                 <button class="tab-btn active" data-tab="etape1">Étape 1</button>
                 <button class="tab-btn" data-tab="etape2">Étape 2</button>
                 <button class="tab-btn" data-tab="etape3">Étape 3</button>
-                <button class="tab-btn" data-tab="simulation">Monte Carlo & Probabilités</button>
             </div>
-
             <div id="tab-contents">
-                <div id="etape1" class="tab-content active"></div>
+                <div id="etape1" class="tab-content active">
+                    <!-- Placeholder text restored. The "no-data" class is used for styling. -->
+                    <p class="no-data">Veuillez vous rendre sur la page "Mise à jour" pour importer vos données.</p>
+                </div>
                 <div id="etape2" class="tab-content"></div>
                 <div id="etape3" class="tab-content"></div>
-
-                <div id="simulation" class="tab-content">
-                    <h2>Analyse Prédictive Stochastique</h2>
-                    <p>Le modèle utilise la <strong>Régression Linéaire</strong> pour la tendance et projette la performance future. Les probabilités sont calculées via une <strong>CDF Normale</strong> basée sur votre tendance et volatilité (Écart-Type). Ces données sont des estimations statistiques.</p>
-
-                    <h3>Prédictions de Moyenne Finale Globale</h3>
-                    <div id="global-predictions" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
-                        <!-- Prediction cards go here -->
-                    </div>
-
-                    <h3>Analyse de Déséquilibre (Volatilité / Effort)</h3>
-                    <div id="mismatch-analysis" class="space-y-4">
-                        <!-- Mismatch analysis cards go here -->
-                    </div>
-
-                    <h3>Analyse de Chemin : Moyenne Requise</h3>
-                    <p>Moyenne exacte que vous devez obtenir dans les étapes futures pour atteindre chaque objectif global.</p>
-                    <table class="probability-table w-full">
-                        <thead>
-                            <tr>
-                                <th>Objectif (%)</th>
-                                <th>Requis E2 (%)</th>
-                                <th>Prob. (%)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="probability-table-body-e2"></tbody>
-                    </table>
-                    <table class="probability-table w-full" style="margin-top: 1rem;">
-                        <thead>
-                            <tr>
-                                <th>Objectif (%)</th>
-                                <th>Requis E3 (%)</th>
-                                <th>Prob. (%)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="probability-table-body-e3"></tbody>
-                    </table>
-                </div>
             </div>
         </section>
+
+        <aside class="side-panel">
+            <div class="moyenne-widgets">
+                <div class="moyenne-widget"><h4>Moyenne générale</h4><div id="moyenne-generale" class="moyenne-value">--</div></div>
+                <div class="moyenne-widget"><h4>Moyenne de l'étape</h4><div id="moyenne-etape" class="moyenne-value">--</div></div>
+            </div>
+            <div class="control-group">
+                <label for="niveau-secondaire">Niveau Secondaire</label>
+                <select id="niveau-secondaire">
+                    <option value="">-- Sélectionner --</option>
+                    <option value="sec4">Secondaire 4</option>
+                    <option value="sec5">Secondaire 5</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <button id="unites-btn" class="btn btn-secondary btn-full-width">Configurer les unités</button>
+            </div>
+            
+            <div id="ponderation-controls" class="hidden" style="background-color: #fff9f0; padding: 15px; border-radius: 8px; border: 1px solid var(--warning-color); margin-bottom: 20px;">
+                <p style="font-weight: bold; text-align: center; margin-top: 0; color: var(--text-color);">Pondérations modifiées</p>
+                <div style="display: flex; gap: 10px;">
+                    <button id="save-ponds-btn" class="btn btn-primary" style="flex:1;">Sauvegarder</button>
+                    <button id="revert-ponds-btn" class="btn btn-secondary" style="background-color: #95a5a6; flex:1;">Annuler</button>
+                </div>
+            </div>
+
+            <div class="subject-averages">
+                <h4>Moyennes par matière</h4>
+                <ul id="subject-averages-list"><li class="no-data">Aucune donnée</li></ul>
+            </div>
+        </aside>
     </main>
 
-    <!-- HELP MODAL -->
-    <div id="help-modal" class="modal">
+    <div class="modal-overlay" id="unites-modal">
         <div class="modal-content">
-            <span id="close-help-modal" class="modal-close">&times;</span>
-            <h2 class="help-title">Guide Détaillé de l'Analyseur</h2>
-            <p>Cet outil analyse votre <b>tendance</b> (votre "élan") et votre <b>volatilité</b> (votre stabilité) pour prédire vos performances.</p>
-            <h3 class="help-section-title">Le Cœur de l'IA : La Régression Linéaire</h3>
-            <p>L'IA trouve la "ligne de tendance" qui passe au milieu de vos notes pour analyser la <b>relation</b> entre deux variables. Elle effectue 3 analyses distinctes :</p>
-            <ol>
-                <li><b>TENDANCE (Note vs. Temps) :</b> Est-ce que vos notes montent ou baissent avec le temps ?</li>
-                <li><b>FOCUS (Note vs. Pondération du Devoir) :</b> Réussissez-vous mieux les petits devoirs ou les gros examens ?</li>
-                <li><b>PRIORITÉ (Note vs. Pondération de la Compétence) :</b> Êtes-vous meilleur dans les compétences mineures ou majeures ?</li>
-            </ol>
-            <!-- ... More help content from your original file can be added here ... -->
+            <span class="modal-close" id="close-unites-modal">&times;</span>
+            <h3>Configuration des Unités</h3>
+            <div class="control-group">
+                <select id="unites-mode">
+                    <option value="defaut">Unités par défaut</option>
+                    <option value="sans">Sans unités (tout = 1)</option>
+                    <option value="perso">Personnalisée</option>
+                </select>
+            </div>
+            <div id="unites-list"></div>
         </div>
     </div>
 
-    <!-- UNITS MODAL -->
-    <div id="unites-modal" class="modal">
-        <div class="modal-content">
-            <span id="close-unites-modal" class="modal-close">&times;</span>
-            <h3>Unités par Matière</h3>
-            <p>Ajustez les unités pour chaque matière si le mode 'Personnalisé' est sélectionné.</p>
-            <div id="unites-list" style="max-height: 60vh; overflow-y: auto; border: 1px solid var(--border-color); padding: 1rem; border-radius: 8px;"></div>
-            <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
-                <button id="apply-unites-changes" class="btn btn-primary">Fermer & Appliquer</button>
-            </div>
-        </div>
-    </div>
-    
     <footer>
         <p>Outil MBS - Moyenne, Bilan, Stratégie</p>
         <p><a href="ticket.html">Signaler un problème</a></p>
     </footer>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- THEME CONTROL ---
-            const themeToggle = document.getElementById('theme-toggle');
-            const html = document.documentElement;
-            const toggleIcon = themeToggle.querySelector('i');
-            const THEME_KEY = 'mbs-theme';
+        // Theme setup and save to local storage
+        const themeToggle = document.getElementById('theme-toggle');
+        const html = document.documentElement;
+        const toggleIcon = themeToggle.querySelector('i');
+        
+        const THEME_KEY = 'mbs-theme';
 
-            const updateTheme = (theme) => {
-                html.setAttribute('data-theme', theme);
-                localStorage.setItem(THEME_KEY, theme);
-                toggleIcon.className = `fa-solid ${theme === 'dark' ? 'fa-sun' : 'fa-moon'}`;
-            };
+        const updateTheme = (theme) => {
+            html.setAttribute('data-theme', theme);
+            localStorage.setItem(THEME_KEY, theme);
+            // Change icon for the opposite theme
+            if (theme === 'dark') {
+                toggleIcon.classList.remove('fa-moon');
+                toggleIcon.classList.add('fa-sun');
+            } else {
+                toggleIcon.classList.remove('fa-sun');
+                toggleIcon.classList.add('fa-moon');
+            }
+        };
 
-            const storedTheme = localStorage.getItem(THEME_KEY);
-            const initialTheme = storedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-            updateTheme(initialTheme);
+        // 1. Initial Load Theme
+        const storedTheme = localStorage.getItem(THEME_KEY);
+        // Determine the initial theme
+        const initialTheme = storedTheme || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        updateTheme(initialTheme);
 
-            themeToggle.addEventListener('click', () => {
-                const newTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-                updateTheme(newTheme);
-            });
 
-            // --- MODAL CONTROL ---
-            const setupModal = (modalId, openBtnId, closeBtnSelector) => {
-                const modal = document.getElementById(modalId);
-                const openBtn = document.getElementById(openBtnId);
-                const closeBtns = document.querySelectorAll(closeBtnSelector);
-                
-                if (!modal || !openBtn) return;
-
-                const open = () => modal.classList.add('active');
-                const close = () => modal.classList.remove('active');
-
-                openBtn.addEventListener('click', open);
-                closeBtns.forEach(btn => btn.addEventListener('click', close));
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) close();
-                });
-            };
-
-            setupModal('help-modal', 'open-help-btn', '#close-help-modal');
-            setupModal('unites-modal', 'unites-btn', '#close-unites-modal, #apply-unites-changes');
-
-            // --- TABS CONTROL ---
-            const tabs = document.querySelectorAll('.tab-btn');
-            const tabContents = document.querySelectorAll('.tab-content');
-
-            tabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const target = tab.dataset.tab;
-                    
-                    tabs.forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
-
-                    tabContents.forEach(content => {
-                        content.classList.remove('active');
-                        if (content.id === target) {
-                            content.classList.add('active');
-                        }
-                    });
-                });
-            });
+        // 2. Theme Toggle Handler
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            updateTheme(newTheme);
         });
-    </script>
-    <!-- Your existing functional scripts -->
-    <script src="js/projected-averages.js"></script> 
-    <script src="js/projection.js"></script>
 
+        // 3. Modal/Popup Animation Control
+        const unitesModal = document.getElementById('unites-modal');
+        const unitesBtn = document.getElementById('unites-btn');
+        const closeUnitesModal = document.getElementById('close-unites-modal');
+
+        unitesBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            unitesModal.classList.add('active');
+        });
+
+        const closeModal = () => {
+            unitesModal.classList.remove('active');
+        };
+
+        closeUnitesModal.addEventListener('click', closeModal);
+        unitesModal.addEventListener('click', (e) => {
+            if (e.target === unitesModal) {
+                closeModal();
+            }
+        });
+
+    </script>
+    <script src="js/main-functions.js"></script>
 </body>
 </html>
