@@ -338,6 +338,69 @@
             border-radius: 8px;
             cursor: pointer;
         }
+        .order-editor-content {
+    background-color: var(--primary-color);
+    padding: 25px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.editor-instructions {
+    margin-bottom: 20px;
+    color: var(--text-secondary-color);
+    text-align: center;
+}
+
+#order-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px 0;
+    max-height: 40vh;
+    overflow-y: auto;
+}
+
+#order-list li {
+    background-color: var(--secondary-color);
+    margin-bottom: 8px;
+    padding: 10px 15px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    cursor: grab;
+    transition: background-color 0.2s;
+}
+
+#order-list li:active {
+    cursor: grabbing;
+}
+
+#order-list li.dragging {
+    opacity: 0.5;
+    background-color: var(--accent-color);
+}
+
+#order-list li .fa-grip-vertical {
+    margin-right: 15px;
+    color: var(--text-secondary-color);
+}
+
+.grade-pill {
+    margin-left: auto;
+    background-color: var(--primary-color);
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.order-editor-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+}
     </style>
 </head>
 <body>
