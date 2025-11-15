@@ -21,10 +21,10 @@ document.addEventListener('DOMContentLoaded', () => {
         mbsData.settings = mbsData.settings || {};
         mbsData.settings.objectives = mbsData.settings.objectives || {};
         mbsData.settings.chartViewPrefs = mbsData.settings.chartViewPrefs || {};
-        mbsData.settings.historyModes = mbsData.settings.historyModes || {};
+        mbsData.settings.historyModes = mbsData.settings.historyModes || {}; // 'average' or 'assignment'
 
-        mbsData.historique = mbsData.historique || {};
-        mbsData.assignmentHistory = mbsData.assignmentHistory || {};
+        mbsData.historique = mbsData.historique || {}; // ALWAYS stores average history for trend arrows
+        mbsData.assignmentHistory = mbsData.assignmentHistory || {}; // Stores user-defined assignment history for graphs
 
         mbsData.generalAverageMemory = mbsData.generalAverageMemory || [null, null];
         mbsData.assignmentsSnapshot = mbsData.assignmentsSnapshot || {};
@@ -138,7 +138,11 @@ document.addEventListener('DOMContentLoaded', () => {
             ['etape1', 'etape2', 'etape3'].forEach(etape => {
                 (mbsData[etape] || []).forEach(subject => {
                     if (!allSubjects.has(subject.code)) {
-                        allSubjects.set(subject.code, { code: subject.code, name: subject.name, competencies: [] });
+                        allSubjects.set(subject.code, {
+                            code: subject.code,
+                            name: subject.name,
+                            competencies: []
+                        });
                     }
                     allSubjects.get(subject.code).competencies.push(...subject.competencies);
                 });
@@ -146,7 +150,10 @@ document.addEventListener('DOMContentLoaded', () => {
             subjectsToRender = Array.from(allSubjects.values());
             subjectsToRender.forEach(s => s.average = calculateSubjectAverage(s));
         } else {
-            subjectsToRender = (mbsData[etapeKey] || []).map(subject => ({ ...subject, average: calculateSubjectAverage(subject) }));
+            subjectsToRender = (mbsData[etapeKey] || []).map(subject => ({
+                ...subject,
+                average: calculateSubjectAverage(subject)
+            }));
         }
 
         let needsDataSave = false;
@@ -188,9 +195,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="gauge-container"><canvas id="gauge-${chartCanvasId}"></canvas></div>
                 </div>
                 <div class="widget-chart-controls">
-                    <button class="chart-toggle-btn" data-subject-code="${subject.code}"><i class="fa-solid fa-chart-simple"></i> Changer</button>
+                    <button class="chart-toggle-btn" data-subject-code="${subject.code}" data-canvas-id="${chartCanvasId}"><i class="fa-solid fa-chart-simple"></i> Changer</button>
                 </div>
-                <div class="histogram-container" data-subject-code="${subject.code}" data-canvas-id="${chartCanvasId}"><canvas id="${chartCanvasId}"></canvas></div>`;
+                <div class="histogram-container"><canvas id="${chartCanvasId}"></canvas></div>`;
 
             widget.querySelector('.widget-top-section').addEventListener('click', () => openDetailsModal(subject, etapeKey));
             widgetGrid.appendChild(widget);
@@ -216,30 +223,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         });
+
+        const toggleGraphView = (button) => {
+            const subjectCode = button.dataset.subjectCode;
+            const canvasId = button.dataset.canvasId;
+            const subject = subjectsToRender.find(s => s.code === subjectCode);
+            if (!subject) return;
+
+            const currentView = mbsData.settings.chartViewPrefs[subjectCode] || 'histogram';
+            const newView = currentView === 'histogram' ? 'line' : 'histogram';
+            mbsData.settings.chartViewPrefs[subjectCode] = newView;
+            localStorage.setItem('mbsData', JSON.stringify(mbsData));
+
+            if (activeWidgetCharts[canvasId]) activeWidgetCharts[canvasId].destroy();
+            if (newView === 'line') {
+                renderLineGraph(canvasId, subject);
+            } else {
+                renderHistogram(canvasId, subject);
+            }
+        };
         
-        // --- FIX: Clicking on the graph area now toggles it. ---
-        // --- Comment: Cliquer sur le graphique pour le changer ---
+        // Cliquer sur le graphique pour le changer
+        // --- FIX: Clicking the graph container toggles the view. ---
         document.querySelectorAll('.histogram-container').forEach(container => {
             container.addEventListener('click', (e) => {
-                // Prevent editor from opening if clicking on the graph
-                e.stopPropagation(); 
-                
-                const subjectCode = container.dataset.subjectCode;
-                const canvasId = container.dataset.canvasId;
-                const subject = subjectsToRender.find(s => s.code === subjectCode);
-                if (!subject) return;
-
-                const currentView = mbsData.settings.chartViewPrefs[subjectCode] || 'histogram';
-                const newView = currentView === 'histogram' ? 'line' : 'histogram';
-                mbsData.settings.chartViewPrefs[subjectCode] = newView;
-                localStorage.setItem('mbsData', JSON.stringify(mbsData));
-
-                if (activeWidgetCharts[canvasId]) activeWidgetCharts[canvasId].destroy();
-                if (newView === 'line') {
-                    renderLineGraph(canvasId, subject);
-                } else {
-                    renderHistogram(canvasId, subject);
-                }
+                const button = e.currentTarget.closest('.subject-widget').querySelector('.chart-toggle-btn');
+                toggleGraphView(button);
             });
         });
 
@@ -264,7 +273,7 @@ document.addEventListener('DOMContentLoaded', () => {
             labels = history.map((_, i) => `Point ${i + 1}`);
             data = history;
             title = 'Historique des moyennes';
-        } else {
+        } else { // mode === 'assignment'
             const history = (mbsData.assignmentHistory[subject.code] || []).filter(h => h && h.assignmentName && h.grade !== null);
             labels = history.map(h => h.assignmentName);
             data = history.map(h => h.grade);
@@ -283,7 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 maintainAspectRatio: false,
                 scales: { y: { suggestedMin: 50, suggestedMax: 100 } },
                 plugins: { legend: { display: false }, title: { display: true, text: title } },
-                // --- FIX: onClick is removed here. The container handles the click to toggle. ---
+                // Note: onClick is now handled by the parent container for toggling view
             }
         });
     }
@@ -298,6 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .filter(a => getNumericGrade(a.result) !== null);
 
         const currentMode = mbsData.settings.historyModes[subject.code] || 'average';
+
         const modal = document.createElement('div');
         modal.id = 'history-editor-modal';
         modal.className = 'modal-overlay active';
@@ -315,7 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h4>Points de données actuels (Moyennes) :</h4>
                     <ul>${averageHistory.map(avg => `<li>${avg.toFixed(2)}%</li>`).join('') || '<li>Aucune donnée.</li>'}</ul>
                 </div>`;
-        } else {
+        } else { // 'assignment' mode
             editorBodyHTML = `
                 <p>Le mode actuel est <strong>Manuel (par travail)</strong>. Choisissez un travail noté pour chaque point de donnée.</p>
                 <div id="data-points-container"></div>
@@ -346,13 +356,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentMode === 'average') {
             modal.querySelector('#switch-to-assignment-mode').addEventListener('click', () => {
                 mbsData.settings.historyModes[subject.code] = 'assignment';
-                // --- FIX: Initialize with an EMPTY array. Do not pre-select anything. ---
-                mbsData.assignmentHistory[subject.code] = [];
+                // --- FIX: Initialize with one empty data point for the user to fill. ---
+                mbsData.assignmentHistory[subject.code] = [null];
                 localStorage.setItem('mbsData', JSON.stringify(mbsData));
                 modal.remove();
                 openHistoryEditor(subject);
             });
-        } else {
+        } else { // Assignment mode logic
             let tempHistory = JSON.parse(JSON.stringify(mbsData.assignmentHistory[subject.code] || []));
             const pointsContainer = modal.querySelector('#data-points-container');
 
@@ -678,6 +688,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentOverallAverage === null) return;
         const storedAverage = mbsData.generalAverageMemory[0];
         if (storedAverage === null || Math.abs(currentOverallAverage - storedAverage) > 0.01) {
+            console.log("General average has changed. Updating memory and checking assignments.");
             mbsData.generalAverageMemory[1] = storedAverage;
             mbsData.generalAverageMemory[0] = currentOverallAverage;
             checkForAssignmentChanges();
@@ -688,6 +699,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function checkForAssignmentChanges() {
         const oldSnapshot = mbsData.assignmentsSnapshot || {};
         const newSnapshot = {};
+        const changedAssignments = [];
         const allAssignments = ['etape1', 'etape2', 'etape3'].flatMap(etapeKey =>
             (mbsData[etapeKey] || []).flatMap(s =>
                 s.competencies.flatMap(c =>
@@ -699,12 +711,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const oldResult = oldSnapshot[assign.uniqueId];
             const newResult = assign.result;
             if (oldResult !== newResult) {
-                 if (oldResult !== undefined) {
-                    console.log(`Grade changed for '${assign.work}': ${oldResult} -> ${newResult}`);
+                if (oldResult !== undefined) {
+                    changedAssignments.push({ name: assign.work, subject: assign.uniqueId.split('-')[0], old: oldResult, new: newResult });
                 }
             }
             newSnapshot[assign.uniqueId] = newResult;
         });
+        if (changedAssignments.length > 0) {
+            console.log("Detected changes in assignment grades:", changedAssignments);
+        }
         mbsData.assignmentsSnapshot = newSnapshot;
     }
 });
