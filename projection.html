@@ -3,384 +3,299 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tableau de Bord - Outil MBS</title>
-    <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
-    <!-- Font Awesome for icons (Updated & Reliable CDN Link) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Analyseur Dynamique V10 (Pathfinder V2)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Custom Compressed CSS -->
     <style>
-        :root {
-            /* Animation Transition */
-            --transition-duration: 0.35s;
-
-            /* Light Mode Variables */
-            --primary-color: #2980b9;
-            --secondary-color: #2c3e50;
-            --side-panel-color: #ffffff;
-            --widget-darker-color: #f0f4f7;
-            --background-color: #f7f9fb;
-            --widget-background: #ffffff;
-            --text-color: #34495e;
-            --light-grey: #bdc3c7;
-            --footer-grey: #7f8c8d;
-            --success-color: #27ae60;
-            --danger-color: #e74c3c;
-            --warning-color: #f39c12;
-            --shadow-header: 0 2px 4px rgba(0, 0, 0, 0.05);
-            --shadow-widget: 0 8px 15px rgba(0, 0, 0, 0.08);
-            --border-color: #e0e6eb;
-            --tab-border-color: #ddd;
-            --input-bg-color: white;
-            /* Button Inversion Colors (Light Mode Base) */
-            --btn-secondary-bg: var(--secondary-color);
-            --btn-secondary-color: white;
-            --btn-secondary-hover-bg: #3a536b;
-        }
-
-        /* DARK MODE VARIABLES */
-        [data-theme="dark"] {
-            --background-color: #121212;
-            --side-panel-color: #1e1e1e;
-            --widget-background: #1e1e1e;
-            --widget-darker-color: #282828;
-            --text-color: #e0e0e0;
-            --secondary-color: #bbbbbb;
-            --light-grey: #757575;
-            --footer-grey: #a0a0a0;
-            --shadow-header: 0 2px 5px rgba(255, 255, 255, 0.1);
-            --shadow-widget: 0 5px 10px rgba(0, 0, 0, 0.3);
-            --border-color: #333333;
-            --tab-border-color: #444444;
-            --input-bg-color: #282828;
-            /* Button Inversion Colors (Dark Mode Inverted) */
-            --btn-secondary-bg: #bbbbbb; /* Light grey background */
-            --btn-secondary-color: #121212; /* Dark text */
-            --btn-secondary-hover-bg: #d0d0d0;
-
-            /* Specific element adjustments for dark mode */
-            .site-header { color: var(--text-color); }
-            .nav-arrow { color: var(--text-color); }
-            .moyenne-widget { border-color: #333; }
-            .subject-averages { border-top-color: #333; }
-            .subject-table thead tr:first-child th { background-color: #333; color: white; }
-            .subject-table thead tr:last-child th { background-color: #222; color: var(--text-color); }
-            .subject-table th, .subject-table td { border-bottom-color: #282828; }
-            .competency-row td { background-color: #222; color: var(--secondary-color); }
-            footer { border-top-color: #333; }
-            .modal-content { background-color: var(--side-panel-color); }
-            .unite-item:nth-child(even) { background-color: #222; }
-            .pond-input-field.modified-input, .grade-input-field.modified-input { background-color: #332b1a; border-color: var(--warning-color); }
-        }
-
-        /* GLOBAL TRANSITIONS for smooth theme change */
-        body, .site-header-container, .side-panel, .moyenne-widget, .subject-table, .modal-content, .tab-btn, .btn, select, input {
-            transition: background-color var(--transition-duration) ease, color var(--transition-duration) ease, border-color var(--transition-duration) ease, box-shadow var(--transition-duration) ease;
-        }
-
-        /* SMOOTHER Page Load Animation Keyframes */
-        @keyframes fadeInSlideUp {
-            from {
-                opacity: 0;
-                transform: translateY(25px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        /* Initial state and animation application for main elements */
-        .site-header-container, .main-container, footer {
-            opacity: 0;
-            transform: translateY(25px);
-            /* Smoother easing function and slightly longer duration */
-            animation: fadeInSlideUp 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-        }
-        .main-container {
-            animation-delay: 0.2s; /* Stagger the main content */
-        }
-        footer {
-            animation-delay: 0.4s; /* Stagger the footer */
-        }
-
-        /* General Styles */
-        body {
-            margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--background-color); color: var(--text-color);
-        }
-        .site-header-container {
-            background-color: var(--widget-background); box-shadow: var(--shadow-header);
-            border-bottom: 1px solid var(--border-color); padding: 15px 25px;
-            display: flex; align-items: center; justify-content: space-between; position: relative; margin-bottom: 20px;
-        }
-        .header-left { display: flex; align-items: center; }
-        .header-center { position: absolute; left: 50%; transform: translateX(-50%); }
-        .header-right { display: flex; align-items: center; gap: 15px; } /* Added align-items for vertical centering */
-        .site-header {
-            padding: 0; margin: 0; color: var(--secondary-color);
-            font-size: 2.2em; font-weight: 700; font-family: 'Playfair Display', serif;
-        }
-        .nav-arrow {
-            font-size: 2em; color: var(--secondary-color); text-decoration: none;
-            transition: color 0.2s, transform 0.2s;
-        }
-        .nav-arrow:hover { color: var(--primary-color); transform: scale(1.05); }
-        /* Dark Mode Toggle Button Styling */
-        .icon-btn {
-            background: none; border: 2px solid var(--light-grey); color: var(--text-color);
-            width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; font-size: 1.1em;
-            transition: all 0.2s ease, background-color var(--transition-duration);
-        }
-        .icon-btn:hover {
-            border-color: var(--primary-color); color: var(--primary-color);
-            transform: scale(1.1);
-        }
-
-        .main-container {
-            display: flex; max-width: 1600px; margin: 0 auto;
-            padding: 0 20px; align-items: flex-start; gap: 30px;
-        }
-        .data-section { flex: 3; }
-        .side-panel {
-            flex: 1; position: sticky; top: 20px; background-color: var(--side-panel-color);
-            border-radius: 12px; padding: 25px; box-shadow: var(--shadow-widget);
-        }
-        .moyenne-widgets { display: flex; gap: 15px; margin-bottom: 25px; }
-        .moyenne-widget {
-            flex: 1; background-color: var(--widget-darker-color); border-radius: 10px;
-            padding: 15px; text-align: center; border: 1px solid var(--border-color);
-        }
-        .moyenne-widget h4 { margin: 0 0 8px 0; font-size: 0.85em; color: var(--secondary-color); font-weight: 500; }
-        .moyenne-value { font-size: 2.2em; font-weight: bold; color: var(--primary-color); }
-        .moyenne-value.invalid { color: var(--danger-color); }
-        .control-group { margin-bottom: 20px; }
-        .control-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
-        select {
-            width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd;
-            background-color: var(--input-bg-color); color: var(--text-color); -webkit-appearance: none; appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='5'%3E%3Cpath d='M0 0l5 5 5-5z' fill='%232c3e50'/%3E%3C/svg%3E");
-            background-repeat: no-repeat; background-position: right 15px center; background-size: 10px;
-        }
-        [data-theme="dark"] select {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='5'%3E%3Cpath d='M0 0l5 5 5-5z' fill='%23bbbbbb'/%3E%3C/svg%3E");
-        }
-        .subject-averages { margin-top: 25px; padding-top: 15px; border-top: 1px solid var(--border-color); }
-        .subject-averages h4 { margin-top: 0; color: var(--secondary-color); font-size: 1.1em; margin-bottom: 15px; }
-        #subject-averages-list { list-style: none; padding: 0; margin: 0; font-size: 0.9em; }
-        #subject-averages-list li { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dotted var(--border-color); }
-        .btn {
-            display: inline-block; padding: 12px 20px; border: none; border-radius: 8px;
-            font-size: 0.95em; font-weight: 600; cursor: pointer; text-decoration: none;
-            color: white; transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
-            text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
-        .btn-primary { background-color: var(--primary-color); }
-        .btn-primary:hover { background-color: #3498db; }
-        
-        /* Secondary Button (Inverted in Dark Mode) */
-        .btn-secondary { 
-            background-color: var(--btn-secondary-bg);
-            color: var(--btn-secondary-color); 
-        }
-        .btn-secondary:hover { 
-            background-color: var(--btn-secondary-hover-bg); 
-            color: var(--btn-secondary-color);
-        }
-
-        .btn-full-width { width: 100%; display: block; }
-        .tabs { display: flex; border-bottom: 2px solid var(--tab-border-color); margin-bottom: 20px; }
-        .tab-btn { padding: 12px 20px; cursor: pointer; border: none; background: none; font-size: 1.05em; font-weight: 600; color: var(--light-grey); position: relative; }
-        .tab-btn.active { color: var(--primary-color); }
-        .tab-btn.active::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 3px; background-color: var(--primary-color); transition: width 0.3s ease; }
-        .tab-content { display: none; transition: opacity 0.3s ease; }
-        .tab-content.active { display: block; }
-        .subject-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 30px; background: var(--widget-background); box-shadow: var(--shadow-widget); border-radius: 12px; overflow: hidden; }
-        .subject-table th, .subject-table td { padding: 14px 18px; text-align: left; border-bottom: 1px solid #f0f0f0; }
-        [data-theme="dark"] .subject-table th, [data-theme="dark"] .subject-table td { border-bottom-color: #282828; }
-        .subject-table thead tr:first-child th { background-color: var(--secondary-color); color: white; font-size: 1.1em; }
-        .subject-table thead tr:last-child th { background-color: #f8f9fa; color: var(--text-color); font-size: 0.85em; text-transform: uppercase; }
-        .competency-row td { background-color: #eaf2f8; color: var(--secondary-color); font-weight: bold; font-style: italic; }
-        .no-data { color: var(--light-grey); font-style: italic; text-align: center; padding: 40px; }
-        .grade-percentage { font-weight: 700; color: var(--success-color); }
-        footer { text-align: center; padding: 25px; font-size: 0.9em; color: var(--footer-grey); border-top: 1px solid var(--border-color); margin-top: 40px; }
-        footer a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
-        footer a:hover { text-decoration: underline; }
-
-        /* Modal/Popup Animations */
-        .modal-overlay { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; 
-            z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s;
-        }
-        .modal-overlay.active { opacity: 1; visibility: visible; }
-        .modal-content { 
-            background-color: white; padding: 30px; border-radius: 12px; width: 450px; position: relative; 
-            transform: scale(0.9) translateY(-20px); 
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        .modal-overlay.active .modal-content {
-            transform: scale(1) translateY(0);
-        }
-        .modal-close { position: absolute; top: 10px; right: 15px; font-size: 2em; cursor: pointer; color: var(--light-grey); }
-        .unite-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; }
-        .unite-item:nth-child(even) { background-color: #fcfdfe; }
-        .unite-item input { width: 70px; text-align: center; padding: 6px; border: 1px solid #ddd; border-radius: 6px; }
-        .hidden { display: none !important; }
-        .pond-input-field, .grade-input-field { 
-            text-align: center; border-radius: 6px; border: 1px solid #ccc; padding: 6px; width: 60px;
-            background-color: var(--input-bg-color); color: var(--text-color);
-        }
-        .grade-input-field { width: 80px; }
-        .pond-input-field.modified-input, .grade-input-field.modified-input { border-color: var(--warning-color); background-color: #fff9f0; }
-        .grade-display { cursor: pointer; min-height: 30px; display: inline-block; padding: 4px; border-radius: 4px; }
+:root{--primary-color:#5B21B6;--secondary-color:#059669;--warning-color:#F59E0B;--danger-color:#DC2626;--bg-color:#f9fafb}body{font-family:'Inter',sans-serif;background-color:var(--bg-color);color:#1f2937}.main-container{display:flex;min-height:100vh}.side-panel{width:100%;max-width:380px;background-color:white;padding:1.5rem;box-shadow:0 4px 16px rgba(0,0,0,.1);border-radius:.75rem;margin:1rem;height:fit-content}@media (max-width:1024px){.main-container{flex-direction:column}.side-panel{max-width:100%}}.content-area{flex-grow:1;padding:1rem}.tab-btn{padding:.75rem 1.5rem;font-weight:600;border-radius:.375rem .375rem 0 0;border-bottom:2px solid transparent;cursor:pointer;transition:all .2s;background-color:#eef2ff;color:#4c1d95;margin-right:.25rem}.tab-btn.active{background-color:white;border-bottom:2px solid var(--primary-color);color:var(--primary-color);box-shadow:0 -2px 6px rgba(0,0,0,.05)}.tab-content{background-color:white;padding:1.5rem;border-radius:0 .75rem .75rem .75rem;box-shadow:0 4px 16px rgba(0,0,0,.08)}.tab-content:not(.active){display:none}.subject-table{width:100%;border-collapse:collapse;margin-top:1.5rem;box-shadow:0 1px 4px rgba(0,0,0,.08);border-radius:.5rem;overflow:hidden;margin-bottom:1.5rem}.subject-table thead th{padding:.75rem;text-align:left;background-color:var(--primary-color);color:white;font-weight:700}.subject-table thead tr:first-child th{font-size:1.125rem;text-align:center}.subject-table tbody tr:nth-child(even){background-color:#f3f4f6}.subject-table td{padding:.5rem .75rem;border-bottom:1px solid #e5e7eb}.grade-percentage{font-weight:700;color:var(--primary-color)}.subject-analysis{background-color:#f5f3ff;border:1px solid #e9d5ff;padding:1rem;border-radius:.5rem;margin-top:-1rem;margin-bottom:1.5rem}.analysis-badge{display:inline-flex;align-items:center;padding:.25rem .75rem;border-radius:9999px;font-size:.875rem;font-weight:600;margin-right:.5rem}.badge-green{background-color:#D1FAE5;color:#065F46}.badge-yellow{background-color:#FEF3C7;color:#92400E}.badge-red{background-color:#FEE2E2;color:#991B1B}.badge-violet{background-color:#E9D5FF;color:#5B21B6}.badge-blue{background-color:#DBEAFE;color:#1E40AF}.badge-orange{background-color:#FFEDD5;color:#C2410C}.prediction-card{background-color:#f7f7f7;padding:1rem;border-radius:.5rem;border-left:4px solid;margin-bottom:1rem;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.05)}.card-green{border-left-color:var(--secondary-color)}.card-violet{border-left-color:var(--primary-color)}.card-yellow{border-left-color:var(--warning-color)}.card-red{border-left-color:var(--danger-color)}.card-score{font-size:1.875rem;font-weight:800;margin-top:.25rem}.probability-table th,.probability-table td{padding:.5rem;text-align:center;border:1px solid #e5e7eb}.prob-high{background-color:#D1FAE5;color:#065F46;font-weight:700}.prob-medium{background-color:#FEF3C7;color:#92400E}.prob-low{background-color:#FEE2E2;color:#991B1B}.modal{position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0,0,0,.5);display:flex;justify-content:center;align-items:center;z-index:1000;transition:opacity .3s ease-out;opacity:0;pointer-events:none}.modal.active{opacity:1;pointer-events:auto}.modal-content{background:white;padding:2rem;border-radius:.75rem;box-shadow:0 10px 15px rgba(0,0,0,.1);max-width:90%;width:500px}.score-card{display:flex;align-items:center;padding:.75rem;border-radius:.5rem;background-color:#f3f4f6;transition:all .15s}.score-card strong{font-size:1.5rem}.score-icon{font-size:1.5rem;margin-right:1rem}.effort-needed{font-size:1.25rem;font-weight:700}.slider-label{font-weight:600;margin-top:1rem}.ai-insight-box{background-color:#f5f3ff;border:1px solid #ddd6fe;border-radius:.5rem;padding:1rem;margin-top:.75rem}.ai-insight-box h4{display:flex;align-items:center;font-size:1rem;font-weight:700;color:var(--primary-color);margin-bottom:.75rem}.ai-insight-box h4 span{font-size:1.25rem;margin-right:.5rem}.ai-insight-box ul{list-style-type:none;padding-left:0;font-size:.875rem}.ai-insight-box li{position:relative;padding-left:1.5rem;margin-bottom:.5rem;color:#374151;line-height:1.4}.ai-insight-box li::before{content:'⚠️';font-size:.75rem;position:absolute;left:0;top:4px}.ai-insight-box li.insight-good::before{content:'✅'}.ai-insight-box li.insight-info::before{content:'ℹ️'}.ai-insight-box li.insight-trend::before{content:'📈'}.ai-insight-box li.insight-focus::before{content:'🎯'}.ai-insight-box li.insight-priority::before{content:'🧠'}.ai-insight-box li.insight-erratic::before{content:'⚡'}.gauge-container{width:100%;padding:.5rem 0;margin-top:.5rem;margin-bottom:1rem}.gauge-bar{width:100%;height:12px;background:linear-gradient(90deg,var(--danger-color),var(--warning-color),var(--secondary-color));border-radius:6px;position:relative;box-shadow:inset 0 1px 3px rgba(0,0,0,.1)}.gauge-needle{position:absolute;top:-4px;width:4px;height:20px;background-color:#1f2937;border-radius:2px;border:1px solid white;box-shadow:0 0 5px rgba(0,0,0,.5);transform:translateX(-50%);transition:left .5s ease-out}.gauge-labels{display:flex;justify-content:space-between;font-size:.75rem;font-weight:600;color:#4b5563;margin-top:.5rem}.help-btn{position:fixed;top:10px;right:10px;width:30px;height:30px;background-color:#000000;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;text-decoration:none;box-shadow:0 4px 10px rgba(0,0,0,.2);z-index:999;cursor:pointer;transition:all .2s ease-in-out}.help-btn:hover{transform:translateY(-2px) scale(1.05);box-shadow:0 6px 15px rgba(0,0,0,.3);background-color:#6D28D9}#help-modal .modal-content{width:750px;max-width:95%;max-height:90vh;overflow-y:auto;text-align:left}.help-title{font-size:1.5rem;font-weight:700;color:var(--primary-color);margin-bottom:1rem;text-align:left}.help-section-title{font-size:1.25rem;font-weight:600;color:var(--primary-color);margin-top:1.5rem;border-bottom:2px solid var(--primary-color);padding-bottom:4px;margin-bottom:1rem}#help-modal h4{font-size:1.0rem;font-weight:700;color:#1f2937;margin-top:1.25rem;margin-bottom:.25rem}#help-modal p,#help-modal li{font-size:.95rem;color:#374151;line-height:1.6;margin-top:.5rem}#help-modal ul{list-style-type:disc;padding-left:2rem;margin-top:.5rem;margin-bottom:1rem}#help-modal ol.detailed-list{list-style-type:decimal;padding-left:1.5rem}#help-modal ol.detailed-list>li{font-weight:600;color:#1f2937;margin-top:1rem}#help-modal ol.detailed-list>li>ul{margin-top:.25rem;font-weight:normal}#help-modal b{font-weight:600;color:#1f2937}#help-modal .modal-close{position:absolute;top:10px;right:15px;font-size:2em;cursor:pointer;color:#aaa;line-height:1;z-index:1001}.back-to-main-btn{position:fixed;top:10px;left:30px;width:20px;height:20px;background-color:var(--primary-color);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.0rem;text-decoration:none;box-shadow:0 4px 10px rgba(0,0,0,.2);z-index:999;transition:all .2s ease-in-out}.back-to-main-btn:hover{transform:translateY(-2px) scale(1.05);box-shadow:0 6px 15px rgba(0,0,0,.3);background-color:#6D28D9}
     </style>
+    <!-- Font Awesome (for icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
 
-    <header class="site-header-container">
-        <div class="header-left">
-            <a href="index.html" class="nav-arrow" title="Retour à l'accueil">←</a>
-        </div>
-        <div class="header-center">
-            <h1 class="site-header">Outil MBS</h1>
-        </div>
-        <div class="header-right">
-            <button id="theme-toggle" class="icon-btn" aria-label="Changer de thème (Mode Clair/Sombre)">
-                <i class="fa-solid fa-moon"></i>
-            </button>
-            <a href="projection.html" class="btn btn-secondary">Projection des résultats</a>
-            <a href="data.html" class="btn btn-secondary">Mise à jour</a>
-            <a href="improve.html" class="btn btn-primary">Analyser</a>
-        </div>
-    </header>
+<a id="open-help-btn" class="help-btn" title="Comment ça marche ?">
+    <i class="fa-solid fa-question"></i>
+</a>
 
-    <main class="main-container">
-        <section class="data-section">
-            <div class="tabs">
-                <button class="tab-btn active" data-tab="etape1">Étape 1</button>
-                <button class="tab-btn" data-tab="etape2">Étape 2</button>
-                <button class="tab-btn" data-tab="etape3">Étape 3</button>
+<div id="help-modal" class="modal">
+    <div class="modal-content">
+        <span id="close-help-modal" class="modal-close">&times;</span>
+        <h2 class="help-title">Guide Détaillé de l'Analyseur</h2>
+        
+        <p>Cet outil analyse votre <b>tendance</b> (votre "élan") et votre <b>volatilité</b> (votre stabilité) pour prédire vos performances. Voici ce que chaque terme signifie en détail.</p>
+
+        <h3 class="help-section-title">Section Spéciale : La Régression Linéaire (Le Cœur de l'IA)</h3>
+        
+        <h4>Qu'est-ce que c'est ?</h4>
+        <p>Le "Moteur de Découverte (IA)" utilise un outil statistique appelé <b>Régression Linéaire</b>. Son but est de trouver la "ligne de tendance" (la ligne droite de meilleur ajustement) qui passe au milieu d'un nuage de points de données. 
+
+[Image of a scatter plot with a positive trend line]
+</p>
+        <p>L'IA n'analyse pas seulement vos notes, elle analyse la <b>relation</b> entre deux variables. L'application effectue 3 analyses de régression distinctes :</p>
+        
+        <ol class="detailed-list">
+            <li><b>Modèle 1 : TENDANCE (Note vs. Temps)</b>
+                <ul>
+                    <li><b>(Axe X) :</b> Le temps (Devoir 1, Devoir 2, Devoir 3...)</li>
+                    <li><b>(Axe Y) :</b> La note obtenue (85%, 88%, 87%...)</li>
+                    <li><b>Ce qu'elle cherche :</b> "Est-ce que vos notes <b>montent</b> ou <b>baissent</b> avec le temps ?" C'est votre élan, ou "pente". C'est ce qui alimente le "Facteur de Tendance Globale".</li>
+                </ul>
+            </li>
+            <li><b>Modèle 2 : FOCUS (Note vs. Pondération du Devoir)</b>
+                <ul>
+                    <li><b>(Axe X) :</b> L'importance du devoir (Ex: 5%, 10%, 40%...)</li>
+                    <li><b>(Axe Y) :</b> La note obtenue (95%, 90%, 82%...)</li>
+                    <li><b>Ce qu'elle cherche :</b> "Avez-vous tendance à mieux réussir les <b>petits devoirs</b> ou les <b>gros examens</b> ?" Une pente négative ici est un signal d'alarme : cela signifie que plus un examen est important, plus votre note a tendance à baisser.</li>
+                </ul>
+            </li>
+            <li><b>Modèle 3 : PRIORITÉ (Note vs. Pondération de la Compétence)</b>
+                <ul>
+                    <li><b>(Axe X) :</b> L'importance de la compétence (Ex: 30%, 40%, 60%...)</li>
+                    <li><b>(Axe Y) :</b> La note obtenue dans cette compétence (90%, 85%, 80%...)</li>
+                    <li><b>Ce qu'elle cherche :</b> "Êtes-vous meilleur dans les compétences mineures ou majeures ?"</li>
+                </ul>
+            </li>
+        </ol>
+
+        <h4>Ce qui INFLUENCE la Régression (Votre question)</h4>
+        <p>La "ligne de tendance" est comme une balançoire. Ce qui l'influence le plus, ce sont les <b>points aberrants (Outliers)</b> et la <b>dispersion</b> de vos notes.</p>
+        <ul>
+            <li><b>Les Points Aberrants (Outliers) :</b> C'est l'influence n°1. Si vous avez une moyenne de 90% mais que vous tombez malade et obtenez <b>20%</b> à un examen, ce seul point tirera la "ligne de tendance" <b>massivement</b> vers le bas. L'IA verra cela comme une forte tendance négative. De même, un 100% facile sur un devoir tirera la ligne vers le haut.</li>
+            <li><b>La Fiabilité (Le R²) :</b> C'est le "Niveau de Confiance" de l'IA. C'est la statistique la plus importante que l'IA regarde.
+                <ul>
+                    <li>Un <b>R² élevé (ex: 0.8 ou 80%)</b> signifie que vos notes sont très proches de la ligne de tendance. Le schéma est <b>fiable</b>. L'IA peut affirmer avec certitude "Vous êtes en hausse".</li>
+                    <li>Un <b>R² faible (ex: 0.1 ou 10%)</b> signifie que vos notes sont "erratiques" et totalement dispersées autour de la ligne. Le schéma est <b>non fiable</b>. C'est à ce moment que l'IA vous dit : <b>"Je n'ai trouvé aucun schéma fiable"</b>, car la tendance qu'elle a trouvée n'explique que 10% de vos résultats.</li>
+                </ul>
+            </li>
+            <li><b>Le Nombre de Points (N) :</b> Une tendance sur 3 devoirs ne veut rien dire. Une tendance sur 30 devoirs est un schéma très fort. C'est pourquoi l'IA ignore les matières avec moins de 5 notes.</li>
+        </ul>
+
+        <h3 class="help-section-title">Panneau Principal (Gauche)</h3>
+        
+        <h4>Prédiction Globale Stochastique (Tendance MC)</h4>
+        <p>"MC" signifie <b>Monte Carlo</b>. L'outil simule <b>100 000 scénarios possibles</b> pour l'Étape 3. Chaque simulation est un "jet de dé" basé sur :</p>
+        <ol>
+            <li><b>Votre moyenne projetée</b> (basée sur la <b>Pente</b> de votre Régression Linéaire "Tendance").</li>
+            <li><b>Votre volatilité</b> (votre <b>Écart-Type</b>, ou "StdDev"). Un étudiant stable (faible volatilité) aura des simulations groupées (ex: 88-92%). Un étudiant erratique (haute volatilité) aura des simulations dispersées (ex: 70-100%).</li>
+        </ol>
+        <p>Le score affiché est le <b>P50 (Médian)</b> : le point exact où 50 000 simulations ont fait pire et 50 000 ont fait mieux. C'est le résultat le plus probable.</p>
+
+        <h4>Jauge de Performance (P5 à P95)</h4>
+        <p>C'est la carte complète des 100 000 simulations :</p>
+        <ul>
+            <li><b>P5 (Pessimiste) :</b> 95 000 simulations ont donné un meilleur score. C'est votre "pire" scénario probable.</li>
+            <li><b>P50 (Médian) :</b> Le centre, identique à la prédiction "Tendance MC".</li>
+            <li><b>P95 (Optimiste) :</b> Seulement 5 000 simulations ont fait mieux. C'est le scénario "rêvé".</li>
+        </ul>
+
+        <h4>Indices de Risque Dynamique</h4>
+        <ul>
+            <li><b>Indice de Consistance :</b> C'est l'inverse de votre <b>Volatilité (Écart-Type)</b>. Un score de 100 signifie un Écart-Type de 0 (ex: 90%, 90%, 90%). Un score bas signifie que vos notes sont très dispersées (ex: 60%, 100%, 75%).</li>
+            <li><b>Risque de Burnout :</b> Score (sur 100) basé sur 4 facteurs : <b>1.</b> Volatilité (l'instabilité est stressante), <b>2.</b> Tendance (une pente négative est un signe de difficulté), <b>3.</b> Charge de travail (Unités), <b>4.</b> Absentéisme.</li>
+            <li><b>Facteur de Tendance Globale :</b> C'est la <b>Pente (Slope)</b> de votre Régression "Tendance" x 10. (Ex: Pente de +0.2 = +2.0% F.T.G. = Vous gagnez 0.2 points par devoir, ou 2 points tous les 10 devoirs).</li>
+        </ul>
+
+        <h3 class="help-section-title">Analyse Détaillée (Droite)</h3>
+
+        <h4>Analyse de Déséquilibre (Mismatch)</h4>
+        <p>Cette section identifie les matières "risquées". Le "Score Mismatch" est élevé si une matière a :</p>
+        <ul>
+            <li><b>1. Une haute Volatilité (Écart-Type) :</b> Vos notes sont très dispersées.</li>
+            <li><b>2. Une faible Consistance :</b> Vos notes sont imprévisibles.</li>
+        </ul>
+        <p>Une matière "Rouge" (Mismatch élevé) est une bombe à retardement. C'est là que vous devez vous concentrer pour <b>stabiliser</b> vos résultats (ex: visez des 80-90 constants plutôt que des 70-100 alternés).</p>
+
+        <h4>Analyse de Chemin (Probabilités)</h4>
+        <p>Cette section vous donne un plan d'action. Elle répond à deux questions : <b>1.</b> "De quelle moyenne ai-je besoin ?" et <b>2.</b> "Quelles sont mes chances de l'obtenir ?"</p>
+        <ul>
+            <li><b>Moyenne Requise E2/E3 :</b> C'est un calcul algébrique simple pour déterminer la note exacte que vous devez obtenir à l'étape 2 (ou 3) pour atteindre un objectif global.</li>
+            <li><b>Probabilité (%) :</b> C'est la partie la plus importante. L'outil utilise la <b>Distribution Normale (CDF)</b>. Il compare la "Moyenne Requise" à votre "Jauge de Performance (P5-P95)".</li>
+            <li><b>Exemple :</b> Si votre "Moyenne Requise" est de <b>80%</b>, mais que votre jauge P5-P95 est entre 85% et 95%, votre probabilité de l'atteindre sera très élevée (ex: 99%), car 80% est en dessous de votre "pire" scénario. Si la "Moyenne Requise" est de <b>96%</b>, elle est au-dessus de votre P95, donc la probabilité sera très faible (ex: <5%).</li>
+        </ul>
+    </div>
+</div>
+
+<a href="main.html" class="back-to-main-btn" title="Retour à la page principale">
+    <i class="fa-solid fa-arrow-left"></i>
+</a>
+
+<div class="main-container">
+
+    <div class="side-panel lg:sticky lg:top-4">
+        <h2 class="text-2xl font-bold mb-4 text-gray-800 border-b pb-2">Moteur Stochastique V10 (Fix)</h2>
+
+        <div class="bg-violet-100 p-4 rounded-lg mb-4 border-l-4 border-violet-600">
+            <p class="text-sm font-medium text-gray-700">Prédiction Globale Stochastique (Tendance MC)</p>
+            <strong id="moyenne-prediction" class="text-4xl font-extrabold text-violet-700">--</strong>
+        </div>
+
+        <h3 class="text-lg font-semibold text-gray-800">Jauge de Performance (P5 à P95)</h3>
+        <div class="gauge-container">
+            <div class="gauge-bar">
+                <div id="gauge-needle" class="gauge-needle" style="left: 50%;"></div>
             </div>
-            <div id="tab-contents">
-                <div id="etape1" class="tab-content active">
-                    <!-- Placeholder text restored. The "no-data" class is used for styling. -->
-                    <p class="no-data">Veuillez vous rendre sur la page "Mise à jour" pour importer vos données.</p>
+            <div class="gauge-labels">
+                <span id="gauge-label-p5">P5: --%</span>
+                <strong id="gauge-label-p50" class="text-primary-color">P50: --%</strong>
+                <span id="gauge-label-p95">P95: --%</span>
+            </div>
+        </div>
+        
+        <h3 class="text-lg font-semibold mt-6 mb-3 text-gray-800 border-b pb-2">Indices de Risque Dynamique</h3>
+        <div id="deep-analysis-scorecard" class="space-y-3 mb-6">
+            <div class="score-card score-high" id="consistency-score">
+                <span class="score-icon text-gray-600">🎯</span>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Indice de Consistance/Volatilité (100 = Parfait)</p>
+                    <strong class="text-xl text-gray-800">--</strong>
                 </div>
-                <div id="etape2" class="tab-content"></div>
-                <div id="etape3" class="tab-content"></div>
             </div>
-        </section>
+            <div class="score-card score-low" id="burnout-risk-score">
+                <span class="score-icon text-red-600">🔥</span>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Score de Risque de Burnout (100 = Risque Maximal pour Perte de Contrôle)</p>
+                    <strong class="text-xl text-red-600">--</strong>
+                </div>
+            </div>
 
-        <aside class="side-panel">
-            <div class="moyenne-widgets">
-                <div class="moyenne-widget"><h4>Moyenne générale</h4><div id="moyenne-generale" class="moyenne-value">--</div></div>
-                <div class="moyenne-widget"><h4>Moyenne de l'étape</h4><div id="moyenne-etape" class="moyenne-value">--</div></div>
+            <div class="ai-insight-box" id="ai-insight-container">
+                <h4><span>🔎</span> Moteur de Découverte (IA)</h4>
+                <p class="text-xs text-gray-500 -mt-2 mb-3">L'IA a scanné vos données et a trouvé les corrélations les plus fortes (R² > 0.25) :</p>
+                <ul id="ai-insights-list">
+                    </ul>
             </div>
-            <div class="control-group">
-                <label for="niveau-secondaire">Niveau Secondaire</label>
-                <select id="niveau-secondaire">
-                    <option value="">-- Sélectionner --</option>
+            
+            <div class="score-card score-low" id="dff-score">
+                <span class="score-icon text-orange-600">📉</span>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Facteur de Tendance Globale (Pente / 10 devoirs)</p>
+                    <strong class="text-xl text-orange-600">--</strong>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="text-lg font-semibold mt-4 mb-2 text-gray-700 border-t pt-3">Paramètres Actuels</h3>
+        <div class="space-y-3 mb-6 text-sm">
+            <div>
+                <label for="niveau-secondaire" class="block text-sm font-medium text-gray-700">Niveau Secondaire</label>
+                <select id="niveau-secondaire" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm py-2 px-3 focus:ring-primary-500 focus:border-primary-500">
+                    <option value="">Sélectionner</option>
                     <option value="sec4">Secondaire 4</option>
                     <option value="sec5">Secondaire 5</option>
                 </select>
             </div>
-            <div class="control-group">
-                <button id="unites-btn" class="btn btn-secondary btn-full-width">Configurer les unités</button>
+            <div>
+                <label class="slider-label block text-sm font-medium text-gray-700">Taux d'Absentéisme/Désengagement</label>
+                <input type="range" id="absence-rate-slider" min="0" max="25" step="0.5" value="5" class="w-full mt-1">
+                <p class="text-xs text-gray-500 mt-1">Impact sur B-Risk : <span id="absence-rate-value">5.0%</span></p>
             </div>
-            
-            <div id="ponderation-controls" class="hidden" style="background-color: #fff9f0; padding: 15px; border-radius: 8px; border: 1px solid var(--warning-color); margin-bottom: 20px;">
-                <p style="font-weight: bold; text-align: center; margin-top: 0; color: var(--text-color);">Pondérations modifiées</p>
-                <div style="display: flex; gap: 10px;">
-                    <button id="save-ponds-btn" class="btn btn-primary" style="flex:1;">Sauvegarder</button>
-                    <button id="revert-ponds-btn" class="btn btn-secondary" style="background-color: #95a5a6; flex:1;">Annuler</button>
+
+            <div>
+                <label for="unites-mode" class="block text-sm font-medium text-gray-700">Mode Unités (Pondération)</label>
+                <div class="flex space-x-2">
+                    <select id="unites-mode" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm py-2 px-3 focus:ring-primary-500 focus:border-primary-500">
+                        <option value="defaut">Défaut (Officiel)</option>
+                        <option value="sans">Sans Unités (Moy. Simple)</option>
+                        <option value="perso">Personnalisé</option>
+                    </select>
+                    <button id="unites-btn" class="bg-gray-200 text-gray-600 rounded-md px-3 hover:bg-gray-300 transition duration-150 text-sm">Éditer</button>
                 </div>
             </div>
-
-            <div class="subject-averages">
-                <h4>Moyennes par matière</h4>
-                <ul id="subject-averages-list"><li class="no-data">Aucune donnée</li></ul>
-            </div>
-        </aside>
-    </main>
-
-    <div class="modal-overlay" id="unites-modal">
-        <div class="modal-content">
-            <span class="modal-close" id="close-unites-modal">&times;</span>
-            <h3>Configuration des Unités</h3>
-            <div class="control-group">
-                <select id="unites-mode">
-                    <option value="defaut">Unités par défaut</option>
-                    <option value="sans">Sans unités (tout = 1)</option>
-                    <option value="perso">Personnalisée</option>
-                </select>
-            </div>
-            <div id="unites-list"></div>
         </div>
+
+        <h3 class="text-lg font-semibold mt-4 mb-2 text-gray-700 border-t pt-3">Moyennes par Matière (<span id="active-etape-name">1</span>)</h3>
+        <ul id="subject-averages-list" class="space-y-2 text-base">
+            </ul>
+
     </div>
 
-    <footer>
-        <p>Outil MBS - Moyenne, Bilan, Stratégie</p>
-        <p><a href="ticket.html">Signaler un problème</a></p>
-    </footer>
+    <div class="content-area">
+        <h1 class="text-3xl font-bold mb-4 text-gray-800">Détails de Performance & Prédictions</h1>
 
-    <script>
-        // Theme setup and save to local storage
-        const themeToggle = document.getElementById('theme-toggle');
-        const html = document.documentElement;
-        const toggleIcon = themeToggle.querySelector('i');
-        
-        const THEME_KEY = 'mbs-theme';
+        <div class="flex border-b border-gray-200 mb-4">
+            <button class="tab-btn active" data-tab="etape1">Étape 1 - Analyse</button>
+            <button class="tab-btn" data-tab="etape2">Étape 2 - Analyse</button>
+            <button class="tab-btn" data-tab="etape3">Étape 3 - Projection</button>
+            <button class="tab-btn" data-tab="simulation">Monte Carlo & Probabilités</button>
+        </div>
 
-        const updateTheme = (theme) => {
-            html.setAttribute('data-theme', theme);
-            localStorage.setItem(THEME_KEY, theme);
-            // Change icon for the opposite theme
-            if (theme === 'dark') {
-                toggleIcon.classList.remove('fa-moon');
-                toggleIcon.classList.add('fa-sun');
-            } else {
-                toggleIcon.classList.remove('fa-sun');
-                toggleIcon.classList.add('fa-moon');
-            }
-        };
+        <div id="tab-contents">
+            <div id="etape1" class="tab-content active">
+                </div>
+            <div id="etape2" class="tab-content">
+                </div>
+            <div id="etape3" class="tab-content">
+                </div>
 
-        // 1. Initial Load Theme
-        const storedTheme = localStorage.getItem(THEME_KEY);
-        // Determine the initial theme
-        const initialTheme = storedTheme || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        updateTheme(initialTheme);
+            <div id="simulation" class="tab-content">
+                <h2 class="text-2xl font-bold mb-4 text-primary-color">Analyse Prédictive Stochastique (100,000 Scénarios)</h2>
+                <p class="text-gray-600 mb-6 border-b pb-4">
+                    *Le modèle utilise la **Régression Linéaire** pour la tendance de base et projette la performance. Les probabilités sont calculées à l'aide d'une **CDF Normale** basée sur la tendance et la volatilité (StdDev) de vos notes. Ces données sont des estimations statistiques.*
+                </p>
 
+                <h3 class="text-xl font-semibold mb-3 mt-4 text-gray-700">Prédictions de Moyenne Finale Globale (Intervalles de Confiance)</h3>
+                <div id="global-predictions" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                    </div>
 
-        // 2. Theme Toggle Handler
-        themeToggle.addEventListener('click', () => {
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            updateTheme(newTheme);
-        });
+                <h3 class="text-xl font-semibold mb-3 mt-8 text-gray-700 border-t pt-4">Analyse de Déséquilibre Volatilité / Effort (Mismatch)</h3>
+                <div id="mismatch-analysis" class="space-y-4">
+                    </div>
 
-        // 3. Modal/Popup Animation Control
-        const unitesModal = document.getElementById('unites-modal');
-        const unitesBtn = document.getElementById('unites-btn');
-        const closeUnitesModal = document.getElementById('close-unites-modal');
+                <h3 class="text-xl font-semibold mb-3 mt-8 text-gray-700 border-t pt-4">Analyse de Chemin : Moyenne Requise à l'Étape 2</h3>
+                <p class="text-sm text-gray-600 mb-4">Moyenne exacte que vous devez obtenir à l'**Étape 2** (basé sur E1 et la projection E3) pour atteindre chaque objectif global.</p>
+                <table class="probability-table w-full rounded-lg overflow-hidden">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th>Objectif Global (%)</th>
+                            <th>Moyenne Requise E2 (%)</th>
+                            <th>Probabilité (%)</th>
+                            <th>Analyse du Risque</th>
+                        </tr>
+                    </thead>
+                    <tbody id="probability-table-body-e2">
+                        </tbody>
+                </table>
 
-        unitesBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            unitesModal.classList.add('active');
-        });
+                <h3 class="text-xl font-semibold mb-3 mt-8 text-gray-700 border-t pt-4">Analyse de Chemin : Moyenne Requise à l'Étape 3</h3>
+                <p class="text-sm text-gray-600 mb-4">Moyenne exacte que vous devez obtenir à l'**Étape 3** (basé sur E1+E2) pour atteindre chaque objectif global.</p>
+                <table class="probability-table w-full rounded-lg overflow-hidden">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th>Objectif Global (%)</th>
+                            <th>Moyenne Requise E3 (%)</th>
+                            <th>Probabilité (%)</th>
+                            <th>Analyse du Risque</th>
+                        </tr>
+                    </thead>
+                    <tbody id="probability-table-body-e3">
+                        </tbody>
+                </table>
 
-        const closeModal = () => {
-            unitesModal.classList.remove('active');
-        };
+                 <h3 class="text-xl font-semibold mb-3 mt-8 text-gray-700 border-t pt-4">Prédictions Tendancielles Détaillées par Matière</h3>
+                <p class="text-sm text-gray-600 mb-4">Prédiction de note finale (E1+E2+E3) basée sur la **Tendance par Régression Linéaire**. **Plafondé au Max. Historique + 5%**.</p>
+                <div id="subject-predictions-list" class="space-y-3">
+                    </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-        closeUnitesModal.addEventListener('click', closeModal);
-        unitesModal.addEventListener('click', (e) => {
-            if (e.target === unitesModal) {
-                closeModal();
-            }
-        });
+<div id="unites-modal" class="modal">
+    <div class="modal-content">
+        <h3 class="text-xl font-bold mb-4">Unités par Matière</h3>
+        <p class="text-sm text-gray-500 mb-4">Ajustez les unités pour chaque matière si le mode 'Personnalisé' est sélectionné.</p>
+        <div id="unites-list" class="max-h-80 overflow-y-auto border p-3 rounded-md space-y-2">
+            </div>
+        <div class="mt-6 flex justify-end">
+            <button id="close-unites-modal" class="bg-primary-color text-white px-4 py-2 rounded-md hover:bg-violet-700 transition">Fermer & Appliquer</button>
+        </div>
+    </div>
+</div>
 
-    </script>
-    <script src="js/main-functions.js"></script>
+<script src="js/projected-averages.js"></script> 
+<script src="js/projection.js"></script>
+
 </body>
 </html>
