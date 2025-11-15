@@ -1,11 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- START: VITAL CHANGES FOR PAGE LIFECYCLE ---
     let listenersAttached = false;
-    window.addEventListener('pageshow', () => {
-        console.log("Page shown. Reloading data and widgets.");
-        init();
-    });
-    // --- END: VITAL CHANGES ---
+    window.addEventListener('pageshow', () => init());
 
     const gradeMap = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 85, 'B': 80, 'B-': 75, 'C+': 70, 'C': 65, 'C-': 60, 'D+': 55, 'D': 50, 'E': 45 };
     let mbsData = {};
@@ -21,11 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
         mbsData.settings = mbsData.settings || {};
         mbsData.settings.objectives = mbsData.settings.objectives || {};
         mbsData.settings.chartViewPrefs = mbsData.settings.chartViewPrefs || {};
-        mbsData.settings.historyModes = mbsData.settings.historyModes || {}; // 'average' or 'assignment'
-
-        mbsData.historique = mbsData.historique || {}; // ALWAYS stores average history for trend arrows
-        mbsData.assignmentHistory = mbsData.assignmentHistory || {}; // Stores user-defined assignment history for graphs
-
+        mbsData.historique = mbsData.historique || {};
         mbsData.generalAverageMemory = mbsData.generalAverageMemory || [null, null];
         mbsData.assignmentsSnapshot = mbsData.assignmentsSnapshot || {};
 
@@ -40,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
             setupEventListeners();
             listenersAttached = true;
         }
-
+        
         renderWidgets('generale');
     }
 
@@ -51,6 +42,128 @@ document.addEventListener('DOMContentLoaded', () => {
             renderWidgets(btn.dataset.etape);
         }));
         detailsModal.addEventListener('click', e => { if (e.target === detailsModal) closeDetailsModal(); });
+    }
+
+    // --- NEW: History logic is now split by mode ---
+
+    /**
+     * Initializes history for a subject if it doesn't exist. Defaults to 'average' mode.
+     */
+    function initializeHistory(subjectCode, currentAverage) {
+        if (!mbsData.historique[subjectCode]) {
+            mbsData.historique[subjectCode] = {
+                mode: 'average', // 'average' or 'assignment'
+                data: [currentAverage]
+            };
+            return true; // Data was changed
+        }
+        return false;
+    }
+
+    /**
+     * Updates history for subjects in 'average' mode. Manages a 5-point sliding window.
+     */
+    function updateAverageHistory(subjectCode, currentAverage) {
+        const history = mbsData.historique[subjectCode];
+        if (history.data.length > 0 && history.data[history.data.length - 1]?.toFixed(2) === currentAverage.toFixed(2)) {
+            return false; // No change
+        }
+        history.data.push(currentAverage);
+        if (history.data.length > 5) {
+            history.data.shift(); // Sliding window of 5 points
+        }
+        return true;
+    }
+    
+    /**
+     * Updates history for subjects in 'assignment' mode by adding newly graded assignments.
+     */
+    function updateAssignmentHistory(subjectCode) {
+        const history = mbsData.historique[subjectCode];
+        const allAssignments = getAllAssignmentsForSubject(mbsData, subjectCode);
+        const gradedAssignments = allAssignments.filter(a => getNumericGrade(a.result) !== null);
+
+        let changed = false;
+        gradedAssignments.forEach(assign => {
+            // If a graded assignment is not already in our manual list, add it automatically.
+            if (!history.data.includes(assign.uniqueId)) {
+                history.data.push(assign.uniqueId);
+                changed = true;
+            }
+        });
+        return changed;
+    }
+
+    function getAllAssignmentsForSubject(data, subjectCode) {
+        return ['etape1', 'etape2', 'etape3'].flatMap((etapeKey, etapeIndex) =>
+            (data[etapeKey] || []).filter(s => s.code === subjectCode)
+            .flatMap(s => s.competencies.flatMap(c => c.assignments.map((a, assignIndex) => ({
+                ...a,
+                compName: c.name,
+                subjectCode: s.code,
+                subjectName: s.name,
+                // Create a more robust unique ID
+                uniqueId: `${s.code}-${etapeIndex}-${c.name.replace(/\s/g, '')}-${assignIndex}`
+            }))))
+        );
+    }
+    
+    function calculateOverallAverage(data) {
+        let totalWeightedAverage = 0;
+        let totalEtapeWeight = 0;
+        const etapeWeights = { etape1: 0.2, etape2: 0.2, etape3: 0.6 };
+
+        ['etape1', 'etape2', 'etape3'].forEach(etapeKey => {
+            const subjectsInEtape = data[etapeKey] || [];
+            if (subjectsInEtape.length > 0) {
+                let etapeTotalScore = 0;
+                let etapeSubjectCount = 0;
+                subjectsInEtape.forEach(subject => {
+                    const avg = calculateSubjectAverage(subject);
+                    if (avg !== null) {
+                        etapeTotalScore += avg;
+                        etapeSubjectCount++;
+                    }
+                });
+
+                if (etapeSubjectCount > 0) {
+                    const etapeAverage = etapeTotalScore / etapeSubjectCount;
+                    totalWeightedAverage += etapeAverage * etapeWeights[etapeKey];
+                    totalEtapeWeight += etapeWeights[etapeKey];
+                }
+            }
+        });
+
+        return totalEtapeWeight > 0 ? totalWeightedAverage / totalEtapeWeight : null;
+    }
+    
+    function updateGeneralAverageMemory() {
+        const currentOverallAverage = calculateOverallAverage(mbsData);
+        if (currentOverallAverage === null) return;
+
+        const storedAverage = mbsData.generalAverageMemory[0];
+
+        if (storedAverage === null || Math.abs(currentOverallAverage - storedAverage) > 0.01) {
+            mbsData.generalAverageMemory[1] = storedAverage;
+            mbsData.generalAverageMemory[0] = currentOverallAverage;
+            checkForAssignmentChanges();
+            localStorage.setItem('mbsData', JSON.stringify(mbsData));
+        }
+    }
+    
+    function checkForAssignmentChanges() {
+        const oldSnapshot = mbsData.assignmentsSnapshot || {};
+        const newSnapshot = {};
+        const allAssignments = ['etape1', 'etape2', 'etape3'].flatMap(etapeKey =>
+            (mbsData[etapeKey] || []).flatMap(s =>
+                s.competencies.flatMap(c => c.assignments.map((a, index) => ({
+                    ...a,
+                    uniqueId: `${s.code}-${c.name}-${a.work.replace(/\s/g,'')}-${index}`
+                })))
+            )
+        );
+        allAssignments.forEach(assign => { newSnapshot[assign.uniqueId] = assign.result; });
+        mbsData.assignmentsSnapshot = newSnapshot;
     }
 
     function getNumericGrade(result) {
@@ -79,11 +192,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         return totalWeight > 0 ? { average: totalWeightedGrade / totalWeight, weight: totalWeight } : null;
     }
-
+    
     function calculateSubjectAverage(subject) {
         let totalWeightedCompetencyScore = 0;
         let totalCompetencyWeight = 0;
-        (subject.competencies || []).forEach(comp => {
+        subject.competencies.forEach(comp => {
             const compWeightMatch = comp.name.match(/\((\d+)%\)/);
             if (!compWeightMatch) return;
             const competencyWeight = parseFloat(compWeightMatch[1]);
@@ -95,121 +208,73 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         return totalCompetencyWeight > 0 ? totalWeightedCompetencyScore / totalCompetencyWeight : null;
     }
-
-    function updateAverageHistory(subjectCode) {
-        const allCompetencies = ['etape1', 'etape2', 'etape3']
-            .flatMap(e => (mbsData[e] || []).filter(s => s.code === subjectCode))
-            .flatMap(s => s.competencies);
-
-        if (allCompetencies.length === 0) return false;
-        const currentAverage = calculateSubjectAverage({ competencies: allCompetencies });
-        if (currentAverage === null) return false;
-
-        let historyArray = mbsData.historique[subjectCode] || [];
-
-        if (historyArray.length === 0) {
-            historyArray.push(currentAverage);
-            mbsData.historique[subjectCode] = historyArray;
-            return true;
-        }
-
-        const lastAverage = historyArray[historyArray.length - 1];
-        if (Math.abs(currentAverage - lastAverage) < 0.01) {
-            return false;
-        }
-
-        historyArray.push(currentAverage);
-        while (historyArray.length > 5) { historyArray.shift(); }
-        mbsData.historique[subjectCode] = historyArray;
-        return true;
-    }
-
-    /**
-     * --- NEW: Syncs manual assignment history with new grades ---
-     */
-    function syncAssignmentHistory(subjectCode) {
-        const mode = mbsData.settings.historyModes[subjectCode];
-        if (mode !== 'assignment') return false;
-
-        const allGradedAssignments = ['etape1', 'etape2', 'etape3']
-            .flatMap(etapeKey => (mbsData[etapeKey] || []).filter(s => s.code === subjectCode))
-            .flatMap(s => s.competencies.flatMap(c => c.assignments))
-            .map((a, index) => ({ ...a, uniqueId: `${subjectCode}-${index}` }))
-            .filter(a => getNumericGrade(a.result) !== null);
-
-        let currentHistory = mbsData.assignmentHistory[subjectCode] || [];
-        const historyIds = new Set(currentHistory.map(h => h.assignmentId));
-        let updated = false;
-
-        allGradedAssignments.forEach(assign => {
-            if (!historyIds.has(assign.uniqueId)) {
-                currentHistory.push({
-                    assignmentId: assign.uniqueId,
-                    assignmentName: assign.work.replace('<br>', ' '),
-                    grade: getNumericGrade(assign.result)
-                });
-                historyIds.add(assign.uniqueId);
-                updated = true;
-            }
-        });
-
-        if (updated) {
-            while (currentHistory.length > 5) {
-                currentHistory.shift();
-            }
-            mbsData.assignmentHistory[subjectCode] = currentHistory;
-        }
-        return updated;
-    }
-
+    
     function renderWidgets(etapeKey) {
         widgetGrid.innerHTML = '';
         Object.values(activeGauges).forEach(chart => chart.destroy());
         Object.values(activeWidgetCharts).forEach(chart => chart.destroy());
         activeGauges = {};
-
+        
         let subjectsToRender = [];
         if (etapeKey === 'generale') {
-             const allSubjects = new Map();
+            const allSubjects = new Map();
             ['etape1', 'etape2', 'etape3'].forEach(etape => {
                 (mbsData[etape] || []).forEach(subject => {
-                    if (!allSubjects.has(subject.code)) {
-                        allSubjects.set(subject.code, { code: subject.code, name: subject.name, competencies: [] });
-                    }
+                    if (!allSubjects.has(subject.code)) allSubjects.set(subject.code, { name: subject.name, competencies: [] });
                     allSubjects.get(subject.code).competencies.push(...subject.competencies);
                 });
             });
-            subjectsToRender = Array.from(allSubjects.values());
-            subjectsToRender.forEach(s => s.average = calculateSubjectAverage(s));
+            subjectsToRender = Array.from(allSubjects.entries()).map(([code, data]) => ({
+                code, name: data.name, competencies: data.competencies,
+                average: calculateSubjectAverage({ competencies: data.competencies })
+            }));
         } else {
-            subjectsToRender = (mbsData[etapeKey] || []).map(subject => ({ ...subject, average: calculateSubjectAverage(subject) }));
+            subjectsToRender = (mbsData[etapeKey] || []).map(subject => ({
+                ...subject, average: calculateSubjectAverage(subject)
+            }));
         }
 
         let needsDataSave = false;
         subjectsToRender.forEach(subject => {
             if (subject.average === null) return;
+            
+            // --- REWORKED: History Update Logic ---
+            const overallSubjectAverage = calculateSubjectAverage({
+                competencies: ['etape1', 'etape2', 'etape3']
+                    .flatMap(e => mbsData[e] || [])
+                    .filter(s => s.code === subject.code)
+                    .flatMap(s => s.competencies)
+            });
 
-            if (updateAverageHistory(subject.code)) needsDataSave = true;
-            if (syncAssignmentHistory(subject.code)) needsDataSave = true;
+            if (overallSubjectAverage !== null) {
+                if (initializeHistory(subject.code, overallSubjectAverage)) needsDataSave = true;
 
-            const averageHistory = (mbsData.historique[subject.code] || []).filter(h => h !== null);
+                const history = mbsData.historique[subject.code];
+                let historyWasUpdated = false;
+                if (history.mode === 'average') {
+                    historyWasUpdated = updateAverageHistory(subject.code, overallSubjectAverage);
+                } else { // mode === 'assignment'
+                    historyWasUpdated = updateAssignmentHistory(subject.code);
+                }
+                if(historyWasUpdated) needsDataSave = true;
+            }
+            
+            // --- IMPORTANT: Trend arrow is ALWAYS based on the true average history, not the graph display mode ---
+            const trueAverageHistory = (JSON.parse(localStorage.getItem('mbsData'))?.historique[subject.code]?.data || []).filter(d => typeof d === 'number');
             let trend;
-
-            if (averageHistory.length < 2) {
+            if (trueAverageHistory.length < 2) {
                 trend = { direction: '▲', change: '0.00%', class: 'up' };
             } else {
-                const currentAvg = averageHistory[averageHistory.length - 1];
-                const previousAvg = averageHistory[averageHistory.length - 2];
-                const change = currentAvg - previousAvg;
-                trend = change < 0 ?
-                    { direction: '▼', change: `${change.toFixed(2)}%`, class: 'down' } :
-                    { direction: '▲', change: `+${change.toFixed(2)}%`, class: 'up' };
+                const change = trueAverageHistory[trueAverageHistory.length - 1] - trueAverageHistory[trueAverageHistory.length - 2];
+                trend = change < 0 
+                    ? { direction: '▼', change: `${change.toFixed(2)}%`, class: 'down' }
+                    : { direction: '▲', change: `+${change.toFixed(2)}%`, class: 'up' };
             }
 
             const widget = document.createElement('div');
             widget.className = 'subject-widget';
             const chartCanvasId = `dist-chart-${subject.code.replace(/\s+/g, '')}-${etapeKey}`;
-
+            
             widget.innerHTML = `
                 <div class="widget-top-section">
                     <div class="widget-info">
@@ -223,15 +288,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="gauge-container"><canvas id="gauge-${chartCanvasId}"></canvas></div>
                 </div>
                 <div class="widget-chart-controls">
-                    <button class="chart-open-editor-btn" data-subject-code="${subject.code}"><i class="fa-solid fa-pen-to-square"></i> Éditeur</button>
-                    <small class="chart-toggle-hint">Cliquer sur le graphique pour le changer</small>
+                     <button class="chart-edit-btn" data-subject-code="${subject.code}"><i class="fa-solid fa-pen-to-square"></i> Éditer le Graphique</button>
                 </div>
-                <div class="histogram-container" data-subject-code="${subject.code}" data-canvas-id="${chartCanvasId}"><canvas id="${chartCanvasId}"></canvas></div>`;
-
+                <div class="histogram-container"><canvas id="${chartCanvasId}"></canvas></div>
+                <small style="text-align: center; width: 100%; display: block; margin-top: 4px;">Cliquer sur le graphique pour le changer.</small>
+                `;
+            
             widget.querySelector('.widget-top-section').addEventListener('click', () => openDetailsModal(subject, etapeKey));
             widgetGrid.appendChild(widget);
-
+            
             renderGauge(`gauge-${chartCanvasId}`, subject.average, mbsData.settings.objectives[subject.code]);
+            
+            const chartContainer = widget.querySelector('.histogram-container');
+            chartContainer.dataset.subjectCode = subject.code;
+            chartContainer.dataset.canvasId = chartCanvasId;
 
             const preferredView = mbsData.settings.chartViewPrefs[subject.code] || 'histogram';
             if (preferredView === 'line') {
@@ -239,38 +309,36 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 renderHistogram(chartCanvasId, subject);
             }
+
+            // --- NEW: Event listener for swapping graphs is on the canvas container ---
+            chartContainer.addEventListener('click', () => {
+                const subjectCode = chartContainer.dataset.subjectCode;
+                const canvasId = chartContainer.dataset.canvasId;
+                
+                const currentView = mbsData.settings.chartViewPrefs[subjectCode] || 'histogram';
+                const newView = currentView === 'histogram' ? 'line' : 'histogram';
+                mbsData.settings.chartViewPrefs[subjectCode] = newView;
+                localStorage.setItem('mbsData', JSON.stringify(mbsData));
+
+                if (activeWidgetCharts[canvasId]) activeWidgetCharts[canvasId].destroy();
+                
+                const subjectData = subjectsToRender.find(s => s.code === subjectCode);
+                if (newView === 'line') {
+                    renderLineGraph(canvasId, subjectData);
+                } else {
+                    renderHistogram(canvasId, subjectData);
+                }
+            });
         });
         
-        const toggleGraphView = (element) => {
-            const subjectCode = element.dataset.subjectCode;
-            const canvasId = element.dataset.canvasId;
-            const subject = subjectsToRender.find(s => s.code === subjectCode);
-            if (!subject) return;
-
-            const currentView = mbsData.settings.chartViewPrefs[subjectCode] || 'histogram';
-            const newView = currentView === 'histogram' ? 'line' : 'histogram';
-            mbsData.settings.chartViewPrefs[subjectCode] = newView;
-            localStorage.setItem('mbsData', JSON.stringify(mbsData));
-
-            if (activeWidgetCharts[canvasId]) activeWidgetCharts[canvasId].destroy();
-            if (newView === 'line') {
-                renderLineGraph(canvasId, subject);
-            } else {
-                renderHistogram(canvasId, subject);
-            }
-        };
-
-        document.querySelectorAll('.chart-open-editor-btn').forEach(button => {
+        // --- NEW: Edit button now opens the editor ---
+        document.querySelectorAll('.chart-edit-btn').forEach(button => {
             button.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const subjectCode = button.dataset.subjectCode;
-                const subject = subjectsToRender.find(s => s.code === subjectCode);
-                if (subject) openHistoryEditor(subject);
+                const subject = subjectsToRender.find(s => s.code === subjectCode) || getAllAssignmentsForSubject(mbsData, subjectCode)[0];
+                openHistoryEditor(subject);
             });
-        });
-
-        document.querySelectorAll('.histogram-container').forEach(container => {
-            container.addEventListener('click', () => toggleGraphView(container));
         });
 
         if (needsDataSave) {
@@ -282,168 +350,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function renderLineGraph(canvasId, subject) {
-        const mode = mbsData.settings.historyModes[subject.code] || 'average';
-        let labels = [], data = [], title = '';
-
-        if (mode === 'average') {
-            const history = (mbsData.historique[subject.code] || []).filter(h => h !== null);
-            labels = history.map((_, i) => `Point ${i + 1}`);
-            data = history;
-            title = 'Historique des moyennes';
-        } else {
-            const history = (mbsData.assignmentHistory[subject.code] || []).filter(h => h && h.assignmentName && h.grade !== null);
-            labels = history.map(h => h.assignmentName);
-            data = history.map(h => h.grade);
-            title = 'Historique des travaux';
-        }
-
-        const ctx = document.getElementById(canvasId).getContext('2d');
-        activeWidgetCharts[canvasId] = new Chart(ctx, {
-            type: 'line',
-            data: { labels, datasets: [{ label: 'Note', data, borderColor: '#3498db', pointBackgroundColor: '#3498db', pointRadius: 5 }] },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                scales: { y: { suggestedMin: 50, suggestedMax: 100 } },
-                plugins: { legend: { display: false }, title: { display: true, text: title } }
-            }
-        });
-    }
-
-    function openHistoryEditor(subject) {
-        const allGradedAssignments = ['etape1', 'etape2', 'etape3']
-            .flatMap(etapeKey => (mbsData[etapeKey] || []).filter(s => s.code === subject.code))
-            .flatMap(s => s.competencies.flatMap(c => c.assignments))
-            .map((a, index) => ({ ...a, uniqueId: `${subject.code}-${index}` }))
-            .filter(a => getNumericGrade(a.result) !== null);
-
-        const currentMode = mbsData.settings.historyModes[subject.code] || 'average';
-        const modal = document.createElement('div');
-        modal.id = 'history-editor-modal';
-        modal.className = 'modal-overlay active';
-
-        let editorBodyHTML = '';
-        if (currentMode === 'average') {
-            const averageHistory = mbsData.historique[subject.code] || [];
-            editorBodyHTML = `
-                <p>Le mode actuel est <strong>Auto Moyenne</strong>. Le graphique suit l'évolution de votre moyenne générale pour cette matière.</p>
-                <p>Pour suivre des travaux spécifiques, passez en mode manuel.</p>
-                <div class="history-editor-actions">
-                    <button id="switch-to-assignment-mode" class="btn-primary">Passer en Mode Manuel</button>
-                </div>
-                <div class="history-data-display">
-                    <h4>Points de données actuels (Moyennes) :</h4>
-                    <ul>${averageHistory.map(avg => `<li>${avg.toFixed(2)}%</li>`).join('') || '<li>Aucune donnée.</li>'}</ul>
-                </div>`;
-        } else { // 'assignment' mode
-            editorBodyHTML = `
-                <p>Le mode actuel est <strong>Manuel (par travail)</strong>. Choisissez un travail noté pour chaque point de donnée. Les nouveaux travaux notés s'ajouteront automatiquement.</p>
-                <div id="data-points-container"></div>
-                <div class="history-editor-actions">
-                    <button id="add-point-btn" class="btn-secondary">Ajouter un point</button>
-                    <button id="reset-to-average-mode" class="btn-danger">Réinitialiser en Mode Auto</button>
-                </div>`;
-        }
-
-        modal.innerHTML = `
-            <div class="history-editor-content">
-                <div class="history-editor-header"><h3>Éditeur d'historique pour ${subject.name}</h3><span class="close-btn">&times;</span></div>
-                <div class="editor-body">${editorBodyHTML}</div>
-                <div class="history-editor-footer">
-                    <button id="close-history-editor" class="btn-secondary">Annuler</button>
-                    ${currentMode === 'assignment' ? '<button id="save-history-assignments" class="btn-primary">Sauvegarder</button>' : ''}
-                </div>
-            </div>`;
-        document.body.appendChild(modal);
-
-        const closeModal = () => {
-            modal.remove();
-            renderWidgets(document.querySelector('.tab-btn.active').dataset.etape);
-        };
-        modal.querySelector('.close-btn').addEventListener('click', closeModal);
-        modal.querySelector('#close-history-editor').addEventListener('click', closeModal);
-
-        if (currentMode === 'average') {
-            modal.querySelector('#switch-to-assignment-mode').addEventListener('click', () => {
-                mbsData.settings.historyModes[subject.code] = 'assignment';
-                // --- FIX: Start with a blank slate, not pre-populated assignments ---
-                mbsData.assignmentHistory[subject.code] = [];
-                localStorage.setItem('mbsData', JSON.stringify(mbsData));
-                modal.remove();
-                openHistoryEditor(subject);
-            });
-        } else {
-            let tempHistory = JSON.parse(JSON.stringify(mbsData.assignmentHistory[subject.code] || []));
-            const pointsContainer = modal.querySelector('#data-points-container');
-
-            const renderDataPointEditors = () => {
-                pointsContainer.innerHTML = tempHistory.map((pointData, i) => {
-                    const assignmentOptions = allGradedAssignments.map(a =>
-                        `<option value="${a.uniqueId}" ${pointData && pointData.assignmentId === a.uniqueId ? 'selected' : ''}>
-                            ${a.work.replace('<br>', ' ')} (${getNumericGrade(a.result).toFixed(1)}%)
-                        </option>`
-                    ).join('');
-                    return `
-                        <div class="data-point-editor">
-                            <label>Point ${i + 1}:</label>
-                            <select data-index="${i}">
-                                <option value="">-- Choisissez un travail --</option>
-                                ${assignmentOptions}
-                            </select>
-                            <button class="remove-point-btn" data-index="${i}">&times;</button>
-                        </div>`;
-                }).join('');
-                modal.querySelector('#add-point-btn').disabled = tempHistory.length >= 5;
-            };
-
-            pointsContainer.addEventListener('click', (e) => {
-                if (e.target.classList.contains('remove-point-btn')) {
-                    tempHistory.splice(parseInt(e.target.dataset.index), 1);
-                    renderDataPointEditors();
-                }
-            });
-
-            pointsContainer.addEventListener('change', (e) => {
-                if (e.target.tagName === 'SELECT') {
-                    const index = parseInt(e.target.dataset.index);
-                    const selectedAssignment = allGradedAssignments.find(a => a.uniqueId === e.target.value);
-                    if (selectedAssignment) {
-                        tempHistory[index] = {
-                            assignmentId: selectedAssignment.uniqueId,
-                            assignmentName: selectedAssignment.work.replace('<br>', ' '),
-                            grade: getNumericGrade(selectedAssignment.result)
-                        };
-                    } else { tempHistory[index] = null; }
-                }
-            });
-
-            modal.querySelector('#add-point-btn').addEventListener('click', () => {
-                if (tempHistory.length < 5) {
-                    tempHistory.push(null);
-                    renderDataPointEditors();
-                }
-            });
-
-            modal.querySelector('#save-history-assignments').addEventListener('click', () => {
-                mbsData.assignmentHistory[subject.code] = tempHistory.filter(h => h !== null);
-                localStorage.setItem('mbsData', JSON.stringify(mbsData));
-                closeModal();
-            });
-
-            modal.querySelector('#reset-to-average-mode').addEventListener('click', () => {
-                mbsData.settings.historyModes[subject.code] = 'average';
-                delete mbsData.assignmentHistory[subject.code];
-                localStorage.setItem('mbsData', JSON.stringify(mbsData));
-                closeModal();
-            });
-
-            renderDataPointEditors();
-        }
-    }
-
-
-    // --- Unchanged Helper Functions (Gauge, Histogram, Modals, Calculators, etc.) ---
-    
     function renderGauge(canvasId, value, goal) {
         const ctx = document.getElementById(canvasId).getContext('2d');
         const gradient = ctx.createLinearGradient(0, 0, 120, 0);
@@ -497,6 +403,142 @@ document.addEventListener('DOMContentLoaded', () => {
             data: { labels: Object.keys(bins), datasets: [{ data: Object.values(bins), backgroundColor: colors }] },
             options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false }, title: { display: true, text: 'Distribution des notes' } } }
         });
+    }
+
+    function renderLineGraph(canvasId, subject) {
+        const history = mbsData.historique[subject.code];
+        if (!history) return;
+
+        let labels = [];
+        let data = [];
+        let title = 'Historique des moyennes';
+
+        if (history.mode === 'average') {
+            data = history.data.filter(d => d !== null);
+            labels = data.map((_, i) => `Point ${i + 1}`);
+        } else { // 'assignment' mode
+            title = 'Notes des travaux sélectionnés';
+            const allAssignments = getAllAssignmentsForSubject(mbsData, subject.code);
+            const assignmentsToPlot = allAssignments.filter(a => history.data.includes(a.uniqueId));
+            
+            assignmentsToPlot.forEach(a => {
+                const grade = getNumericGrade(a.result);
+                if (grade !== null) {
+                    labels.push(a.work.replace('<br>', ' '));
+                    data.push(grade);
+                }
+            });
+        }
+
+        const lineGraphColor = '#3498db';
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        activeWidgetCharts[canvasId] = new Chart(ctx, {
+            type: 'line',
+            data: { labels, datasets: [{ label: 'Note', data, borderColor: lineGraphColor, pointBackgroundColor: lineGraphColor, pointRadius: 5 }] },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                scales: { y: { suggestedMin: 50, suggestedMax: 100 } }, 
+                plugins: { legend: { display: false }, title: { display: true, text: title } }
+            }
+        });
+    }
+
+    /**
+     * --- FULLY REWRITTEN HISTORY EDITOR WITH DUAL MODE LOGIC ---
+     */
+    function openHistoryEditor(subject) {
+        const subjectCode = subject.code;
+        const history = mbsData.historique[subjectCode];
+        const allAssignments = getAllAssignmentsForSubject(mbsData, subjectCode);
+        const gradedAssignments = allAssignments.filter(a => getNumericGrade(a.result) !== null);
+
+        const modal = document.createElement('div');
+        modal.id = 'history-editor-modal';
+        modal.className = 'modal-overlay active';
+        
+        let contentHTML = '';
+        // --- UI depends on the current history mode ---
+        if (history.mode === 'average') {
+            contentHTML = `
+                <h3>Mode Actuel: Moyenne Automatique</h3>
+                <p>Le graphique suit automatiquement l'évolution de la moyenne générale de cette matière.</p>
+                <div class="assignments-list">
+                    <p><strong>Points de données actuels:</strong> ${history.data.map(d => d.toFixed(2)+'%').join(', ')}</p>
+                </div>
+                <div class="history-editor-footer">
+                    <button id="switch-to-assignment-mode" class="btn-primary">Personnaliser le Graphique (Mode Travaux)</button>
+                </div>`;
+        } else { // 'assignment' mode
+            const assignmentCheckboxes = gradedAssignments.map(assign => {
+                const isChecked = history.data.includes(assign.uniqueId);
+                return `
+                <div class="assignment-item">
+                    <input type="checkbox" id="${assign.uniqueId}" data-id="${assign.uniqueId}" ${isChecked ? 'checked' : ''}>
+                    <label for="${assign.uniqueId}">
+                        ${assign.work.replace('<br>', ' ')}
+                        <small>Note: ${assign.result || 'N/A'} | Pondération: ${assign.pond}%</small>
+                    </label>
+                </div>`;
+            }).join('');
+
+            contentHTML = `
+                <h3>Mode Actuel: Travaux Personnalisés</h3>
+                <p>Cochez les travaux que vous souhaitez afficher sur le graphique. De nouveaux travaux notés seront ajoutés automatiquement.</p>
+                <div class="assignments-list">${assignmentCheckboxes}</div>
+                <div class="history-editor-footer">
+                    <button id="save-assignment-selection" class="btn-primary">Sauvegarder la Sélection</button>
+                </div>`;
+        }
+
+        modal.innerHTML = `
+            <div class="history-editor-content">
+                <div class="history-editor-header">
+                    <h2>Éditeur de Graphique pour ${subject.name}</h2>
+                    <button id="close-history-editor" class="close-btn">&times;</button>
+                </div>
+                ${contentHTML}
+            </div>`;
+        document.body.appendChild(modal);
+
+        const closeModal = () => {
+            modal.remove();
+            renderWidgets(document.querySelector('.tab-btn.active').dataset.etape);
+        };
+
+        // --- Event Listeners for the modal ---
+        if (history.mode === 'average') {
+            modal.querySelector('#switch-to-assignment-mode').addEventListener('click', () => {
+                // Switch to assignment mode, pre-selecting all graded assignments.
+                history.mode = 'assignment';
+                history.data = gradedAssignments.map(a => a.uniqueId);
+                localStorage.setItem('mbsData', JSON.stringify(mbsData));
+                closeModal();
+            });
+        } else {
+            modal.querySelector('#save-assignment-selection').addEventListener('click', () => {
+                const selectedIds = new Set();
+                modal.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+                    selectedIds.add(cb.dataset.id);
+                });
+
+                // If user deselects everything, revert to average mode.
+                if (selectedIds.size === 0) {
+                    history.mode = 'average';
+                    const currentAvg = calculateSubjectAverage(subject);
+                    // Reset history to a single point
+                    history.data = currentAvg !== null ? [currentAvg] : [];
+                } else {
+                    history.data = Array.from(selectedIds);
+                }
+                
+                localStorage.setItem('mbsData', JSON.stringify(mbsData));
+                closeModal();
+            });
+        }
+        
+        modal.querySelector('#close-history-editor').addEventListener('click', closeModal);
+        modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
     }
 
     function openDetailsModal(subject, etapeKey) {
@@ -660,73 +702,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         goalInput.addEventListener('input', calculate);
         calculate();
-    }
-    
-    // --- General Average Memory Functions ---
-
-    function calculateOverallAverage(data) {
-        let totalWeightedAverage = 0;
-        let totalEtapeWeight = 0;
-        const etapeWeights = { etape1: 0.2, etape2: 0.2, etape3: 0.6 };
-        ['etape1', 'etape2', 'etape3'].forEach(etapeKey => {
-            const subjectsInEtape = data[etapeKey] || [];
-            if (subjectsInEtape.length > 0) {
-                let etapeTotalScore = 0;
-                let etapeSubjectCount = 0;
-                subjectsInEtape.forEach(subject => {
-                    const avg = calculateSubjectAverage(subject);
-                    if (avg !== null) {
-                        etapeTotalScore += avg;
-                        etapeSubjectCount++;
-                    }
-                });
-                if (etapeSubjectCount > 0) {
-                    const etapeAverage = etapeTotalScore / etapeSubjectCount;
-                    totalWeightedAverage += etapeAverage * etapeWeights[etapeKey];
-                    totalEtapeWeight += etapeWeights[etapeKey];
-                }
-            }
-        });
-        return totalEtapeWeight > 0 ? totalWeightedAverage / totalEtapeWeight : null;
-    }
-
-    function updateGeneralAverageMemory() {
-        const currentOverallAverage = calculateOverallAverage(mbsData);
-        if (currentOverallAverage === null) return;
-        const storedAverage = mbsData.generalAverageMemory[0];
-        if (storedAverage === null || Math.abs(currentOverallAverage - storedAverage) > 0.01) {
-            console.log("General average has changed. Updating memory and checking assignments.");
-            mbsData.generalAverageMemory[1] = storedAverage;
-            mbsData.generalAverageMemory[0] = currentOverallAverage;
-            checkForAssignmentChanges();
-            localStorage.setItem('mbsData', JSON.stringify(mbsData));
-        }
-    }
-
-    function checkForAssignmentChanges() {
-        const oldSnapshot = mbsData.assignmentsSnapshot || {};
-        const newSnapshot = {};
-        const changedAssignments = [];
-        const allAssignments = ['etape1', 'etape2', 'etape3'].flatMap(etapeKey =>
-            (mbsData[etapeKey] || []).flatMap(s =>
-                s.competencies.flatMap(c =>
-                    c.assignments.map((a, index) => ({ ...a, uniqueId: `${s.code}-${c.name}-${a.work.replace(/\s/g, '')}-${index}` }))
-                )
-            )
-        );
-        allAssignments.forEach(assign => {
-            const oldResult = oldSnapshot[assign.uniqueId];
-            const newResult = assign.result;
-            if (oldResult !== newResult) {
-                if (oldResult !== undefined) {
-                    changedAssignments.push({ name: assign.work, subject: assign.uniqueId.split('-')[0], old: oldResult, new: newResult });
-                }
-            }
-            newSnapshot[assign.uniqueId] = newResult;
-        });
-        if (changedAssignments.length > 0) {
-            console.log("Detected changes in assignment grades:", changedAssignments);
-        }
-        mbsData.assignmentsSnapshot = newSnapshot;
     }
 });
