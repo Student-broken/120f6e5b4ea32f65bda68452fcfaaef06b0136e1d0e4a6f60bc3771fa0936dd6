@@ -3,29 +3,472 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Importer les Données - Outil MBS</title>
-    <link rel="stylesheet" href="css/global.css">
-    <script src="js/ui/theme.js"></script>
+    <title>Mise à Jour des Données - Outil MBS</title>
+    <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        :root {
+            --transition-duration: 0.15s;
+            --primary-color: #2980b9;
+            --secondary-color: #2c3e50;
+            --background-color: #f7f9fb;
+            --widget-background: #ffffff;
+            --text-color: #34495e;
+            --light-grey: #bdc3c7;
+            --footer-grey: #7f8c8d;
+            --danger-color: #e74c3c;
+            --shadow: 0 8px 15px rgba(0, 0, 0, 0.08);
+            --border-color: #e0e6eb;
+        }
+
+        [data-theme='dark'] {
+            --background-color: #121212;
+            --widget-background: #1e1e1e;
+            --text-color: #e0e0e0;
+            --secondary-color: #bbbbbb;
+            --light-grey: #757575;
+            --footer-grey: #a0a0a0;
+            --danger-color: #ff6b6b;
+            --shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            --border-color: #333333;
+            .site-header { color: var(--text-color); }
+            .important-message { border-color: var(--primary-color); }
+        }
+
+        body, .site-header-container, .data-widget, textarea, .icon-btn, footer, .modal-content, .important-message {
+            transition: background-color var(--transition-duration) ease, color var(--transition-duration) ease, border-color var(--transition-duration) ease, box-shadow var(--transition-duration) ease;
+        }
+
+        /* --- NOUVELLES KEYFRAMES POUR L'ANIMATION DE LA FLÈCHE DE RETOUR --- */
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(41, 128, 185, 0.4); }
+            70% { box-shadow: 0 0 0 8px rgba(41, 128, 185, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(41, 128, 185, 0); }
+        }
+        @keyframes arrow-move {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(-3px); }
+        }
+        /* --- FIN NOUVELLES KEYFRAMES --- */
+        
+        /* ANCIENNES ANIMATIONS DE CHARGEMENT SUPPRIMÉES POUR LA VITESSE */
+        /* .site-header-container, .content, footer n'ont plus d'opacity: 0; ou de transform: translateY(25px); */
+
+        body {
+            margin: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .site-header-container {
+            background-color: var(--widget-background);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            padding: 15px 25px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header-left, .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .site-header {
+            text-align: center;
+            padding: 0; margin: 0;
+            color: var(--secondary-color);
+            font-size: 2.2em; font-weight: 700;
+            font-family: 'Playfair Display', serif;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .content {
+            flex-grow: 1; display: flex;
+            justify-content: center; align-items: flex-start;
+            padding: 40px 20px;
+        }
+        
+        .icon-btn {
+            background: none; border: 2px solid var(--light-grey); color: var(--text-color);
+            width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; font-size: 1.1em;
+            text-decoration: none;
+            transition: all 0.2s ease, background-color var(--transition-duration), box-shadow 0.2s; /* Ajout box-shadow à la transition */
+        }
+        .icon-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            transform: scale(1.1);
+        }
+
+        /* --- ANIMATION SPÉCIFIQUE DU BOUTON RETOUR (CERCLE + FLÈCHE) --- */
+        .header-left .icon-btn:hover {
+            animation: pulse-border 1.5s infinite; /* Animation du cercle (ombre qui pulse) */
+        }
+        .header-left .icon-btn:hover i {
+            animation: arrow-move 0.5s ease-in-out infinite alternate; /* Animation de la flèche */
+        }
+        /* --- FIN ANIMATION SPÉCIFIQUE --- */
+
+
+        .data-widget {
+            background-color: var(--widget-background);
+            padding: 40px; border-radius: 16px;
+            box-shadow: var(--shadow);
+            width: 100%; max-width: 650px; text-align: center;
+        }
+        textarea {
+            width: 100%; height: 350px; padding: 15px;
+            border: 2px dashed var(--light-grey);
+            border-radius: 10px; font-family: monospace;
+            font-size: 14px; box-sizing: border-box; resize: vertical;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            transition: border-color 0.2s, box-shadow 0.2s, background-color var(--transition-duration), color var(--transition-duration);
+        }
+        textarea:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(41, 128, 185, 0.2);
+            outline: none;
+        }
+        
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: flex; justify-content: center; align-items: center; z-index: 1000;
+            opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-content {
+            background-color: var(--widget-background);
+            padding: 30px; border-radius: 12px;
+            max-width: 90%; width: 450px; position: relative;
+            box-shadow: var(--shadow);
+            transform: scale(0.9) translateY(-20px);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s, background-color var(--transition-duration);
+        }
+        .modal-overlay.active .modal-content {
+            transform: scale(1) translateY(0);
+        }
+        .modal-close { position: absolute; top: 10px; right: 15px; font-size: 2em; cursor: pointer; color: var(--light-grey); transition: color 0.2s; }
+        .modal-close:hover { color: var(--danger-color); }
+        .modal-content h3 { color: var(--primary-color); margin-top: 0; }
+        .modal-content p { line-height: 1.5; margin-bottom: 10px; border-left: 3px solid var(--primary-color); padding-left: 10px; }
+        
+        .important-message {
+            background-color: var(--background-color);
+            border: 1px solid var(--primary-color);
+            color: var(--text-color);
+            padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: 500;
+            display: flex; align-items: center; font-size: 0.95em;
+        }
+        .important-message .icon { font-size: 1.5em; margin-right: 10px; color: var(--primary-color); }
+
+        footer {
+            text-align: center; padding: 25px; font-size: 0.9em;
+            color: var(--footer-grey); border-top: 1px solid var(--border-color); margin-top: auto;
+        }
+        footer a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
+        footer a:hover { text-decoration: underline; }
+    </style>
 </head>
 <body>
-    <main class="container">
-        <a href="index.html" class="back-link">← Retour</a>
-        <h1 class="page-title">Importer vos Données</h1>
-        <p class="instructions">
-            1. Allez sur le portail étudiant. <br>
-            2. Sélectionnez tout (Ctrl+A ou Cmd+A). <br>
-            3. Copiez (Ctrl+C ou Cmd+C). <br>
-            4. Collez dans la zone ci-dessous.
-        </p>
 
-        <div id="paste-area">
-            <textarea id="raw-text" readonly placeholder="Collez vos données ici..."></textarea>
+    <header class="site-header-container">
+        <div class="header-left">
+             <a href="main.html" class="icon-btn" title="Retour au tableau de bord">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
         </div>
-        
-        <div id="status-area">
-            <!-- Status messages will be shown here -->
+        <h1 class="site-header">Outil MBS</h1>
+        <div class="header-right">
+            <button class="icon-btn" id="theme-toggle" title="Mode Sombre/Clair">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+            <button class="icon-btn" id="open-modal-btn" title="Comment ça marche ?">
+                <i class="fa-solid fa-circle-question"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="content">
+        <div class="data-widget" id="data-widget">
+            <h2 style="font-family: 'Playfair Display', serif; font-weight: 700;">Mise à Jour des Données</h2>
+            <p style="margin-top: -10px; margin-bottom: 30px;">Collez simplement vos données du portail ci-dessous.</p>
+            <textarea id="raw-text" placeholder="1. Allez sur le portail et copiez tout (Ctrl+A, Ctrl+C)&#10;2. Revenez ici et collez (Ctrl+V)&#10;&#10;L'analyse et la sauvegarde sont automatiques !"></textarea>
         </div>
     </main>
-    <script type="module" src="js/pages/data.js"></script>
+
+    <div class="modal-overlay" id="tutorial-modal">
+        <div class="modal-content">
+            <span class="modal-close" id="close-modal-btn">&times;</span>
+            <h3>Comment utiliser l'outil</h3>
+            <div class="important-message">
+                <span class="icon"><i class="fas fa-lightbulb"></i></span>
+                <span>Pour garder vos moyennes à jour, répétez ces étapes régulièrement.</span>
+            </div>
+            <p>1. Allez dans la section "Travaux" du portail étudiant.</p>
+            <p>2. Appuyez sur <strong>CTRL + A</strong> pour tout sélectionner.</p>
+            <p>3. Appuyez sur <strong>CTRL + C</strong> pour tout copier.</p>
+            <p>4. Revenez sur cette page et collez avec <strong>CTRL + V</strong>.</p>
+            <p><strong>C'est tout !</strong> Vous serez redirigé automatiquement.</p>
+        </div>
+    </div>
+
+    <footer>
+        <p>Outil MBS - Moyenne, Bilan, Stratégie</p>
+        <p><a href="ticket.html">Signaler un problème</a></p>
+    </footer>
+
+    <!-- This replaces the need for an external js/data-functions.js file -->
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- Elements ---
+        const openModalBtn = document.getElementById('open-modal-btn');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const tutorialModal = document.getElementById('tutorial-modal');
+        const rawTextArea = document.getElementById('raw-text');
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const html = document.documentElement; // Target the <html> tag for theme attribute
+        const toggleIcon = themeToggleBtn.querySelector('i');
+
+        // --- Dark Mode Logic (Standardized) ---
+        const THEME_KEY = 'mbs-theme'; // Use a consistent key
+
+        const updateTheme = (theme) => {
+            html.setAttribute('data-theme', theme);
+            localStorage.setItem(THEME_KEY, theme);
+            if (theme === 'dark') {
+                toggleIcon.classList.remove('fa-moon');
+                toggleIcon.classList.add('fa-sun');
+            } else {
+                toggleIcon.classList.remove('fa-sun');
+                toggleIcon.classList.add('fa-moon');
+            }
+        };
+
+        const storedTheme = localStorage.getItem(THEME_KEY);
+        const initialTheme = storedTheme || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        updateTheme(initialTheme);
+
+        themeToggleBtn.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            updateTheme(newTheme);
+        });
+
+        // --- Modal Logic ---
+        const openModal = () => tutorialModal.classList.add('active');
+        const closeModal = () => tutorialModal.classList.remove('active');
+
+        openModalBtn.addEventListener('click', openModal);
+        closeModalBtn.addEventListener('click', closeModal);
+        tutorialModal.addEventListener('click', (e) => { if (e.target === tutorialModal) closeModal(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+        // --- Core Paste & Save Logic ---
+        rawTextArea.addEventListener('paste', (e) => {
+            // Animation temporaire sur la zone de texte
+            rawTextArea.style.boxShadow = '0 0 0 5px var(--primary-color)';
+            setTimeout(() => {
+                rawTextArea.style.boxShadow = ''; // Laisser la transition CSS reprendre le contrôle
+            }, 300);
+
+            // Allow the pasted text to populate the textarea before we read it
+            setTimeout(() => {
+                const rawText = rawTextArea.value;
+                if (!rawText.trim()) return;
+
+                handleDataProcessing(rawText);
+            }, 0);
+        });
+
+        function handleDataProcessing(rawText) {
+            try {
+                const parsedResult = parsePortalData(rawText);
+                
+                if (!parsedResult.nom || !parsedResult.etapeData) {
+                    alert("Erreur d'analyse : Le nom ou le numéro d'étape n'a pas été trouvé. Assurez-vous d'avoir bien copié toute la page du portail.");
+                    rawTextArea.value = ''; // Clear the textarea for another attempt
+                    return;
+                }
+
+                // Get existing data or create a new object
+                let existingData = JSON.parse(localStorage.getItem('mbsData')) || {};
+
+                // Create user ID if it doesn't exist
+                if (!existingData.user_random) {
+                    existingData.user_random = 'user-' + Date.now().toString(36) + Math.random().toString(36).substring(2);
+                }
+                
+                // Overwrite data for the specific etape
+                const updatedData = {
+                    ...existingData,
+                    valid: true, // Mark data as valid
+                    nom: parsedResult.nom,
+                    [parsedResult.etapeKey]: parsedResult.etapeData,
+                };
+
+                // ---- START: HISTORY TRACKING LOGIC (for improve.html) ----
+                const gradeMap = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 85, 'B': 80, 'B-': 75, 'C+': 70, 'C': 65, 'C-': 60, 'D+': 55, 'D': 50, 'E': 45 };
+                
+                function getNumericGrade(result) {
+                    if (!result) return null;
+                    const trimmed = result.trim();
+                    if (gradeMap[trimmed]) return gradeMap[trimmed];
+                    const scoreMatch = trimmed.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/);
+                    if (scoreMatch) {
+                        const score = parseFloat(scoreMatch[1].replace(',', '.'));
+                        const max = parseFloat(scoreMatch[2].replace(',', '.'));
+                        return (max > 0) ? (score / max) * 100 : null;
+                    }
+                    return null;
+                }
+
+                let currentTermAverage = 0;
+                let totalWeight = 0;
+                parsedResult.etapeData.forEach(subject => {
+                    subject.competencies.forEach(comp => {
+                        const compWeightMatch = comp.name.match(/\((\d+)%\)/);
+                        if (compWeightMatch) {
+                            const compWeight = parseFloat(compWeightMatch[1]);
+                            let competencyGrade = 0;
+                            let competencyTotalWeight = 0;
+                            comp.assignments.forEach(assign => {
+                                const grade = getNumericGrade(assign.result);
+                                const weight = parseFloat(assign.pond);
+                                if (grade !== null && !isNaN(weight) && weight > 0) {
+                                    competencyGrade += grade * weight;
+                                    competencyTotalWeight += weight;
+                                }
+                            });
+                            if (competencyTotalWeight > 0) {
+                                currentTermAverage += (competencyGrade / competencyTotalWeight) * compWeight;
+                                totalWeight += compWeight;
+                            }
+                        }
+                    });
+                });
+                
+                const finalTermAvg = totalWeight > 0 ? currentTermAverage / totalWeight : null;
+
+                if (finalTermAvg !== null) {
+                    if (!updatedData.historique) updatedData.historique = {};
+                    if (!updatedData.historique[parsedResult.etapeKey]) {
+                        updatedData.historique[parsedResult.etapeKey] = { timestamps: [], moyennes: [] };
+                    }
+                    updatedData.historique[parsedResult.etapeKey].timestamps.push(Date.now());
+                    updatedData.historique[parsedResult.etapeKey].moyennes.push(finalTermAvg);
+                }
+                // ---- END: HISTORY TRACKING LOGIC ----
+
+                // Save the updated data
+                localStorage.setItem('mbsData', JSON.stringify(updatedData));
+                
+                // Redirect to the main dashboard
+                window.location.href = 'main.html';
+
+            } catch (error) {
+                console.error("An error occurred during data processing:", error);
+                alert("Une erreur inattendue est survenue. Veuillez réessayer.");
+                rawTextArea.value = '';
+            }
+        }
+
+        // --- Data Parsing Function ---
+        function parsePortalData(text) {
+            const nameMatch = text.match(/Photo\s*\n(.+)/);
+            const semesterMatch = text.match(/Classe\s*\n\s*(\d)/);
+            const nom = nameMatch ? nameMatch[1].trim() : null;
+            const etapeNumber = semesterMatch ? semesterMatch[1].trim() : null;
+            if (!nom || !etapeNumber) return {};
+            const etapeKey = `etape${etapeNumber}`;
+
+            const POND_REGEX = /^\d{1,3}$/;
+            const DATE_REGEX = /^\d{4}-\d{2}-\d{2}/;
+            const RESULT_REGEX = /^(\d{1,3},\d\s\/\s\d{1,3}\s\(.+\)|[A-DF][+-]?)$/;
+
+            const createNewAssignment = () => ({ textBuffer: [], category: '', work: '', pond: '', assignedDate: '', dueDate: '', result: '' });
+
+            const parseAssignments = (lines) => {
+                let assignments = [];
+                if (lines.length === 0) return assignments;
+                let currentAssignment = createNewAssignment();
+
+                const finalizeAssignment = () => {
+                    if (currentAssignment.textBuffer.length === 0 && !currentAssignment.pond) return;
+                    const buffer = currentAssignment.textBuffer;
+                    if (buffer.length === 1) {
+                        currentAssignment.work = buffer[0];
+                    } else if (buffer.length > 1) {
+                        currentAssignment.category = buffer[0];
+                        currentAssignment.work = buffer.slice(1).join('<br>');
+                    }
+                    delete currentAssignment.textBuffer;
+                    assignments.push(currentAssignment);
+                };
+
+                for (const line of lines) {
+                    const trimmedLine = line.trim();
+                    if (!trimmedLine || trimmedLine.includes('Catégorie\tTravail\tPond.')) continue;
+
+                    if (RESULT_REGEX.test(trimmedLine)) {
+                        currentAssignment.result = trimmedLine;
+                        finalizeAssignment();
+                        currentAssignment = createNewAssignment();
+                    } else if (POND_REGEX.test(trimmedLine)) {
+                        currentAssignment.pond = trimmedLine;
+                    } else if (DATE_REGEX.test(trimmedLine)) {
+                        if (!currentAssignment.assignedDate) {
+                            currentAssignment.assignedDate = trimmedLine.split('à')[0].trim();
+                        }
+                        currentAssignment.dueDate = trimmedLine;
+                    } else {
+                        if (currentAssignment.pond || currentAssignment.assignedDate) {
+                            finalizeAssignment();
+                            currentAssignment = createNewAssignment();
+                        }
+                        currentAssignment.textBuffer.push(trimmedLine);
+                    }
+                }
+                finalizeAssignment();
+                return assignments;
+            };
+            
+            const subjects = [];
+            const subjectRegex = /([A-Z]{3}\d{3}[A-Z]?) - (.+)/g;
+            const subjectsText = text.split(subjectRegex).slice(1);
+            
+            for (let i = 0; i < subjectsText.length; i += 3) {
+                const subjectData = { code: subjectsText[i].trim(), name: subjectsText[i+1].trim(), competencies: [] };
+                let subjectContent = subjectsText[i+2] || '';
+                const competencyBlocks = subjectContent.split('Compétence - ').slice(1);
+                
+                for(const block of competencyBlocks) {
+                    const blockLines = block.trim().split('\n');
+                    const compName = blockLines.shift();
+                    const competencyData = {
+                        name: `Compétence - ${compName.trim()}`,
+                        assignments: parseAssignments(blockLines)
+                    };
+                    if (competencyData.assignments.length > 0) {
+                        subjectData.competencies.push(competencyData);
+                    }
+                }
+                if (subjectData.competencies.length > 0) {
+                    subjects.push(subjectData);
+                }
+            }
+            return { nom, etapeKey, etapeData: subjects };
+        }
+    });
+    </script>
 </body>
 </html>

@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signaler un Problème</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2980b9; 
+            --secondary-color: #2c3e50; 
+            --background-color: #f7f9fb; 
+            --widget-background: #ffffff;
+            --text-color: #34495e; 
+            --light-grey: #bdc3c7;
+            --footer-grey: #95a5a6;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --shadow: 0 8px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, 'Playfair Display';
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .site-header-container {
+            background-color: var(--widget-background);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); 
+            border-bottom: 1px solid #e0e6eb; 
+            padding: 15px 0; 
+        }
+        
+        .site-header {
+            text-align: center;
+            padding: 0; 
+            margin: 0;
+            color: var(--secondary-color);
+            font-size: 2.2em;
+            font-weight: 700;
+            font-family: 'Playfair Display', serif;
+            letter-spacing: 0.05em;
+        }
+
+        .content {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 20px;
+            gap: 20px;
+            flex-wrap: wrap;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .form-widget {
+            background-color: var(--widget-background);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            flex: 2;
+            min-width: 300px;
+            max-width: 700px;
+        }
+
+        .status-widget {
+            background-color: var(--secondary-color);
+            padding: 0;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            flex: 1;
+            min-width: 300px;
+            max-width: 450px;
+            color: white;
+            overflow: hidden;
+        }
+
+        h2 {
+            color: var(--secondary-color);
+            font-weight: 700;
+            font-family: 'Playfair Display', serif;
+            border-bottom: 2px solid #e0e6eb;
+            padding-bottom: 15px;
+            margin-top: 0;
+            margin-bottom: 25px;
+            font-size: 1.8em;
+        }
+
+        label {
+            display: block;
+            font-weight: 500;
+            color: var(--text-color);
+            margin-bottom: 8px;
+            margin-top: 20px;
+            font-size: 0.95em;
+        }
+
+        input[type="text"], textarea, select {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-sizing: border-box;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            font-size: 15px;
+            font-family: inherit;
+        }
+
+        input[type="text"]:focus, textarea:focus, select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(41, 128, 185, 0.2);
+            outline: none;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        select {
+            cursor: pointer;
+            background-color: white;
+        }
+
+        input[type="submit"], .btn {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 16px 25px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-top: 25px;
+            transition: background-color 0.2s, transform 0.1s;
+            width: 100%;
+        }
+
+        input[type="submit"]:not(:disabled):hover, .btn:not(:disabled):hover {
+            background-color: #3498db;
+            transform: translateY(-1px);
+        }
+
+        input[type="submit"]:disabled, .btn:disabled {
+            background-color: var(--light-grey);
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+
+        .status-header {
+            background-color: #34495e;
+            padding: 25px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+            transition: background-color 0.3s;
+            border-bottom: 1px solid #4a627a;
+            font-size: 1.1em;
+        }
+
+        .status-header:hover {
+            background-color: #3e566b;
+        }
+
+        .status-header span {
+            transition: transform 0.3s;
+            font-size: 1.2em;
+        }
+
+        .status-content {
+            padding: 25px;
+            transition: max-height 0.5s ease-in-out, opacity 0.5s ease-in-out, padding 0.5s;
+            overflow: hidden;
+            max-height: 500px;
+        }
+
+        .status-widget.collapsed .status-content {
+            max-height: 0;
+            opacity: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+
+        .status-widget.collapsed .status-header span {
+            transform: rotate(-90deg);
+        }
+
+        .status-content label {
+            color: #ecf0f1;
+            margin-top: 0;
+        }
+
+        .status-content input[type="text"] {
+            background-color: white;
+            color: var(--text-color);
+            border: none;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-content .btn {
+            background-color: #3498db;
+            margin-top: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-content .btn:hover {
+            background-color: #2980b9;
+        }
+
+        #statusResult {
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 25px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 1em;
+            color: #ecf0f1;
+            min-height: 20px;
+        }
+
+        #responseMessage {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+
+        #responseMessage.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        #responseMessage.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        #responseMessage.loading {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        #responseMessage strong {
+            font-weight: 700;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 0.85em;
+            color: var(--footer-grey);
+            font-style: italic;
+            border-top: 1px solid #e0e6eb;
+            margin-top: auto;
+            background-color: var(--widget-background);
+        }
+
+        @media (max-width: 900px) {
+            .content {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .form-widget, .status-widget {
+                max-width: 100%;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="site-header-container">
+        <header class="site-header">Signaler un Problème</header>
+    </div>
+
+    <main class="content">
+        <div class="form-widget">
+            <h2>Soumettre une Demande</h2>
+
+            <form id="ticketForm">
+                <label for="Name">Votre nom / nom d'utilisateur *</label>
+                <input type="text" id="Name" name="Name" required>
+
+                <label for="Contact">Contacte email (Seulement nécessaire si vous demandez de l'information ou désirez obtenir une copie de vos donnés)</label>
+                <input type="text" id="Contact" name="Contact">
+                
+                <label for="Message">Message *</label>
+                <textarea id="Message" name="Message" rows="5" required></textarea>
+
+                <label for="Category">Type de demande *</label>
+                <select id="Category" name="Category" required>
+                    <option value="" disabled selected>--Sélectionnez une option--</option>
+                    <option value="Request erasure of your data">Signaler un problème</option>
+                    <option value="Request copy of your data">Donner une suggestion</option>
+                    <option value="Request information about how data is collected">Question sur le stockage de donnés</option>
+                    <option value="Other">Autre</option>
+                </select>
+                
+                <input type="submit" value="Soumettre le ticket">
+                
+                <div id="responseMessage"></div>
+            </form>
+        </div>
+
+        <div class="status-widget" id="statusWidget">
+            <div class="status-header" id="statusHeader">
+                Statut du ticket
+                <span>▼</span>
+            </div>
+            
+            <div class="status-content">
+                <label for="ticketIdInput">Entrer votre Ticket ID</label>
+                <input type="text" id="ticketIdInput" placeholder="TICKET-1234567890123" required>
+                <button class="btn" id="checkStatusButton">Vérifier le Statut</button>
+                
+                <div id="statusResult"></div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        Pour des questions, veuillez contacter:
+        <a href="mailto:notabot.chat@gmail.com" style="color: var(--primary-color); text-decoration: none;">notabot.chat@gmail.com</a>
+           
+        <br>
+        <a href="conditions.html" target="_blank">Conditions d’utilisation</a> et la <a href="confidentialite.html" target="_blank">Politique de confidentialité</a>
+
+    </footer>
+
+ <script>
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzpiASb3xyq5Hf3b2-i8MvjYm-p0QW4-JwdyBU0IUFhFn8KlgKtAPCMFriYz0JnFOsf/exec';
+    
+    const ticketForm = document.getElementById('ticketForm');
+    const responseMessage = document.getElementById('responseMessage');
+    const ticketIdInput = document.getElementById('ticketIdInput');
+    const checkStatusButton = document.getElementById('checkStatusButton');
+    const statusResult = document.getElementById('statusResult');
+    const statusWidget = document.getElementById('statusWidget');
+    const statusHeader = document.getElementById('statusHeader');
+    const submitButton = ticketForm.querySelector('input[type="submit"]');
+
+    // --- New Function to manage Local Storage ---
+    function saveTicketId(id) {
+        localStorage.setItem('lastTicketId', id);
+        ticketIdInput.value = id; // Also updates the input field
+    }
+
+    function removeTicketId() {
+        localStorage.removeItem('lastTicketId');
+        ticketIdInput.value = ''; // Clears the input field
+    }
+
+    // --- Check for stored ID on page load ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const storedId = localStorage.getItem('lastTicketId');
+        if (storedId) {
+            ticketIdInput.value = storedId;
+            statusWidget.classList.remove('collapsed');
+        }
+    });
+
+    statusHeader.addEventListener('click', () => {
+        statusWidget.classList.toggle('collapsed');
+    });
+
+    ticketForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const form = e.target;
+        const formData = new FormData(form);
+        
+        submitButton.disabled = true; 
+        submitButton.value = 'Sending...';
+        responseMessage.textContent = 'Submitting your request...';
+        responseMessage.className = 'loading';
+
+        const searchParams = new URLSearchParams(formData);
+
+        fetch(WEB_APP_URL, {
+            method: 'POST',
+            body: searchParams
+        })
+        .then(response => response.json())
+        .then(data => {
+            submitButton.disabled = false;
+            submitButton.value = 'Soumettre le ticket';
+            
+            if (data.status === 'success') {
+                responseMessage.className = 'success';
+                responseMessage.innerHTML = `✅ Succès! Votre ticket a été soumis<br><br>Your <strong>Ticket ID</strong> is: <strong>${data.ticketId}</strong><br><br>Veuillez conserver cet identifiant pour consulter l'état de votre ticket. Votre demande sera traitée dans les prochaines 24 heures. Veuillez revenir consulter l'état de votre billet dans quelques heures. Merci.`;
+                
+                // --- ADDED: Save Ticket ID to Local Storage ---
+                saveTicketId(data.ticketId);
+
+                form.reset(); 
+                statusWidget.classList.remove('collapsed'); 
+            } else {
+                responseMessage.className = 'error';
+                responseMessage.textContent = data.message || '❌ An error occurred. Please try again.';
+            }
+        })
+        .catch(error => {
+            submitButton.disabled = false;
+            submitButton.value = 'Soumettre le ticket';
+            console.error('Error:', error);
+            responseMessage.className = 'error';
+            responseMessage.textContent = '❌ An error occurred during submission. Please check your connection and try again.';
+        });
+    });
+
+    checkStatusButton.addEventListener('click', function() {
+        const ticketId = ticketIdInput.value.trim();
+        if (!ticketId) {
+            statusResult.style.color = '#FFB74D';
+            statusResult.textContent = '⚠️ Veuillez entrer un ticket ID.';
+            return;
+        }
+
+        statusResult.textContent = 'Votre demande est en cours de traitement...';
+        statusResult.style.color = '#B0BEC5';
+
+        fetch(`${WEB_APP_URL}?ticketId=${encodeURIComponent(ticketId)}`, {
+            method: 'GET'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                let color = '#fff';
+                let emoji = '';
+                
+                switch (data.statusCode) {
+                    case 'D':
+                        color = '#81C784';
+                        emoji = '✅';
+                        // --- ADDED: Remove Ticket ID if status is 'Done' (D) ---
+                        removeTicketId();
+                        break;
+                    case 'P':
+                        color = '#FFB74D';
+                        emoji = '⚙️';
+                        break;
+                    case 'W':
+                        color = '#64B5F6';
+                        emoji = '⏳';
+                        break;
+                    default:
+                        color = '#BDBDBD';
+                        emoji = '❓';
+                }
+                
+                statusResult.style.color = color;
+                statusResult.innerHTML = `${emoji} Status for <strong>${ticketId}</strong>: <span>${data.statusText}</span>`;
+            } else {
+                statusResult.style.color = '#E57373';
+                statusResult.textContent = `❌ Error: ${data.message}`;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            statusResult.style.color = '#E57373';
+            statusResult.textContent = '❌ Network error during status lookup. Please try again.';
+        });
+    });
+</script>
+</body>
+</html>
