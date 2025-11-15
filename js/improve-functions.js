@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const gradeMap = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 85, 'B': 80, 'B-': 75, 'C+': 70, 'C': 65, 'C-': 60, 'D+': 55, 'D': 50, 'E': 45 };
     let mbsData = {};
+    let activeChart = null; // For the chart inside the details modal
     let activeGauges = {};
     const activeWidgetCharts = {};
 
@@ -173,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const chartCanvasId = `dist-chart-${subject.code.replace(/\s+/g, '')}-${etapeKey}`;
             
             widget.innerHTML = `
-                <div class="widget-top-section" data-subject-code="${subject.code}">
+                <div class="widget-top-section" data-subject-code="${subject.code}" data-etape-key="${etapeKey}">
                     <div class="widget-info">
                         <h3 class="widget-title">${subject.name}</h3>
                         <p class="widget-average">${subject.average.toFixed(2)}%</p>
@@ -190,6 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             renderGauge(`gauge-${chartCanvasId}`, subject.average, mbsData.settings.objectives[subject.code]);
             
+            // --- FIX: Logic to render a graph by default and allow toggling ---
             const preferredView = mbsData.settings.chartViewPrefs[subject.code] || 'histogram';
             if (preferredView === 'line') {
                 renderLineGraph(chartCanvasId, overallSubject);
@@ -198,11 +200,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
+        // --- EVENT LISTENERS ---
         document.querySelectorAll('.widget-top-section').forEach(section => {
             section.addEventListener('click', () => {
                 const subjectCode = section.dataset.subjectCode;
+                const etapeKey = section.dataset.etapeKey;
                 const overallSubject = allSubjectsAcrossEtapes.get(subjectCode);
-                openDetailsModal(overallSubject);
+                openDetailsModal(overallSubject, etapeKey);
             });
         });
 
@@ -225,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const currentView = mbsData.settings.chartViewPrefs[subjectCode] || 'histogram';
                 const newView = currentView === 'histogram' ? 'line' : 'histogram';
                 mbsData.settings.chartViewPrefs[subjectCode] = newView;
-                needsDataSave = true;
+                localStorage.setItem('mbsData', JSON.stringify(mbsData));
 
                 if (activeWidgetCharts[canvasId]) activeWidgetCharts[canvasId].destroy();
                 
@@ -286,7 +290,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 responsive: true, maintainAspectRatio: false, 
                 scales: { 
                     y: { suggestedMin: 50, suggestedMax: 100 },
-                    // --- MODIFICATION: Hide X-axis labels ---
                     x: { ticks: { display: false }, grid: { display: false } }
                 },
                 plugins: { 
@@ -337,9 +340,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const list = modal.querySelector('#order-list');
         list.addEventListener('dragstart', e => {
-            setTimeout(() => e.target.classList.add('dragging'), 0);
+            if(e.target.tagName === 'LI') setTimeout(() => e.target.classList.add('dragging'), 0);
         });
-        list.addEventListener('dragend', e => e.target.classList.remove('dragging'));
+        list.addEventListener('dragend', e => {
+            if(e.target.tagName === 'LI') e.target.classList.remove('dragging');
+        });
         list.addEventListener('dragover', e => {
             e.preventDefault();
             const afterElement = [...list.querySelectorAll('li:not(.dragging)')].reduce((closest, child) => {
@@ -377,8 +382,8 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.querySelector('#close-order-editor').addEventListener('click', closeModal);
     }
     
-    // --- Unchanged Functions (Histogram, Gauge, Details Modal, etc.) ---
-
+    // --- UNCHANGED AND RESTORED FUNCTIONS ---
+    
     function renderGauge(canvasId, value, goal) {
         const ctx = document.getElementById(canvasId).getContext('2d');
         const gradient = ctx.createLinearGradient(0, 0, 120, 0);
@@ -430,13 +435,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function openDetailsModal(subject) {
+    function openDetailsModal(subject, etapeKey) {
         const modalContent = document.getElementById('modal-content');
         modalContent.innerHTML = `
             <div class="modal-header"><h2 class="modal-title">${subject.name} (${subject.code})</h2></div>
             <div class="modal-body">
                 <div class="competency-widgets"></div>
-                <!-- Other content like calculator can go here -->
+                <div class="graph-container" style="display:none;"><canvas id="assignmentsChart"></canvas></div>
+                <div class="calculator-container"></div>
             </div>`;
         const competencyContainer = modalContent.querySelector('.competency-widgets');
         const uniqueCompetencies = new Map();
@@ -445,19 +451,103 @@ document.addEventListener('DOMContentLoaded', () => {
             uniqueCompetencies.get(comp.name).assignments.push(...(comp.assignments || []));
         });
 
-        Array.from(uniqueCompetencies.values()).forEach(comp => {
+        const compsForChart = Array.from(uniqueCompetencies.values());
+        compsForChart.forEach((comp, index) => {
             const compResult = calculateAverage(comp.assignments);
             if (!compResult) return;
             const compWidget = document.createElement('div');
             compWidget.className = 'comp-widget';
+            compWidget.dataset.index = index;
             compWidget.innerHTML = `<h4>${comp.name}</h4><div class="avg">${compResult.average.toFixed(1)}%</div>`;
             competencyContainer.appendChild(compWidget);
         });
-
+        
+        setupGoalFramework(subject, modalContent.querySelector('.calculator-container'), etapeKey);
         detailsModal.classList.add('active');
     }
-    
+
     function closeDetailsModal() {
         detailsModal.classList.remove('active');
+    }
+
+    function setupGoalFramework(subject, container, etapeKey) {
+        const currentObjective = mbsData.settings.objectives[subject.code] || '';
+        container.innerHTML = `
+            <h3>Planificateur d'Objectifs</h3>
+            <div class="goal-input">
+                <label for="objective-input" id="objective-label">Objectif :</label>
+                <input type="number" id="objective-input" min="0" max="100" value="${currentObjective}">%
+                <button id="save-objective-btn" class="btn-save">Sauvegarder</button>
+            </div>
+            <div id="calculator-content"></div>`;
+        const objectiveInput = container.querySelector('#objective-input');
+        const saveObjectiveBtn = container.querySelector('#save-objective-btn');
+        saveObjectiveBtn.addEventListener('click', () => {
+            const newObjective = parseFloat(objectiveInput.value);
+            if (!isNaN(newObjective) && newObjective >= 0 && newObjective <= 100) {
+                mbsData.settings.objectives[subject.code] = newObjective;
+            } else {
+                delete mbsData.settings.objectives[subject.code];
+            }
+            localStorage.setItem('mbsData', JSON.stringify(mbsData));
+            saveObjectiveBtn.textContent = 'Sauvé!';
+            setTimeout(() => { saveObjectiveBtn.textContent = 'Sauvegarder'; }, 1500);
+            renderWidgets(document.querySelector('.tab-btn.active').dataset.etape);
+        });
+
+        const calculatorContent = container.querySelector('#calculator-content');
+        const hasFutureWork = (subject.competencies || []).some(comp => (comp.assignments || []).some(a => getNumericGrade(a.result) === null && parseFloat(a.pond) > 0));
+        
+        if (hasFutureWork) {
+            setupIntraSubjectCalculator(subject, calculatorContent, objectiveInput);
+        } else {
+            // This part might need adjustment based on your overall data structure for inter-etape calculation
+            calculatorContent.innerHTML = `<p>Tous les travaux pour cette matière ont été notés.</p>`;
+        }
+    }
+    
+    function setupIntraSubjectCalculator(subject, container, goalInput) {
+        container.innerHTML = `<p id="calc-info"></p><div id="goal-result" class="goal-result"></div>`;
+        const goalResult = container.querySelector('#goal-result');
+        const calcInfo = container.querySelector('#calc-info');
+        
+        function calculate() {
+            let sumOfWeightedGrades = 0, sumOfCompletedWeights = 0, sumOfFutureWeights = 0, sumOfTotalWeights = 0;
+            (subject.competencies || []).forEach(comp => (comp.assignments || []).forEach(assign => {
+                const weight = parseFloat(assign.pond);
+                if (isNaN(weight) || weight <= 0) return;
+                sumOfTotalWeights += weight;
+                const grade = getNumericGrade(assign.result);
+                if (grade !== null) {
+                    sumOfWeightedGrades += grade * weight;
+                    sumOfCompletedWeights += weight;
+                } else { 
+                    sumOfFutureWeights += weight; 
+                }
+            }));
+            
+            if (sumOfTotalWeights <= 0) { calcInfo.textContent = 'Aucun travail avec une pondération valide.'; return; }
+            if (sumOfFutureWeights <= 0) { calcInfo.textContent = 'Tous les travaux ont été notés.'; goalResult.style.display = 'none'; return; }
+
+            const currentAverage = sumOfCompletedWeights > 0 ? (sumOfWeightedGrades / sumOfCompletedWeights) : 0;
+            const completedPercentage = (sumOfCompletedWeights / sumOfTotalWeights) * 100;
+            calcInfo.innerHTML = `Moyenne actuelle : <strong>${currentAverage.toFixed(2)}%</strong> (sur <strong>${completedPercentage.toFixed(1)}%</strong> de la matière complétée).`;
+            
+            const targetAvg = parseFloat(goalInput.value);
+            if (isNaN(targetAvg) || targetAvg < 0 || targetAvg > 100) { goalResult.innerHTML = 'Veuillez entrer un objectif entre 0 et 100.'; goalResult.className = 'goal-result danger'; return; }
+            
+            const totalPointsNeeded = targetAvg * sumOfTotalWeights;
+            const pointsNeededFromFuture = totalPointsNeeded - sumOfWeightedGrades;
+            const requiredAvgOnFuture = pointsNeededFromFuture / sumOfFutureWeights;
+            
+            let message, resultClass;
+            if (requiredAvgOnFuture > 100.01) { message = `Il faudrait <strong>${requiredAvgOnFuture.toFixed(1)}%</strong> sur les travaux restants. Objectif impossible.`; resultClass = 'danger'; }
+            else if (requiredAvgOnFuture < 0) { message = `Félicitations ! Objectif déjà atteint.`; resultClass = 'success'; }
+            else { message = `Il vous faut une moyenne de <strong>${requiredAvgOnFuture.toFixed(1)}%</strong> sur les travaux restants.`; resultClass = 'warning'; }
+            goalResult.innerHTML = message; goalResult.className = `goal-result ${resultClass}`;
+        }
+        
+        goalInput.addEventListener('input', calculate);
+        calculate();
     }
 });
