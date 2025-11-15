@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Full Interactive Pipeline (MBS-V10)</title>
+    <style>
+        :root {
+            --primary-color: #5B21B6; /* Violet-700 */
+            --secondary-color: #059669; /* Green-600 */
+            --warning-color: #F59E0B; /* Amber */
+            --danger-color: #DC2626; /* Red */
+            --blue-color: #1E40AF;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #1f2937;
+            --subtext-color: #4b5563;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Source+Code+Pro:wght@400;600&display=swap');
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 2rem;
+            /* Prevents horizontal scrollbar from hidden side panel */
+            overflow-x: hidden;
+        }
+
+        .pipeline-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--text-color);
+            margin-bottom: 2rem;
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 10px;
+        }
+
+        .arrow {
+            font-size: 3rem;
+            font-weight: 300;
+            color: #888;
+            text-align: center;
+            margin: -10px 0;
+            user-select: none;
+        }
+        
+        .arrow-note {
+            font-size: 0.9rem;
+            font-style: italic;
+            color: #777;
+            text-align: center;
+            margin-top: -15px;
+            margin-bottom: 1rem;
+            user-select: none;
+        }
+
+        /* --- Level 1: Phase Accordion --- */
+        .phase-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--card-bg);
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            padding: 1.25rem 1.75rem;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            border-left: 8px solid var(--primary-color);
+        }
+        .phase-header:hover {
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+        .phase-header h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 0;
+        }
+        .phase-header h3 {
+            font-size: 1.1rem;
+            font-weight: 400;
+            font-style: italic;
+            color: var(--subtext-color);
+            margin: 0;
+            margin-left: 1rem;
+        }
+        .phase-header-title {
+            display: flex;
+            align-items: baseline;
+        }
+        .phase-toggle {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            transition: transform 0.3s ease;
+            user-select: none;
+        }
+        .phase-header.phase-2 { border-left-color: var(--secondary-color); }
+        .phase-header.phase-2 h2, .phase-header.phase-2 .phase-toggle { color: var(--secondary-color); }
+        .phase-header.phase-3 { border-left-color: var(--warning-color); }
+        .phase-header.phase-3 h2, .phase-header.phase-3 .phase-toggle { color: var(--warning-color); }
+        .phase-header.phase-4 { border-left-color: var(--danger-color); }
+        .phase-header.phase-4 h2, .phase-header.phase-4 .phase-toggle { color: var(--danger-color); }
+        .phase-header.phase-5 { border-left-color: var(--blue-color); }
+        .phase-header.phase-5 h2, .phase-header.phase-5 .phase-toggle { color: var(--blue-color); }
+        .phase-header.active {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transform: translateY(0);
+        }
+        .phase-header.active .phase-toggle {
+            transform: rotate(45deg);
+        }
+        .phase-content {
+            background-color: var(--card-bg);
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out, padding 0.4s ease-out;
+            padding: 0 2rem;
+        }
+        .phase-content.active {
+            max-height: 2000px;
+            padding: 1.5rem 2rem;
+            transition: max-height 0.5s ease-in, padding 0.5s ease-in;
+        }
+        .phase-content strong {
+            font-weight: 700;
+            color: var(--text-color);
+        }
+        
+        /* --- Level 2: Function Accordion --- */
+        .function-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 0.75rem 1.25rem;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: background-color 0.2s ease;
+        }
+        .function-header:hover {
+            background-color: #f3f4f6;
+        }
+        .function-header code {
+            font-size: 1.1rem;
+            background-color: #eef2ff;
+            color: #4c1d95;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: 'Source Code Pro', monospace;
+            font-weight: 600;
+        }
+        .function-toggle {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--subtext-color);
+            transition: transform 0.3s ease;
+            user-select: none;
+        }
+        .function-header.active .function-toggle {
+            transform: rotate(45deg);
+        }
+        .function-header.active {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        .function-content {
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            padding: 0 1.5rem;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out, padding 0.4s ease-out;
+        }
+        .function-content.active {
+            max-height: 1000px;
+            padding: 1.5rem 1.5rem;
+            transition: max-height 0.4s ease-in, padding 0.4s ease-in;
+        }
+        .var-list {
+            list-style-type: none;
+            padding-left: 0;
+            margin-top: 1rem;
+        }
+        .var-list li {
+            position: relative;
+            padding-left: 20px;
+            margin-bottom: 5px;
+        }
+        .var-list li::before {
+            content: '»';
+            position: absolute;
+            left: 0;
+            top: 0;
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+        .var-list code {
+            background-color: #f3f4f6;
+            color: var(--text-color);
+            font-weight: 600;
+        }
+        code.inline {
+            background-color: #f3f4f6;
+            color: #374151;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'Source Code Pro', monospace;
+            font-weight: 400;
+        }
+        pre {
+            background-color: #f3f4f6;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            color: #374151;
+            font-family: 'Source Code Pro', monospace;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .output-box {
+            background-color: #f5f3ff;
+            border: 1px solid #e9d5ff;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1.5rem;
+        }
+        .output-box strong {
+            display: block;
+            color: var(--primary-color);
+            font-size: 1rem;
+            margin-bottom: 5px;
+        }
+        .output-box pre {
+            background-color: #fff;
+            padding: 10px;
+            border-radius: 4px;
+            color: #333;
+            font-family: 'Source Code Pro', monospace;
+            font-weight: 600;
+        }
+        
+        /* --- NEW: Side Panel CSS --- */
+        
+        #open-definitions-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+            position: fixed; /* Always visible */
+            top: 20px;
+            right: 20px;
+            z-index: 998; /* Below panel, above overlay */
+        }
+        #open-definitions-btn:hover {
+            background-color: #4c1d95;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .side-panel {
+            height: 100%;
+            width: 400px; /* A bit wider for detailed text */
+            max-width: 90%;
+            position: fixed;
+            z-index: 1000;
+            top: 0;
+            right: 0;
+            background-color: var(--card-bg);
+            box-shadow: -4px 0 15px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            padding: 2rem;
+            padding-top: 4rem; /* Room for close button */
+            transform: translateX(100%);
+            transition: transform 0.4s ease-in-out;
+        }
+        .side-panel.active {
+            transform: translateX(0);
+        }
+        .side-panel .close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-size: 2.5rem;
+            color: #aaa;
+            text-decoration: none;
+            line-height: 1;
+        }
+        .side-panel .close-btn:hover {
+            color: #333;
+        }
+        
+        .definitions-list {
+            margin-top: 2rem;
+        }
+        .definitions-list dt { /* The term */
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-top: 1.25rem;
+        }
+        .definitions-list dd { /* The definition */
+            font-size: 0.95rem;
+            color: var(--subtext-color);
+            margin-left: 0;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+         .definitions-list code {
+            font-size: 0.9rem;
+            background-color: #eef2ff;
+            color: #4c1d95;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: 'Source Code Pro', monospace;
+        }
+
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease-in-out;
+        }
+        #overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+    </style>
+</head>
+<body>
+
+    <button id="open-definitions-btn">Show Definitions</button>
+
+    <div id="overlay"></div>
+
+    <div id="definitions-panel" class="side-panel">
+        <a href="javascript:void(0)" id="close-definitions-btn" class="close-btn">&times;</a>
+        
+        <h2>Concepts & Definitions</h2>
+        
+        <dl class="definitions-list">
+            <dt>Data Normalization</dt>
+            <dd>The process of converting all raw grade formats (e.g., "A-", "4/5", "absent") into a single, standardized format (e.g., 90.0, 80.0, 0.0) so that mathematical operations can be performed on them. "Exempt" is converted to <code>null</code> and ignored.</dd>
+
+            <dt>Weighted Average</dt>
+            <dd>An average where each value is multiplied by a "weight" before being summed. In this model, assignments are weighted to calculate a competency average, and competencies are weighted (e.g., <code>(C1 * 40%) + (C2 * 60%)</code>) to get the final subject grade.</dd>
+
+            <dt>Linear Regression</dt>
+            <dd>A statistical method to find the "line of best fit" (<code>y = mx + b</code>) that models the relationship between a dependent variable (Y) and an independent variable (X). We use it to find trends.</dd>
+            
+            <dt>Slope (m)</dt>
+            <dd>The "m" in <code>y = mx + b</code>. It represents the rate of change. In the "Tendance" model, a positive slope means your grades are improving over time. A negative slope means they are declining.</dd>
+            
+            <dt>R-squared (R²)</dt>
+            <dd>A statistical measure (from 0.0 to 1.0) that represents the "confidence" or "fit" of the trend line. A high R² (e.g., 0.8) means your grades are very close to the line (a reliable trend). A low R² (e.g., 0.1) means your grades are scattered (an unreliable, "erratic" trend).</dd>
+            
+            <dt>AI_R2_THRESHOLD</dt>
+            <dd>The "gate" used by the AI. Set to <code>0.25</code>, it's the minimum R² value a trend must have to be considered "reliable" and worth reporting to the user. This filters out statistical noise.</dd>
+            
+            <dt>Standard Deviation (StdDev)</dt>
+            <dd>The purest measure of <strong>volatility</strong> or inconsistency. It measures how "spread out" your grades are from your average. A low StdDev (e.g., 2.0) means you are stable and consistent. A high StdDev (e.g., 15.0) means your grades are erratic and unpredictable.</dd>
+            
+            <dt>Burnout Risk</dt>
+            <dd>A custom score that measures the risk of "losing control." It's primarily driven by high <strong>volatility (StdDev)</strong> and a <strong>negative trend (Slope)</strong>, as these are statistical signs of instability and decline.</dd>
+            
+            <dt>Monte Carlo Simulation</dt>
+            <dd>A technique that "rolls the dice" thousands of times (here, 100,000). It uses your "Statistical Fingerprint" to generate 100,000 possible future E3 grades, giving a realistic range of outcomes instead of a single guess.</dd>
+            
+            <dt>Statistical Fingerprint</dt>
+            <dd>The unique "bell curve" of your likely future performance, defined by two numbers: <code>predictedE3SMean</code> (your trend-adjusted future average) and <code>predictedE3SSigma</code> (your future volatility, based on your past volatility).</dd>
+            
+            <dt>P-Scores (P5, P50, P95)</dt>
+            <dd>Percentile scores from the 100,000 simulations.
+                <ul>
+                    <li><strong>P50 (Median):</strong> The most likely outcome. 50,000 simulations were higher, 50,000 were lower.</li>
+                    <li><strong>P5 (Pessimistic):</strong> Your "safe" score. 95% of all simulations resulted in a *better* grade than this.</li>
+                    <li><strong>P95 (Optimistic):</strong> Your "dream" score. Only 5% of simulations resulted in a grade *this high or better*.</li>
+                </ul>
+            </dd>
+
+            <dt>Z-Score</dt>
+            <dd>A statistical measurement that describes a value's relationship to the mean of a group of values, measured in terms of standard deviations. In Phase 5, it answers: "How many standard deviations away from my projected mean is the grade I *need*?"</dd>
+            
+            <dt>Cumulative Distribution Function (CDF)</dt>
+            <dd>A function that calculates the probability of a random variable being less than or equal to a certain value. We use <code>1 - CDF(z)</code> to find the *exact* statistical probability of scoring *at or above* the required grade.</dd>
+        </dl>
+    </div>
+
+    <div class="pipeline-container">
+        <h1>Nested Algorithmic Pipeline (MBS-V10)</h1>
+
+        <div class="phase-header" data-phase="1">
+            <div class="phase-header-title">
+                <h2>PHASE 1:</h2>
+                <h3>Data Normalization & Aggregation (The "Truth")</h3>
+            </div>
+            <span class="phase-toggle">+</span>
+        </div>
+        <div class="phase-content" id="content-1">
+            <p><strong>Objective:</strong> To clean all raw data (e.g., "A-", "4/5", "absent") into standardized numbers and calculate the baseline "ground truth" averages.</p>
+            
+            <div class="function-header" data-func="func-1-1">
+                <code>getNumericGrade(result)</code>
+                <span class="function-toggle">+</span>
+            </div>
+            <div class="function-content" id="func-1-1">
+                <strong>Logic:</strong>
+                <p>Parses any text input into a standard float. "A-" becomes 90, "4/5" becomes 80, "absent" becomes 0, and "exempt" becomes <code class="inline">null</code>.</p>
+                <strong>Variable Descriptions:</strong>
+                <ul class="var-list">
+                    <li><code>result</code>: The raw text string from the data (e.g., "A+", "85%", "4/5", "absent").</li>
+                </ul>
+                <strong>Returns:</strong>
+                <p>A floating-point number (e.g., <code class="inline">90.0</code>) or <code class="inline">null</code>.</p>
+            </div>
+
+            <div class="function-header" data-func="func-1-2">
+                <code>calculateSubjectAverageAndStats(subject, etapeKey)</code>
+                <span class="function-toggle">+</span>
+            </div>
+            <div class="function-content" id="func-1-2">
+                <strong>Logic:</strong>
+                <p>This is the main workhorse of Phase 1. It loops through each subject's competencies and assignments:</p>
+                <ul class="var-list">
+                    <li>Calculates the weighted average for each competency based on its assignments.</li>
+                    <li>Calculates the final weighted average for the subject (e.g., <code class="inline">(C1_Avg * 0.4) + (C2_Avg * 0.6)</code>).</li>
+                    <li>Calls <code>extractAssignmentData(subject)</code> to get raw arrays of all grades and ponderations.</li>
+                    <li>Populates the <code>aiDataStore</code> with these raw arrays, grouping them by subject and category (STEM, Langues, etc.) for Phase 2.</li>
+                </ul>
+                <strong>Variable Descriptions:</strong>
+                <ul class="var-list">
+                    <li><code>subject</code>: The entire subject object from the <code class="inline">mbsData</code>, containing competencies and assignments.</li>
+                    <li><code>etapeKey</code>: The string name of the term (e.g., "etape1").</li>
+                </ul>
+            </div>
+
+            <div class="output-box">
+                <strong>➡️ PHASE 1 OUTPUT:</strong>
+                <pre>Normalized Grade Arrays (e.g., [90.0, 85.0, 95.0, 92.0])
+Ponderation Arrays (e.g., [5, 10, 40, 5])
+"Ground Truth" Subject Averages (e.g., Math: 88.5%)</pre>
+            </div>
+        </div>
+
+        <div class="arrow">&darr;</div>
+        
+        <div class="phase-header phase-2" data-phase="2">
+            <div class="phase-header-title">
+                <h2 style="color: var(--secondary-color);">PHASE 2:</h2>
+                <h3>Statistical Profiling & "AI" Engine (The "Why")</h3>
+            </div>
+            <span class="phase-toggle" style="color: var(--secondary-color);">+</span>
+        </div>
+        <div class="phase-content" id="content-2">
+            <p><strong>Objective:</strong> To find *patterns* in the student's performance by running a Linear Regression analysis on the raw data from Phase 1.</p>
+            
+            <div class="function-header" data-func="func-2-1">
+                <code>linearRegression(x_values, y_values)</code>
+                <span class="function-toggle">+</span>
+            </div>
+            <div class="function-content" id="func-2-1">
+                <strong>Logic:</strong>
+                <p>The core statistical function. It takes two arrays (X and Y) and finds the line of best fit (<code class="inline">y = mx + b</code>) using Ordinary Least Squares.</p>
+                <strong>Variable Descriptions:</strong>
+                <ul class="var-list">
+                    <li><code>x_values</code>: The independent variable array (e.g., time, ponderation).</li>
+                    <li><code>y_values</code>: The dependent variable array (always the grades).</li>
+                </ul>
+                <strong>Returns:</strong>
+                <p>An object containing:</p>
+                <ul class="var-list">
+                    <li><code>slope (m)</code>: The rate of change.</li>
+                    <li><code>intercept (b)</code>: The starting point.</li>
+                    <li><code>r2 (R-squared)</code>: The "confidence" or "fit" of the line (0.0 to 1.0).</li>
+                </ul>
+            </div>
+
+            <div class="function-header" data-func="func-2-2">
+                <code>AI Model Execution (in calculateAllAnalysis)</code>
+                <span class="function-toggle">+</span>
+            </div>
+            <div class="function-content" id="func-2-2">
+                <strong>Logic:</strong>
+                <p>The script loops through the <code>aiDataStore</code> and runs <code>linearRegression</code> three times for each data group (Global, STEM, etc.):</p>
+                <pre>
+// Model 1: TENDANCE (Time vs. Grade)
+linearRegression(data.grades.map((g, i) => i), data.grades)
+
+// Model 2: FOCUS (Ponderation vs. Grade)
+linearRegression(data.pondérations, data.grades)
+
+// Model 3: PRIORITÉ (Competency Weight vs. Grade)
+linearRegression(data.compWeights, data.grades)
+</pre>
+            </div>
+            
+            <div class="function-header" data-func="func-2-3">
+                <code>generateAndRenderInsights(analysis)</code>
+                <span class="function-toggle">+</span>
+            </div>
+            <div class="function-content" id="func-2-3">
+                <strong>Logic:</strong>
+                <p>This function acts as the "AI Gate." It filters all the models, keeping only the "reliable" ones to report to the user.</p>
+                 <ul class="var-list">
+                    <li>It checks if <code>model.r2 > AI_R2_THRESHOLD</code> (which is set to <code>0.25</code>).</li>
+                    <li>If <code>R²</code> is high, it formats a human-readable insight.</li>
+                    <li>If no models are reliable, it reports an "Erratic" profile.</li>
+                </ul>
+            </div>
+
+            <div class="output-box" style="background-color: #D1FAE5; border-color: #6EE7B7;">
+                <strong style="color: #065F46;">➡️ PHASE 2 OUTPUT:</strong>
+                <pre>Master Trend (e.g., Global Slope: +0.25)
+Reliable Patterns (e.g., "Negative Focus in STEM", R²=0.4)</pre>
+            </div>
+        </div>
+
+        <div class="arrow">&darr;</div>
+
+        <div class="phase-header phase-3" data-phase="3">
+            <div class="phase-header-title">
+                <h2 style="color: var(--warning-color);">PHASE 3:</h2>
+                <h3>Risk Modeling (The "Threats")</h3>
+            </div>
+            <span class="phase-toggle" style="color: var(--warning-color);">+</span>
+        </div>
+        <div class="phase-content" id="content-3">
+             <p><strong>Objective:</strong> To quantify the abstract concepts of "risk" and "burnout" using the data from Phase 1 & 2.</p>
+            
+            <div class="function-header" data-func="func-3-1">
+                <code>calculateStdDev(grades)</code>
+                <span class="function-toggle">+</span>
+            </div>
+            <div class="function-content" id="func-3-1">
+                <strong>Logic:</strong>
+                <p>Calculates the Sample Standard Deviation of a grade array. This is the purest mathematical measure of <strong>volatility</strong> (inconsistency). A low StdDev (e.g., 2.0) is stable. A high StdDev (e.g., 15.0) is erratic.</p>
+                <strong>Variable Descriptions:</strong>
+                <ul class="var-list">
+                    <li><code>grades</code>: A raw array of numbers (e.g., <code class="inline">[90, 80, 100]</code>).</li>
+                </ul>
+                <strong>Returns:</strong>
+                <p>A single float number (the StdDev).</p>
+            </div>
+            
+            <div class="function-header" data-func="func-3-2">
+                <code>calculateConsistencyScore(grades)</code>
+                <span class="function-toggle">+</span>
+            </div>
+            <div class="function-content" id="func-3-2">
+                <strong>Logic:</strong>
+                <p>A simple wrapper for StdDev, calculated as <code>Math.max(0, 100 - (stdDev * 2))</code>. This inverts the scale, turning "low volatility" into a "high consistency score."</p>
+            </div>
+
+            <div class="function-header" data-func="func-3-3">
+                <code>calculateBurnoutRisk(...)</code>
+                <span class="function-toggle">+</span>
+            </div>
+            <div class="function-content" id="func-3-3">
+                <strong>Logic:</strong>
+                <p>Calculates the risk score by weighting 4 factors. It is a measure of "losing control," not "working hard."</p>
+                <ul class="var-list">
+                    <li><code>volatilityScore</code> (35%): Based on <code>globalStdDev</code>. High volatility = high risk.</li>
+                    <li><code>trendScore</code> (35%): Based on <code>globalTrend.slope</code>. A *negative* slope = high risk.</li>
+                    <li><code>workloadScore</code> (20%): Based on total <code>Units</code> for the school level.</li>
+                    <li><code>absenceScore</code> (10%): Based on the user's manual slider input.</li>
+                </ul>
+            </div>
+
+            <div class="output-box" style="background-color: #FEF3C7; border-color: #FCD34D;">
+                <strong style="color: #92400E;">➡️ PHASE 3 OUTPUT:</strong>
+                <pre>Global Volatility (e.g., globalStdDev: 12.5)
+Global Consistency (e.g., 75/100)
+Burnout Risk Score (e.g., 68/100)</pre>
+            </div>
+        </div>
+
+        <div class="arrow">&darr;</div>
+        <div class="arrow-note">(Inputs from Phase 1, 2, and 3 combine here)</div>
+
+        <div class="phase-header phase-4" data-phase="4">
+            <div class="phase-header-title">
+                <h2 style="color: var(--danger-color);">PHASE 4:</h2>
+                <h3>Predictive Forecasting (The "Future")</h3>
+            </div>
+            <span class="phase-toggle" style="color: var(--danger-color);">+</span>
+        </div>
+        <div class="phase-content" id="content-4">
+            <p><strong>Objective:</strong> To forecast the *unknown* (Étape 3) by creating a unique "statistical fingerprint" and running a Monte Carlo simulation.</p>
+            
+            <div class="function-header" data-func="func-4-1">
+                <code>runMonteCarloSimulation(...)</code>
+                <span class="function-toggle">+</span>
+            </div>
+            <div class="function-content" id="func-4-1">
+                <strong>Logic (Part 1: Fingerprint):</strong>
+                <p>This function first creates the student's unique "bell curve" for future performance:</p>
+                <ul class="var-list">
+                    <li>Loops through all subjects to calculate a projected E3 mean (<code>predictedE3SMean</code>) and volatility (<code>predictedE3SSigma</code>).</li>
+                    <li>The projection is trend-aware: <code>projectedGrade = trend.intercept + trend.slope * (n + 1)</code>.</li>
+                    <li>It respects a cap: <code>e3PredictionCap = Math.min(100, Math.max(80, historicalMax * 1.05))</code>.</li>
+                    <li>The result is a "fingerprint" of your likely E3 performance (e.g., "likely to get 88% with a StdDev of 7").</li>
+                </ul>
+                <strong>Logic (Part 2: Simulation):</strong>
+                <p>The script runs a simulation <code>NUM_MONTE_CARLO_RUNS</code> (100,000) times:</p>
+                <pre>
+for (let i = 0; i < 100000; i++) {
+    // 1. Get a random point on a normal bell curve
+    let z = [Box-Muller Transform logic...];
+    
+    // 2. Apply it to the student's "fingerprint"
+    let predictedE3AvgGlobal = predictedE3SMean + z * predictedE3SSigma;
+    
+    // 3. Calculate the final grade with this "roll of the dice"
+    let finalGlobalGrade = (E1*0.2) + (E2*0.2) + (predictedE3AvgGlobal*0.6);
+    
+    // 4. Store the result
+    finalGlobalGrades.push(finalGlobalGrade);
+}</pre>
+                <strong>Logic (Part 3: P-Scores):</strong>
+                <p>The 100,000 results are sorted, and the percentiles are extracted:</p>
+                <pre>
+finalGlobalGrades.sort((a, b) => a - b);
+globalPred.p5 = finalGlobalGrades[5000];
+globalPred.p50 = finalGlobalGrades[50000]; // The Median
+globalPred.p95 = finalGlobalGrades[95000];</pre>
+            </div>
+
+            <div class="output-box" style="background-color: #FEE2E2; border-color: #FCA5A5;">
+                <strong style="color: #991B1B;">➡️ PHASE 4 OUTPUT:</strong>
+                <pre>P-Scores: P5 (e.g., 82.1%), P50 (e.g., 88.4%), P95 (e.g., 94.7%)
+The "Statistical Fingerprint": (predictedE3SMean, predictedE3SSigma)</pre>
+            </div>
+        </div>
+        
+        <div class="arrow">&darr;</div>
+
+        <div class="phase-header phase-5" data-phase="5">
+            <div class="phase-header-title">
+                <h2 style="color: var(--blue-color);">PHASE 5:</h2>
+                <h3>Strategic Planning (The "Plan")</h3>
+            </div>
+            <span class="phase-toggle" style="color: var(--blue-color);">+</span>
+        </div>
+        <div class="phase-content" id="content-5">
+            <p><strong>Objective:</strong> To give the user an actionable plan by comparing their *goals* to their *statistical forecast* from Phase 4.</p>
+            
+            <div class="function-header" data-func="func-5-1">
+                <code>calculatePathAnalysis(targetEtapeKey, ...)</code>
+                <span class="function-toggle">+</span>
+            </div>
+            <div class="function-content"id="func-5-1">
+                <strong>Logic:</strong>
+                <p>This function calculates the "Moyenne Requise." It performs the algebra to find the *exact* grade needed in the *target etape* (E2 or E3) to hit a goal (e.g., 90%).</p>
+                <pre>
+// Solves for 'x' (requiredAvg)
+(Target * TotalWeight - KnownSum) / RemainingWeight = x</pre>
+            </div>
+            
+            <div class="function-header" data-func="func-5-2">
+                <code>calculateProbability(mean, stdDev, requiredTarget)</code>
+                <span class="function-toggle">+</span>
+            </div>
+            <div class="function-content" id="func-5-2">
+                <strong>Logic:</strong>
+                <p>This is the "reality check." It compares the <strong>grade you need</strong> (<code>requiredTarget</code> from 5.1) against the <strong>bell curve you're likely to get</strong> (the "fingerprint" from Phase 4).</p>
+                <ul class="var-list">
+                    <li>Calculates a <code>Z-Score</code>: How many standard deviations away is your goal from your mean?</li>
+                    <li><code>z = (requiredTarget - mean) / stdDev</code></li>
+                    <li>Passes this <code class="inline">z</code> score to the CDF function.</li>
+                </ul>
+                <strong>Variable Descriptions:</strong>
+                <ul class="var-list">
+                    <li><code>mean</code>: The <code>predictedE3SMean</code> from Phase 4.</li>
+                    <li><code>stdDev</code>: The <code>predictedE3SSigma</code> from Phase 4.</li>
+                    <li><code>requiredTarget</code>: The grade needed, from <code>calculatePathAnalysis</code>.</li>
+                </ul>
+            </div>
+            
+            <div class="function-header" data-func="func-5-3">
+                <code>standardNormalCDF(z)</code>
+                <span class="function-toggle">+</span>
+            </div>
+            <div class="function-content" id="func-5-3">
+                <strong>Logic:</strong>
+                <p>A standard mathematical function (Cumulative Distribution Function), using the <code>erf()</code> approximation. It takes the <code>Z-Score</code> and finds the *area under the bell curve* to its left.</p>
+                <pre>
+// The final probability calculation
+const prob = 1 - standardNormalCDF(z); // (1 - ) finds the area to the RIGHT
+return prob * 100; // e.g., 25.3%
+</pre>
+            </div>
+
+            <div class="output-box" style="background-color: #DBEAFE; border-color: #BFDBFE;">
+                <strong style="color: #1E40AF;">➡️ PHASE 5 OUTPUT:</strong>
+                <pre>Actionable Plan (e.g., "Need 92.5% in E3")
+Probability of Success (e.g., "25.3% Chance")</pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- Get All Toggle Elements ---
+            const phaseHeaders = document.querySelectorAll('.phase-header');
+            const functionHeaders = document.querySelectorAll('.function-header');
+            const openBtn = document.getElementById('open-definitions-btn');
+            const closeBtn = document.getElementById('close-definitions-btn');
+            const panel = document.getElementById('definitions-panel');
+            const overlay = document.getElementById('overlay');
+
+            // --- Level 1: Phase Accordion Logic ---
+            phaseHeaders.forEach(header => {
+                header.addEventListener('click', () => {
+                    const phaseNumber = header.dataset.phase;
+                    const content = document.getElementById(`content-${phaseNumber}`);
+                    
+                    const isAlreadyActive = header.classList.contains('active');
+
+                    // Close all *phase* panels
+                    phaseHeaders.forEach(h => {
+                        h.classList.remove('active');
+                        const c = document.getElementById(`content-${h.dataset.phase}`);
+                        c.classList.remove('active');
+                    });
+                    
+                    // Close all *function* panels inside
+                    functionHeaders.forEach(fh => {
+                        fh.classList.remove('active');
+                        const fc = document.getElementById(fh.dataset.func);
+                        fc.classList.remove('active');
+                    });
+
+                    // If it wasn't active, open it
+                    if (!isAlreadyActive) {
+                        header.classList.add('active');
+                        content.classList.add('active');
+                    }
+                });
+            });
+
+            // --- Level 2: Function Accordion Logic ---
+            functionHeaders.forEach(header => {
+                header.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Stop the click from bubbling up to the phase-header
+                    
+                    const funcId = header.dataset.func;
+                    const content = document.getElementById(funcId);
+                    
+                    header.classList.toggle('active');
+                    content.classList.toggle('active');
+                });
+            });
+            
+            // --- NEW: Side Panel Logic ---
+            function openPanel() {
+                panel.classList.add('active');
+                overlay.classList.add('active');
+            }
+            function closePanel() {
+                panel.classList.remove('active');
+                overlay.classList.remove('active');
+            }
+
+            openBtn.addEventListener('click', openPanel);
+            closeBtn.addEventListener('click', closePanel);
+            overlay.addEventListener('click', closePanel);
+            
+        });
+    </script>
+
+</body>
+</html>
