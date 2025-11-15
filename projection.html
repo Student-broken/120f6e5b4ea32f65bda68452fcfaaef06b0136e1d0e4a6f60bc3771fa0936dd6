@@ -396,17 +396,17 @@
     /* Bouton d'aide flottant */
     .help-btn {
         position: fixed;
-        bottom: 10px;
-        left: 1490px;
+        top: 10px;     /* MODIFIED */
+        right: 10px;    /* MODIFIED */
         width: 30px;
         height: 30px;
-        background-color: #000000; 
+        background-color: #000000;  
         color: white;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.1rem; 
+        font-size: 1.1rem;  
         text-decoration: none;
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         z-index: 999;
@@ -423,12 +423,12 @@
     /* Ajustements pour la modale d'aide */
     #help-modal .modal-content {
         /* Plus large pour le texte détaillé */
-        width: 750px; 
+        width: 750px;  
         max-width: 95%;
         /* Permet le défilement */
         max-height: 90vh;
-        overflow-y: auto; 
-        text-align: left; 
+        overflow-y: auto;  
+        text-align: left;  
     }
 
     /* Style pour le texte d'aide */
@@ -499,7 +499,7 @@
         cursor: pointer;
         color: #aaa;
         line-height: 1;
-        z-index: 1001; 
+        z-index: 1001;  
     }
 </style>
 
@@ -601,7 +601,7 @@
                 <div class="score-card score-low" id="burnout-risk-score">
                     <span class="score-icon text-red-600">🔥</span>
                     <div>
-                        <p class="text-sm font-medium text-gray-500">Score de Risque de Burnout (100 = Risque Maximal) | Burnout = perte de contrôle</p>
+                        <p class="text-sm font-medium text-gray-500">Score de Risque de Burnout (100 = Risque Maximal)</p>
                         <strong class="text-xl text-red-600">--</strong>
                     </div>
                 </div>
