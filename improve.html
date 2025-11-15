@@ -20,7 +20,6 @@
             --background-color: #f7f9fb;
             --widget-background: #ffffff;
             --text-color: #34495e;
-            --text-secondary-color: #7f8c8d; /* Added for consistency */
             --light-grey: #bdc3c7;
             --footer-grey: #7f8c8d;
             --success-color: #27ae60;
@@ -32,7 +31,6 @@
             --goal-success-bg: #eafaf1;
             --goal-warning-bg: #fff9f0;
             --goal-danger-bg: #fdf3f2;
-            --primary-color-rgb: 41, 128, 185; /* RGB for transparent colors */
         }
 
         /* DARK MODE VARIABLES */
@@ -40,7 +38,6 @@
             --background-color: #121212;
             --widget-background: #1e1e1e;
             --text-color: #e0e0e0;
-            --text-secondary-color: #a0a0a0;
             --secondary-color: #bbbbbb;
             --light-grey: #757575;
             --footer-grey: #a0a0a0;
@@ -50,16 +47,14 @@
             --goal-success-bg: #1a3e2a;
             --goal-warning-bg: #4d381c;
             --goal-danger-bg: #4f2323;
-
-            /* Specific element adjustments for dark mode */
             .site-header { color: var(--text-color); }
             .widget-title { color: var(--text-color); }
             .comp-widget, .calculator-container {
                 background-color: #282828;
                 border-color: var(--border-color);
             }
-            .modal-content { background-color: #1e1e1e; }
-            .modal-header { background-color: #2c3e50; } /* Keep header dark */
+            .modal-content { background-color: var(--background-color); }
+            .modal-header { background-color: #2c3e50; }
             .goal-input input {
                 background-color: #282828;
                 border-color: var(--light-grey);
@@ -68,14 +63,14 @@
         }
 
         /* GLOBAL TRANSITIONS for smooth theme change */
-        body, .site-header-container, .sticky-tabs, .subject-widget, .modal-content, .tab-btn, .comp-widget, .calculator-container, input, .order-editor-content {
+        body, .site-header-container, .sticky-tabs, .subject-widget, .modal-content, .tab-btn, .comp-widget, .calculator-container, input {
             transition: background-color var(--transition-duration) ease, color var(--transition-duration) ease, border-color var(--transition-duration) ease, box-shadow var(--transition-duration) ease;
         }
-        
+
         @keyframes pulse-border {
-            0% { box-shadow: 0 0 0 0 rgba(var(--primary-color-rgb), 0.4); }
-            70% { box-shadow: 0 0 0 8px rgba(var(--primary-color-rgb), 0); }
-            100% { box-shadow: 0 0 0 0 rgba(var(--primary-color-rgb), 0); }
+            0% { box-shadow: 0 0 0 0 rgba(41, 128, 185, 0.4); }
+            70% { box-shadow: 0 0 0 8px rgba(41, 128, 185, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(41, 128, 185, 0); }
         }
         @keyframes arrow-move {
             0%, 100% { transform: translateX(0); }
@@ -83,64 +78,21 @@
         }
 
         /* General Styles */
-        body {
-            margin: 0; font-family: 'Inter', sans-serif;
-            background-color: var(--background-color); color: var(--text-color);
-        }
-        .site-header-container {
-            background-color: var(--widget-background); box-shadow: var(--shadow-header);
-            border-bottom: 1px solid var(--border-color); padding: 15px 25px;
-            display: flex; align-items: center; position: relative;
-        }
+        body { margin: 0; font-family: 'Inter', sans-serif; background-color: var(--background-color); color: var(--text-color); }
+        .site-header-container { background-color: var(--widget-background); box-shadow: var(--shadow-header); border-bottom: 1px solid var(--border-color); padding: 15px 25px; display: flex; align-items: center; position: relative; margin-bottom: 0; }
         .header-left { flex: 1; display: flex; justify-content: flex-start; }
         .header-center { flex: 2; text-align: center; }
         .header-right { flex: 1; display: flex; justify-content: flex-end; }
-        .site-header {
-            padding: 0; margin: 0; color: var(--secondary-color);
-            font-size: 2.2em; font-weight: 700; font-family: 'Playfair Display', serif;
-            display: inline-block;
-        }
-
-        .icon-btn {
-            background: none; border: 2px solid var(--light-grey); color: var(--text-color);
-            width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; font-size: 1.1em;
-            text-decoration: none;
-            transition: all 0.2s ease, background-color var(--transition-duration), box-shadow 0.2s;
-        }
-        .icon-btn:hover {
-            border-color: var(--primary-color); color: var(--primary-color);
-            transform: scale(1.1);
-        }
-
-        .header-left .icon-btn:hover {
-            animation: pulse-border 1.5s infinite;
-        }
-        .header-left .icon-btn:hover i {
-            animation: arrow-move 0.5s ease-in-out infinite alternate;
-        }
-        
-        .sticky-tabs {
-            position: sticky; top: 0; background-color: var(--background-color);
-            z-index: 100; padding: 15px 0; border-bottom: 1px solid var(--border-color);
-            display: flex; justify-content: center; gap: 10px; margin-bottom: 20px;
-        }
-        .tab-btn {
-            padding: 10px 20px; border: 1px solid var(--light-grey); border-radius: 20px;
-            background-color: transparent; color: var(--text-color); font-weight: 600;
-            cursor: pointer; transition: all 0.2s;
-        }
+        .site-header { padding: 0; margin: 0; color: var(--secondary-color); font-size: 2.2em; font-weight: 700; font-family: 'Playfair Display', serif; display: inline-block; }
+        .icon-btn { background: none; border: 2px solid var(--light-grey); color: var(--text-color); width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1em; text-decoration: none; transition: all 0.2s ease, background-color var(--transition-duration), box-shadow 0.2s; }
+        .icon-btn:hover { border-color: var(--primary-color); color: var(--primary-color); transform: scale(1.1); }
+        .header-left .icon-btn:hover { animation: pulse-border 1.5s infinite; }
+        .header-left .icon-btn:hover i { animation: arrow-move 0.5s ease-in-out infinite alternate; }
+        .sticky-tabs { position: sticky; top: 0; background-color: var(--background-color); z-index: 100; padding: 15px 0; border-bottom: 1px solid var(--border-color); display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { padding: 10px 20px; border: 1px solid var(--light-grey); border-radius: 20px; background-color: transparent; color: var(--text-color); font-weight: 600; cursor: pointer; transition: all 0.2s; }
         .tab-btn.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
-        .widget-grid {
-            max-width: 1400px; margin: 30px auto; padding: 0 20px;
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 25px;
-        }
-        .subject-widget {
-            background-color: var(--widget-background); border-radius: 12px;
-            box-shadow: var(--shadow-widget); padding: 20px;
-            cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
-            display: flex; flex-direction: column;
-        }
+        .widget-grid { max-width: 1400px; margin: 30px auto; padding: 0 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 25px; }
+        .subject-widget { background-color: var(--widget-background); border-radius: 12px; box-shadow: var(--shadow-widget); padding: 20px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; }
         .subject-widget:hover { transform: translateY(-5px); box-shadow: 0 12px 20px rgba(0,0,0,0.1); }
         .widget-top-section { display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; }
         .widget-info { flex: 1; }
@@ -149,34 +101,20 @@
         .widget-trend { display: flex; align-items: center; gap: 5px; font-weight: 600; font-size: 0.9em; margin-top: 5px; }
         .widget-trend.up { color: var(--success-color); }
         .widget-trend.down { color: var(--danger-color); }
-        .widget-trend.neutral { color: var(--text-secondary-color); } /* Neutral trend class */
+        .widget-trend.neutral { color: var(--light-grey); }
         .gauge-container { width: 120px; height: 70px; position: relative; }
-        .histogram-container { margin-top: 15px; height: 120px; cursor: pointer; } /* Added pointer cursor */
-        
-        /* Modal General Styles */
-        .modal-overlay {
-            position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(5px); z-index: 1000; display: flex;
-            justify-content: center; align-items: center; opacity: 0;
-            visibility: hidden; transition: opacity 0.3s, visibility 0.3s;
-        }
+        .histogram-container { margin-top: 15px; height: 120px; }
+        .modal-overlay { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(5px); z-index: 1000; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; }
         .modal-overlay.active { opacity: 1; visibility: visible; }
-        .modal-content {
-            background-color: var(--widget-background); border-radius: 16px; width: 90%;
-            max-width: 800px; max-height: 90vh; overflow-y: auto;
-            transform: scale(0.9) translateY(-20px);
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color var(--transition-duration);
-        }
+        .modal-content { background-color: var(--background-color); border-radius: 16px; width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto; transform: scale(0.9) translateY(-20px); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .modal-overlay.active .modal-content { transform: scale(1) translateY(0); }
         .modal-header { padding: 20px 25px; background-color: var(--secondary-color); color: white; border-radius: 16px 16px 0 0; }
         .modal-title { font-family: 'Playfair Display', serif; font-size: 1.8em; margin: 0; }
         .modal-body { padding: 25px; }
-
-        /* Goal Calculator Styles */
         .competency-widgets { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
-        .comp-widget { flex: 1; min-width: 150px; background-color: var(--background-color); border-radius: 8px; padding: 15px; text-align: center; border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s; }
+        .comp-widget { flex: 1; min-width: 150px; background-color: var(--widget-background); border-radius: 8px; padding: 15px; text-align: center; border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s; }
         .comp-widget.active { border-color: var(--primary-color); box-shadow: 0 0 0 2px var(--primary-color); }
-        .calculator-container { background-color: var(--background-color); border-radius: 8px; padding: 20px; border: 1px solid var(--border-color); }
+        .calculator-container { background-color: var(--widget-background); border-radius: 8px; padding: 20px; border: 1px solid var(--border-color); }
         .goal-input { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
         .goal-input input { width: 80px; padding: 8px; border-radius: 6px; border: 1px solid var(--light-grey); text-align: center; font-size: 1.1em; }
         .goal-result { padding: 15px; border-radius: 6px; text-align: center; font-size: 1.1em; font-weight: 600; transition: background-color var(--transition-duration); }
@@ -184,102 +122,113 @@
         .goal-result.warning { background-color: var(--goal-warning-bg); color: var(--warning-color); }
         .goal-result.danger { background-color: var(--goal-danger-bg); color: var(--danger-color); }
         .btn-save { padding: 8px 12px; border: none; background-color: var(--primary-color); color: white; border-radius: 6px; cursor: pointer; }
+        footer { text-align: center; padding: 25px; font-size: 0.9em; color: var(--footer-grey); border-top: 1px solid var(--border-color); margin-top: 40px; }
+        .widget-chart-controls { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 5px; height: 25px; }
+        .chart-toggle-btn { background: none; border: 1px solid var(--border-color); color: var(--light-grey); padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.8em; transition: all 0.2s ease; }
+        .chart-toggle-btn:hover { color: var(--primary-color); border-color: var(--primary-color); }
         .btn-secondary { padding: 10px 15px; border: 1px solid var(--light-grey); background-color: transparent; color: var(--text-color); border-radius: 8px; cursor: pointer; }
         .btn-primary { padding: 10px 15px; border: none; background-color: var(--success-color); color: white; border-radius: 8px; cursor: pointer; }
-        
-        /* Chart Toggle Button */
-        .widget-chart-controls {
-            display: flex; justify-content: flex-end; align-items: center;
-            height: 25px;
+
+        /* --- NEW: CSS for the Drag-and-Drop Order Editor --- */
+        #order-editor-modal {
+            z-index: 1100; /* Ensure it's above other modals */
         }
-        .chart-toggle-btn {
-            background: none; border: 1px solid var(--border-color); color: var(--light-grey);
-            padding: 4px 8px; border-radius: 6px; cursor: pointer;
-            font-size: 0.8em; transition: all 0.2s ease;
-        }
-        .chart-toggle-btn:hover { color: var(--primary-color); border-color: var(--primary-color); }
-        
-        /* --- NEW: Drag-and-Drop Order Editor CSS --- */
-        #order-editor-modal { z-index: 1100; }
+
         .order-editor-content {
             background-color: var(--widget-background);
             padding: 25px;
             border-radius: 12px;
             width: 90%;
             max-width: 600px;
-            box-shadow: var(--shadow-widget);
+            max-height: 85vh;
             display: flex;
             flex-direction: column;
-            max-height: 85vh;
+            box-shadow: var(--shadow-widget);
         }
+
         .order-editor-content h3 {
             font-family: 'Playfair Display', serif;
             font-size: 1.6em;
             margin-top: 0;
-            margin-bottom: 10px;
-            color: var(--primary-color);
             text-align: center;
+            color: var(--primary-color);
         }
+        
         .editor-instructions {
-            margin: 0 0 20px 0;
-            color: var(--text-secondary-color);
+            margin-bottom: 20px;
+            color: var(--light-grey);
             text-align: center;
             font-size: 0.9em;
         }
+
         #order-list {
             list-style: none;
-            padding: 0;
+            padding: 10px;
             margin: 0 0 20px 0;
+            max-height: 40vh;
             overflow-y: auto;
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 10px;
         }
+
         #order-list li {
-            background-color: var(--background-color);
+            background-color: rgba(128, 128, 128, 0.05); /* Works in both modes */
             margin-bottom: 8px;
-            padding: 12px 15px;
+            padding: 10px 15px;
             border-radius: 6px;
             border: 1px solid var(--border-color);
             display: flex;
             align-items: center;
             cursor: grab;
-            transition: background-color 0.2s, opacity 0.2s;
-            font-size: 0.95em;
+            transition: background-color 0.2s, box-shadow 0.2s;
         }
-        #order-list li:active { cursor: grabbing; }
+
+        #order-list li:last-child {
+            margin-bottom: 0;
+        }
+
+        #order-list li:active {
+            cursor: grabbing;
+        }
+
         #order-list li.dragging {
             opacity: 0.6;
-            background-color: rgba(var(--primary-color-rgb), 0.1);
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
         }
+        
+        /* Ensure text remains readable when dragging in dark mode */
+        [data-theme="dark"] #order-list li.dragging {
+            color: var(--widget-background); 
+        }
+
         #order-list li .fa-grip-vertical {
             margin-right: 15px;
             color: var(--light-grey);
         }
+
         .grade-pill {
             margin-left: auto;
-            background-color: var(--widget-background);
+            background-color: var(--background-color);
             border: 1px solid var(--border-color);
-            padding: 4px 10px;
+            padding: 3px 10px;
             border-radius: 12px;
-            font-size: 0.8em;
+            font-size: 0.85em;
             font-weight: 600;
-            color: var(--text-secondary-color);
         }
+
         .order-editor-footer {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 15px;
             padding-top: 15px;
             border-top: 1px solid var(--border-color);
         }
-        /* --- END NEW CSS --- */
-        
-        footer {
-             text-align: center; padding: 25px; font-size: 0.9em;
-             color: var(--footer-grey); border-top: 1px solid var(--border-color);
-             margin-top: 40px; 
+
+        .order-editor-footer > div {
+            display: flex;
+            gap: 10px;
         }
     </style>
 </head>
@@ -311,13 +260,12 @@
     
     <div id="details-modal" class="modal-overlay">
         <div id="modal-content" class="modal-content">
-            <!-- Modal content for goal planning -->
+            <!-- Modal content will be populated by JavaScript -->
         </div>
     </div>
 
     <footer><p>Outil MBS - Moyenne, Bilan, Stratégie</p></footer>
 
-    <!-- Theme and animation control script -->
     <script>
         const themeToggle = document.getElementById('theme-toggle');
         const html = document.documentElement;
@@ -327,494 +275,19 @@
         const updateTheme = (theme) => {
             html.setAttribute('data-theme', theme);
             localStorage.setItem(THEME_KEY, theme);
-            if (theme === 'dark') {
-                toggleIcon.classList.remove('fa-moon');
-                toggleIcon.classList.add('fa-sun');
-            } else {
-                toggleIcon.classList.remove('fa-sun');
-                toggleIcon.classList.add('fa-moon');
-            }
+            toggleIcon.className = theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
         };
 
         const storedTheme = localStorage.getItem(THEME_KEY);
-        const initialTheme = storedTheme || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        const initialTheme = storedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         updateTheme(initialTheme);
 
         themeToggle.addEventListener('click', () => {
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            const newTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
             updateTheme(newTheme);
         });
     </script>
 
-    <!-- FINAL JAVASCRIPT FOR PAGE FUNCTIONALITY -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            let listenersAttached = false;
-            
-            window.addEventListener('pageshow', () => {
-                init(); 
-            });
-
-            const gradeMap = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 85, 'B': 80, 'B-': 75, 'C+': 70, 'C': 65, 'C-': 60, 'D+': 55, 'D': 50, 'E': 45 };
-            let mbsData = {};
-            let activeGauges = {};
-            const activeWidgetCharts = {};
-
-            const widgetGrid = document.getElementById('widget-grid');
-            const detailsModal = document.getElementById('details-modal');
-
-            function init() {
-                mbsData = JSON.parse(localStorage.getItem('mbsData')) || {};
-                mbsData.settings = mbsData.settings || {};
-                mbsData.settings.objectives = mbsData.settings.objectives || {};
-                mbsData.settings.chartViewPrefs = mbsData.settings.chartViewPrefs || {};
-                mbsData.settings.historyMode = mbsData.settings.historyMode || {};
-                mbsData.settings.assignmentOrder = mbsData.settings.assignmentOrder || {};
-                mbsData.historique = mbsData.historique || {};
-                
-                if (!mbsData.valid) {
-                    widgetGrid.innerHTML = `<p style="text-align:center; width:100%;">Aucune donnée à analyser. Veuillez d'abord <a href="data.html">importer vos données</a>.</p>`;
-                    return;
-                }
-
-                if (!listenersAttached) {
-                    setupEventListeners();
-                    listenersAttached = true;
-                }
-                
-                renderWidgets('generale');
-            }
-
-            function setupEventListeners() {
-                document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => {
-                    document.querySelector('.tab-btn.active').classList.remove('active');
-                    btn.classList.add('active');
-                    renderWidgets(btn.dataset.etape);
-                }));
-                detailsModal.addEventListener('click', e => { if (e.target === detailsModal) closeDetailsModal(); });
-            }
-
-            function updateAverageHistory(subjectCode, currentAverage) {
-                const history = mbsData.historique[subjectCode] || [];
-                if (history.length > 0 && history[history.length - 1]?.toFixed(2) === currentAverage.toFixed(2)) {
-                    return false;
-                }
-                history.push(currentAverage);
-                while (history.length > 5) { history.shift(); }
-                mbsData.historique[subjectCode] = history;
-                return true;
-            }
-
-            function getNumericGrade(result) {
-                if (!result) return null;
-                const trimmed = result.trim();
-                if (gradeMap[trimmed]) return gradeMap[trimmed];
-                const scoreMatch = trimmed.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/);
-                if (scoreMatch) {
-                    const score = parseFloat(scoreMatch[1].replace(',', '.'));
-                    const max = parseFloat(scoreMatch[2].replace(',', '.'));
-                    return max > 0 ? (score / max) * 100 : null;
-                }
-                return null;
-            }
-
-            function calculateSubjectAverage(subject) {
-                let totalWeightedCompetencyScore = 0;
-                let totalCompetencyWeight = 0;
-                (subject.competencies || []).forEach(comp => {
-                    const compWeightMatch = comp.name.match(/\((\d+)%\)/);
-                    if (!compWeightMatch) return;
-                    const competencyWeight = parseFloat(compWeightMatch[1]);
-                    const assignments = comp.assignments || [];
-                    const competencyResult = calculateAverage(assignments);
-                    if (competencyResult) {
-                        totalWeightedCompetencyScore += competencyResult.average * competencyWeight;
-                        totalCompetencyWeight += competencyWeight;
-                    }
-                });
-                return totalCompetencyWeight > 0 ? totalWeightedCompetencyScore / totalCompetencyWeight : null;
-            }
-            
-            function calculateAverage(assignments) {
-                let totalWeightedGrade = 0;
-                let totalWeight = 0;
-                (assignments || []).forEach(assign => {
-                    const grade = getNumericGrade(assign.result);
-                    const weight = parseFloat(assign.pond);
-                    if (grade !== null && !isNaN(weight) && weight > 0) {
-                        totalWeightedGrade += grade * weight;
-                        totalWeight += weight;
-                    }
-                });
-                return totalWeight > 0 ? { average: totalWeightedGrade / totalWeight, weight: totalWeight } : null;
-            }
-
-            function renderWidgets(etapeKey) {
-                widgetGrid.innerHTML = '';
-                Object.values(activeGauges).forEach(chart => chart.destroy());
-                Object.values(activeWidgetCharts).forEach(chart => chart.destroy());
-                
-                const allSubjectsAcrossEtapes = new Map();
-                ['etape1', 'etape2', 'etape3'].forEach(etape => {
-                    (mbsData[etape] || []).forEach(subject => {
-                        if (!allSubjectsAcrossEtapes.has(subject.code)) {
-                            allSubjectsAcrossEtapes.set(subject.code, { 
-                                ...subject, 
-                                competencies: [] 
-                            });
-                        }
-                    });
-                });
-
-                ['etape1', 'etape2', 'etape3'].forEach(etape => {
-                    (mbsData[etape] || []).forEach(subject => {
-                        const existingSubject = allSubjectsAcrossEtapes.get(subject.code);
-                        if (existingSubject) {
-                            existingSubject.competencies.push(...subject.competencies);
-                        }
-                    });
-                });
-
-                let subjectsToRender = [];
-                if (etapeKey === 'generale') {
-                    subjectsToRender = Array.from(allSubjectsAcrossEtapes.values()).map(subject => ({
-                        ...subject,
-                        average: calculateSubjectAverage(subject)
-                    }));
-                } else {
-                    subjectsToRender = (mbsData[etapeKey] || []).map(subject => ({
-                        ...subject,
-                        average: calculateSubjectAverage(subject)
-                    }));
-                }
-
-                let needsDataSave = false;
-                subjectsToRender.forEach(subject => {
-                    if (subject.average === null) return;
-                    
-                    const overallSubject = allSubjectsAcrossEtapes.get(subject.code);
-                    const overallAverage = calculateSubjectAverage(overallSubject);
-
-                    if (overallAverage !== null) {
-                        if (updateAverageHistory(subject.code, overallAverage)) {
-                            needsDataSave = true;
-                        }
-                    }
-
-                    const mode = mbsData.settings.historyMode[subject.code];
-                    if (mode === 'assignment') {
-                        const allGradedAssignments = (overallSubject.competencies || [])
-                            .flatMap((c, i) => (c.assignments || []).map((a, j) => ({ ...a, uniqueId: `${subject.code}-${i}-${j}` })))
-                            .filter(a => getNumericGrade(a.result) !== null);
-
-                        const currentOrder = mbsData.settings.assignmentOrder[subject.code] || [];
-                        const currentOrderSet = new Set(currentOrder);
-                        const newAssignments = allGradedAssignments.filter(a => !currentOrderSet.has(a.uniqueId));
-
-                        if (newAssignments.length > 0) {
-                            const newOrder = [...currentOrder, ...newAssignments.map(a => a.uniqueId)];
-                            mbsData.settings.assignmentOrder[subject.code] = newOrder;
-                            needsDataSave = true;
-                        }
-                    }
-
-                    const averageHistory = (mbsData.historique[subject.code] || []).filter(h => h !== null);
-                    let trend;
-                    if (averageHistory.length < 2) {
-                        trend = { direction: '—', change: '0.00%', class: 'neutral' };
-                    } else {
-                        const currentAvg = averageHistory[averageHistory.length - 1];
-                        const previousAvg = averageHistory[averageHistory.length - 2];
-                        const change = currentAvg - previousAvg;
-                        trend = change < 0 
-                            ? { direction: '▼', change: `${change.toFixed(2)}%`, class: 'down' }
-                            : { direction: '▲', change: `+${change.toFixed(2)}%`, class: 'up' };
-                    }
-
-                    const widget = document.createElement('div');
-                    widget.className = 'subject-widget';
-                    const chartCanvasId = `dist-chart-${subject.code.replace(/\s+/g, '')}-${etapeKey}`;
-                    
-                    widget.innerHTML = `
-                        <div class="widget-top-section">
-                            <div class="widget-info">
-                                <h3 class="widget-title">${subject.name}</h3>
-                                <p class="widget-average">${subject.average.toFixed(2)}%</p>
-                                <div class="widget-trend ${trend.class}">
-                                    <span>${trend.direction}</span>
-                                    <span>${trend.change}</span>
-                                </div>
-                            </div>
-                            <div class="gauge-container"><canvas id="gauge-${chartCanvasId}"></canvas></div>
-                        </div>
-                        <div class="widget-chart-controls">
-                            <button class="chart-toggle-btn" data-subject-code="${subject.code}"><i class="fa-solid fa-chart-simple"></i> Changer</button>
-                        </div>
-                        <div class="histogram-container" data-canvas-id="${chartCanvasId}"><canvas id="${chartCanvasId}"></canvas></div>`;
-                    
-                    widget.querySelector('.widget-top-section').addEventListener('click', () => openDetailsModal(overallSubject, etapeKey));
-                    widgetGrid.appendChild(widget);
-                    
-                    renderGauge(`gauge-${chartCanvasId}`, subject.average, mbsData.settings.objectives[subject.code]);
-                    
-                    const preferredView = mbsData.settings.chartViewPrefs[subject.code] || 'histogram';
-                    if (preferredView === 'line') {
-                        renderLineGraph(chartCanvasId, overallSubject);
-                    } else {
-                        renderHistogram(chartCanvasId, overallSubject);
-                    }
-                });
-                
-                document.querySelectorAll('.chart-toggle-btn').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        const subjectCode = button.dataset.subjectCode;
-                        const overallSubject = allSubjectsAcrossEtapes.get(subjectCode);
-                        openOrderEditor(overallSubject);
-                    });
-                });
-
-                document.querySelectorAll('.histogram-container').forEach(container => {
-                    container.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        const canvasId = container.dataset.canvasId;
-                        const subjectCode = canvasId.split('-')[2];
-                        const overallSubject = allSubjectsAcrossEtapes.get(subjectCode);
-
-                        const currentView = mbsData.settings.chartViewPrefs[subjectCode] || 'histogram';
-                        const newView = currentView === 'histogram' ? 'line' : 'histogram';
-                        mbsData.settings.chartViewPrefs[subjectCode] = newView;
-                        needsDataSave = true;
-
-                        if (activeWidgetCharts[canvasId]) activeWidgetCharts[canvasId].destroy();
-                        if (newView === 'line') {
-                            renderLineGraph(canvasId, overallSubject);
-                        } else {
-                            renderHistogram(canvasId, overallSubject);
-                        }
-                    });
-                });
-
-                if (needsDataSave) {
-                    localStorage.setItem('mbsData', JSON.stringify(mbsData));
-                }
-            }
-
-            function renderLineGraph(canvasId, subject) {
-                const mode = mbsData.settings.historyMode[subject.code] || 'average';
-                const ctx = document.getElementById(canvasId).getContext('2d');
-                const lineGraphColor = '#3498db';
-                let chartData, chartTitle;
-
-                if (mode === 'assignment') {
-                    const allAssignments = (subject.competencies || [])
-                        .flatMap((c, i) => (c.assignments || []).map((a, j) => ({ ...a, uniqueId: `${subject.code}-${i}-${j}` })));
-                    
-                    const gradedAssignments = allAssignments.filter(a => getNumericGrade(a.result) !== null);
-
-                    const order = mbsData.settings.assignmentOrder[subject.code] || [];
-                    const orderMap = new Map(order.map((id, index) => [id, index]));
-                    
-                    gradedAssignments.sort((a, b) => {
-                        const posA = orderMap.get(a.uniqueId) ?? Infinity;
-                        const posB = orderMap.get(b.uniqueId) ?? Infinity;
-                        return posA - posB;
-                    });
-                    
-                    chartData = {
-                        labels: gradedAssignments.map(a => a.work.replace('<br>', ' ')),
-                        datasets: [{ 
-                            label: 'Note', 
-                            data: gradedAssignments.map(a => getNumericGrade(a.result)),
-                            borderColor: lineGraphColor, pointBackgroundColor: lineGraphColor, pointRadius: 5 
-                        }]
-                    };
-                    chartTitle = 'Ordre des travaux';
-                } else {
-                    const history = (mbsData.historique[subject.code] || []).filter(h => h !== null);
-                    chartData = {
-                        labels: history.map((_, i) => `Point ${i + 1}`),
-                        datasets: [{ 
-                            label: 'Moyenne', 
-                            data: history, 
-                            borderColor: lineGraphColor, pointBackgroundColor: lineGraphColor, pointRadius: 5 
-                        }]
-                    };
-                    chartTitle = 'Historique des moyennes';
-                }
-
-                activeWidgetCharts[canvasId] = new Chart(ctx, {
-                    type: 'line', data: chartData,
-                    options: { 
-                        responsive: true, maintainAspectRatio: false, 
-                        scales: { y: { suggestedMin: 50, suggestedMax: 100 } },
-                        plugins: { legend: { display: false }, title: { display: true, text: chartTitle } }
-                    }
-                });
-            }
-
-            function openOrderEditor(subject) {
-                const modal = document.createElement('div');
-                modal.id = 'order-editor-modal';
-                modal.className = 'modal-overlay active';
-
-                const allAssignments = (subject.competencies || [])
-                    .flatMap((c, i) => (c.assignments || []).map((a, j) => ({ ...a, uniqueId: `${subject.code}-${i}-${j}` })))
-                    .filter(a => getNumericGrade(a.result) !== null);
-
-                const currentOrder = mbsData.settings.assignmentOrder[subject.code] || [];
-                const orderMap = new Map(currentOrder.map((id, index) => [id, index]));
-                allAssignments.sort((a, b) => (orderMap.get(a.uniqueId) ?? Infinity) - (orderMap.get(b.uniqueId) ?? Infinity));
-                
-                modal.innerHTML = `
-                    <div class="order-editor-content">
-                        <h3>Ordonner les Travaux pour le Graphique</h3>
-                        <p class="editor-instructions">Glissez-déposez pour réorganiser l'ordre des points sur le graphique.</p>
-                        <ul id="order-list">
-                            ${allAssignments.map(assign => `
-                                <li draggable="true" data-id="${assign.uniqueId}">
-                                    <i class="fa-solid fa-grip-vertical"></i>
-                                    ${assign.work.replace('<br>', ' ')} 
-                                    <span class="grade-pill">${assign.result}</span>
-                                </li>
-                            `).join('')}
-                        </ul>
-                        <div class="order-editor-footer">
-                            <button id="reset-mode-btn" class="btn-secondary">Revenir au mode moyenne auto</button>
-                            <div>
-                                <button id="close-order-editor" class="btn-secondary">Annuler</button>
-                                <button id="save-order" class="btn-primary">Sauvegarder</button>
-                            </div>
-                        </div>
-                    </div>`;
-                document.body.appendChild(modal);
-
-                const list = modal.querySelector('#order-list');
-                let draggedItem = null;
-
-                list.addEventListener('dragstart', (e) => {
-                    draggedItem = e.target;
-                    setTimeout(() => e.target.classList.add('dragging'), 0);
-                });
-                
-                list.addEventListener('dragend', (e) => {
-                    e.target.classList.remove('dragging');
-                });
-
-                list.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    const afterElement = getDragAfterElement(list, e.clientY);
-                    const currentlyDragged = document.querySelector('.dragging');
-                    if (afterElement == null) {
-                        list.appendChild(currentlyDragged);
-                    } else {
-                        list.insertBefore(currentlyDragged, afterElement);
-                    }
-                });
-
-                const closeModal = () => {
-                    modal.remove();
-                    renderWidgets(document.querySelector('.tab-btn.active').dataset.etape);
-                };
-
-                modal.querySelector('#save-order').addEventListener('click', () => {
-                    const newOrder = [...list.querySelectorAll('li')].map(li => li.dataset.id);
-                    mbsData.settings.assignmentOrder[subject.code] = newOrder;
-                    mbsData.settings.historyMode[subject.code] = 'assignment';
-                    localStorage.setItem('mbsData', JSON.stringify(mbsData));
-                    closeModal();
-                });
-
-                modal.querySelector('#reset-mode-btn').addEventListener('click', () => {
-                    delete mbsData.settings.assignmentOrder[subject.code];
-                    delete mbsData.settings.historyMode[subject.code];
-                    localStorage.setItem('mbsData', JSON.stringify(mbsData));
-                    closeModal();
-                });
-
-                modal.querySelector('#close-order-editor').addEventListener('click', closeModal);
-            }
-            
-            function getDragAfterElement(container, y) {
-                const draggableElements = [...container.querySelectorAll('li:not(.dragging)')];
-                return draggableElements.reduce((closest, child) => {
-                    const box = child.getBoundingClientRect();
-                    const offset = y - box.top - box.height / 2;
-                    if (offset < 0 && offset > closest.offset) {
-                        return { offset: offset, element: child };
-                    } else {
-                        return closest;
-                    }
-                }, { offset: Number.NEGATIVE_INFINITY }).element;
-            }
-
-            function renderGauge(canvasId, value, goal) {
-                const ctx = document.getElementById(canvasId).getContext('2d');
-                const gradient = ctx.createLinearGradient(0, 0, 120, 0);
-                gradient.addColorStop(0, '#e74c3c');
-                gradient.addColorStop(0.6, '#f39c12');
-                gradient.addColorStop(1, '#27ae60');
-                activeGauges[canvasId] = new Chart(ctx, {
-                    type: 'doughnut', data: { datasets: [{ data: [100], backgroundColor: [gradient], borderWidth: 0 }] },
-                    options: { responsive: true, maintainAspectRatio: false, circumference: 180, rotation: -90, cutout: '60%', plugins: { tooltip: { enabled: false } } },
-                    plugins: [{
-                        id: 'gaugeNeedleAndLine',
-                        afterDraw: chart => {
-                            const { ctx, chartArea } = chart;
-                            const angle = Math.PI + (value / 100) * Math.PI;
-                            const cx = chartArea.left + chartArea.width / 2;
-                            const cy = chartArea.top + chartArea.height;
-                            const needleRadius = chart.getDatasetMeta(0).data[0].outerRadius;
-                            ctx.save();
-                            ctx.translate(cx, cy); ctx.rotate(angle); ctx.beginPath();
-                            ctx.moveTo(0, -5); ctx.lineTo(needleRadius - 10, 0); ctx.lineTo(0, 5);
-                            ctx.fillStyle = 'var(--text-color)'; ctx.fill();
-                            ctx.restore();
-                            if (goal) {
-                                const goalAngle = Math.PI + (goal / 100) * Math.PI;
-                                const innerRadius = chart.getDatasetMeta(0).data[0].innerRadius;
-                                ctx.save();
-                                ctx.translate(cx, cy); ctx.rotate(goalAngle); ctx.beginPath();
-                                ctx.moveTo(innerRadius, 0); ctx.lineTo(needleRadius, 0);
-                                ctx.strokeStyle = 'var(--danger-color)'; ctx.lineWidth = 3; ctx.stroke();
-                                ctx.restore();
-                            }
-                        }
-                    }]
-                });
-            }
-
-            function renderHistogram(canvasId, subject) {
-                const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-                const colors = isDarkMode
-                    ? ['#ff5252', '#ff9800', '#cddc39', '#4caf50']
-                    : ['#e74c3c', '#f39c12', '#a0c800', '#27ae60'];
-                const grades = (subject.competencies || [])
-                    .flatMap(comp => (comp.assignments || []).map(a => getNumericGrade(a.result)).filter(g => g !== null));
-                const bins = { 'Echec (<60)': 0, 'C (60-69)': 0, 'B (70-89)': 0, 'A (90+)': 0 };
-                grades.forEach(g => {
-                    if (g < 60) bins['Echec (<60)']++; else if (g < 70) bins['C (60-69)']++;
-                    else if (g < 90) bins['B (70-89)']++; else bins['A (90+)']++;
-                });
-                const ctx = document.getElementById(canvasId).getContext('2d');
-                activeWidgetCharts[canvasId] = new Chart(ctx, {
-                    type: 'bar',
-                    data: { labels: Object.keys(bins), datasets: [{ data: Object.values(bins), backgroundColor: colors }] },
-                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false }, title: { display: true, text: 'Distribution des notes' } } }
-                });
-            }
-
-            function openDetailsModal(subject, etapeKey) {
-                // This function can be used for other details like the goal planner if needed
-                // Currently, the main widget click action is unassigned to avoid conflict,
-                // but you can re-enable this if you have a separate details view.
-                console.log("Opening details for:", subject.name);
-            }
-            function closeDetailsModal(){
-                detailsModal.classList.remove('active');
-            }
-        });
-    </script>
+    <script src="js/improve-functions.js"></script>
 </body>
 </html>
