@@ -6,34 +6,34 @@
     <title>Analyseur Dynamique V10 (Pathfinder V2)</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
         :root {
             /* Animation */
-            --transition-duration: 0.35s;
+            --transition-duration: 0.3s;
+
+            /* ORIGINAL (Modernized) Color Palette */
+            --primary-color: #5B21B6;   /* Purple */
+            --secondary-color: #059669; /* Green */
+            --warning-color: #F59E0B; /* Amber */
+            --danger-color: #DC2626;  /* Red */
+            --violet-color: var(--primary-color);
+            --orange-color: #C2410C;
 
             /* Light Mode Variables */
-            --primary-color: #2980b9;
-            --secondary-color: #2c3e50;
-            --side-panel-color: #ffffff;
-            --widget-darker-color: #f0f4f7;
-            --background-color: #f7f9fb;
+            --background-color: #f9fafb;
             --widget-background: #ffffff;
-            --text-color: #34495e;
-            --text-color-light: #7f8c8d; /* Lighter text for secondary info */
-            --light-grey: #bdc3c7;
-            --success-color: #27ae60;
-            --danger-color: #e74c3c;
-            --warning-color: #f39c12;
-            --info-color: #3498db;
-            --violet-color: #8e44ad;
-            --orange-color: #f39c12;
-            --shadow-header: 0 2px 4px rgba(0, 0, 0, 0.05);
-            --shadow-widget: 0 8px 15px rgba(0, 0, 0, 0.08);
-            --border-color: #e0e6eb;
-            --tab-border-color: #ddd;
-            --input-bg-color: white;
+            --widget-darker-color: #f3f4f6;
+            --text-color: #1f2937;
+            --text-color-light: #6b7280;
+            --border-color: #e5e7eb;
+            --shadow-widget: 0 4px 16px rgba(0,0,0,.08);
+            --shadow-widget-light: 0 1px 4px rgba(0,0,0,.08);
+            --input-bg-color: #ffffff;
+            --primary-bg-light: #f5f3ff;
+            --primary-text-light: #4c1d95;
+            --gauge-gradient: linear-gradient(90deg, var(--danger-color), var(--warning-color), var(--secondary-color));
 
             /* Badge Colors (Light) */
             --badge-green-bg: #D1FAE5; --badge-green-text: #065F46;
@@ -42,25 +42,30 @@
             --badge-violet-bg: #E9D5FF; --badge-violet-text: #5B21B6;
             --badge-blue-bg: #DBEAFE; --badge-blue-text: #1E40AF;
             --badge-orange-bg: #FFEDD5; --badge-orange-text: #C2410C;
-            --ai-insight-bg: #f5f3ff;
-            --ai-insight-border: #ddd6fe;
         }
 
-        /* DARK MODE VARIABLES */
         [data-theme="dark"] {
-            --background-color: #121212;
-            --side-panel-color: #1e1e1e;
-            --widget-background: #1e1e1e;
-            --widget-darker-color: #282828;
-            --text-color: #e0e0e0;
-            --text-color-light: #a0a0a0;
-            --secondary-color: #bbbbbb;
-            --light-grey: #757575;
-            --shadow-header: 0 2px 5px rgba(255, 255, 255, 0.1);
-            --shadow-widget: 0 5px 10px rgba(0, 0, 0, 0.3);
-            --border-color: #333333;
-            --tab-border-color: #444444;
-            --input-bg-color: #282828;
+            /* Dark Mode Palette */
+            --primary-color: #8B5CF6;     /* Lighter Purple */
+            --secondary-color: #10B981;   /* Lighter Green */
+            --warning-color: #FBBF24;   /* Lighter Amber */
+            --danger-color: #F87171;    /* Lighter Red */
+            --violet-color: var(--primary-color);
+            --orange-color: #F97316;
+
+            /* Dark Mode Variables */
+            --background-color: #111827;
+            --widget-background: #1f2937;
+            --widget-darker-color: #374151;
+            --text-color: #f9fafb;
+            --text-color-light: #9ca3af;
+            --border-color: #374151;
+            --shadow-widget: 0 4px 16px rgba(0,0,0,.2);
+            --shadow-widget-light: 0 1px 4px rgba(0,0,0,.2);
+            --input-bg-color: #374151;
+            --primary-bg-light: #2d2a43;
+            --primary-text-light: #A78BFA;
+            --gauge-gradient: linear-gradient(90deg, var(--danger-color), var(--warning-color), var(--secondary-color));
 
             /* Badge Colors (Dark) */
             --badge-green-bg: #065F46; --badge-green-text: #D1FAE5;
@@ -69,11 +74,9 @@
             --badge-violet-bg: #5B21B6; --badge-violet-text: #E9D5FF;
             --badge-blue-bg: #1E40AF; --badge-blue-text: #DBEAFE;
             --badge-orange-bg: #C2410C; --badge-orange-text: #FFEDD5;
-            --ai-insight-bg: #2a283b;
-            --ai-insight-border: #4a417a;
         }
 
-        /* GLOBAL TRANSITIONS for smooth theme change */
+        /* GLOBAL TRANSITIONS */
         body, .side-panel, .modal-content, .tab-btn, .tab-content, 
         .subject-table, .prediction-card, .score-card, .ai-insight-box, 
         select, input, .gauge-bar, .gauge-needle {
@@ -81,20 +84,19 @@
                         color var(--transition-duration) ease, 
                         border-color var(--transition-duration) ease, 
                         box-shadow var(--transition-duration) ease,
-                        left var(--transition-duration) ease;
+                        left var(--transition-duration) ease-out;
         }
 
-        /* Page Load Animation */
         @keyframes fadeInSlideUp {
-            from { opacity: 0; transform: translateY(25px); }
+            from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
         .main-container, .floating-buttons-container {
             opacity: 0;
-            transform: translateY(25px);
-            animation: fadeInSlideUp 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            transform: translateY(20px);
+            animation: fadeInSlideUp 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
         }
-        .main-container { animation-delay: 0.2s; }
+        .main-container { animation-delay: 0.1s; }
 
         /* General Styles */
         body {
@@ -104,18 +106,18 @@
             color: var(--text-color);
         }
 
-        /* Floating Action Buttons (New) */
+        /* Floating Action Buttons */
         .icon-btn {
             background-color: var(--widget-background);
             border: 1px solid var(--border-color);
-            color: var(--text-color);
+            color: var(--text-color-light);
             width: 44px; height: 44px;
             border-radius: 50%;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2em;
+            font-size: 1.1em;
             box-shadow: var(--shadow-widget);
             transition: all 0.2s ease, background-color var(--transition-duration);
             text-decoration: none;
@@ -124,34 +126,35 @@
             border-color: var(--primary-color);
             color: var(--primary-color);
             transform: scale(1.1) translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,.12);
         }
 
-        /* Main Layout (from original, adapted) */
+        /* Main Layout (Better Spacing) */
         .main-container {
             display: flex;
             min-height: 100vh;
             max-width: 1800px;
             margin: 0 auto;
-            padding: 1.5rem;
-            gap: 1.5rem;
+            padding: 2rem;
+            gap: 2rem;
         }
         .side-panel {
             width: 100%;
             max-width: 380px;
             background-color: var(--side-panel-color);
-            padding: 1.5rem;
+            padding: 1.75rem;
             box-shadow: var(--shadow-widget);
-            border-radius: 12px;
+            border-radius: 16px;
             margin: 0;
             height: fit-content;
         }
         @media (max-width: 1024px) {
-            .main-container { flex-direction: column; padding: 1rem; }
+            .main-container { flex-direction: column; padding: 1rem; gap: 1.5rem; }
             .side-panel { max-width: 100%; position: static; }
         }
         .content-area {
             flex-grow: 1;
-            padding: 0; /* No extra padding needed */
+            padding: 0;
         }
         
         /* Typography */
@@ -160,21 +163,24 @@
             font-family: 'Inter', sans-serif;
             font-weight: 700;
         }
-        h1 { font-size: 1.875rem; /* 30px */ }
-        h2 { font-size: 1.5rem; /* 24px */ }
-        h3 { font-size: 1.25rem; /* 20px */ }
-        h4 { font-size: 1rem; /* 16px */ }
+        h1 { font-size: 1.875rem; margin-bottom: 1.5rem; }
+        h2 { font-size: 1.5rem; margin-bottom: 1rem; }
+        h3 { font-size: 1.25rem; margin-bottom: 1rem; margin-top: 2rem; }
+        .content-area h3 { margin-top: 2.5rem; }
+        h4 { font-size: 1rem; margin-bottom: 0.5rem; }
 
-        /* Tabs (from original, adapted) */
+        /* Tabs (Polished) */
         .tab-btn {
             padding: .75rem 1.5rem;
             font-weight: 600;
-            border-radius: .375rem .375rem 0 0;
+            border-radius: .5rem .5rem 0 0;
             border-bottom: 3px solid transparent;
             cursor: pointer;
             background-color: transparent;
             color: var(--text-color-light);
             margin-right: .25rem;
+            position: relative;
+            top: 2px;
         }
         .tab-btn:hover {
             color: var(--primary-color);
@@ -184,60 +190,63 @@
             background-color: var(--widget-background);
             border-bottom: 3px solid var(--primary-color);
             color: var(--primary-color);
-            box-shadow: 0 -2px 6px rgba(0,0,0,.05);
         }
         .tab-content {
             background-color: var(--widget-background);
-            padding: 1.5rem;
+            padding: 2rem;
             border-radius: 0 .75rem .75rem .75rem;
             box-shadow: var(--shadow-widget);
         }
-        .tab-content:not(.active) {
-            display: none;
-        }
+        .tab-content:not(.active) { display: none; }
 
-        /* Subject Table (from original, adapted) */
+        /* Subject Table */
         .subject-table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
             margin-top: 1.5rem;
             box-shadow: var(--shadow-widget);
-            border-radius: .5rem;
+            border-radius: .75rem;
             overflow: hidden;
             margin-bottom: 1.5rem;
             border: 1px solid var(--border-color);
         }
         .subject-table thead th {
-            padding: .75rem;
+            padding: 1rem 1.25rem;
             text-align: left;
-            background-color: var(--secondary-color);
-            color: white;
+            background-color: var(--widget-darker-color);
+            color: var(--text-color);
             font-weight: 700;
             border-bottom: 1px solid var(--border-color);
         }
         .subject-table thead tr:first-child th {
-            font-size: 1.125rem;
+            font-size: 1.25rem;
             text-align: center;
+            background-color: var(--primary-color);
+            color: white;
         }
         .subject-table tbody tr:nth-child(even) {
             background-color: var(--widget-darker-color);
         }
         .subject-table td {
-            padding: .5rem .75rem;
+            padding: 0.75rem 1.25rem;
             border-bottom: 1px solid var(--border-color);
             color: var(--text-color);
         }
+        .subject-table tr:last-child td { border-bottom: none; }
         .grade-percentage {
             font-weight: 700;
             color: var(--primary-color);
         }
 
-        /* Analysis Box (from original, adapted) */
+        /* ** NEW/RESTORED DYNAMIC STYLES **
+         Styles for dynamic content from your original file
+        */
         .subject-analysis {
-            background-color: var(--widget-darker-color);
+            background-color: var(--primary-bg-light);
             border: 1px solid var(--border-color);
-            padding: 1rem;
-            border-radius: .5rem;
+            padding: 1.25rem;
+            border-radius: .75rem;
             margin-top: -1rem;
             margin-bottom: 1.5rem;
         }
@@ -249,27 +258,30 @@
             font-size: .875rem;
             font-weight: 600;
             margin-right: .5rem;
+            border: 1px solid transparent;
         }
-        .badge-green { background-color: var(--badge-green-bg); color: var(--badge-green-text); }
-        .badge-yellow { background-color: var(--badge-yellow-bg); color: var(--badge-yellow-text); }
-        .badge-red { background-color: var(--badge-red-bg); color: var(--badge-red-text); }
-        .badge-violet { background-color: var(--badge-violet-bg); color: var(--badge-violet-text); }
-        .badge-blue { background-color: var(--badge-blue-bg); color: var(--badge-blue-text); }
-        .badge-orange { background-color: var(--badge-orange-bg); color: var(--badge-orange-text); }
+        .badge-green { background-color: var(--badge-green-bg); color: var(--badge-green-text); border-color: var(--badge-green-text);}
+        .badge-yellow { background-color: var(--badge-yellow-bg); color: var(--badge-yellow-text); border-color: var(--badge-yellow-text);}
+        .badge-red { background-color: var(--badge-red-bg); color: var(--badge-red-text); border-color: var(--badge-red-text);}
+        .badge-violet { background-color: var(--badge-violet-bg); color: var(--badge-violet-text); border-color: var(--badge-violet-text);}
+        .badge-blue { background-color: var(--badge-blue-bg); color: var(--badge-blue-text); border-color: var(--badge-blue-text);}
+        .badge-orange { background-color: var(--badge-orange-bg); color: var(--badge-orange-text); border-color: var(--badge-orange-text);}
 
-        /* Prediction Cards (from original, adapted) */
         .prediction-card {
             background-color: var(--widget-background);
-            padding: 1rem;
-            border-radius: .5rem;
-            border-left: 4px solid;
+            padding: 1rem 1.25rem;
+            border-radius: 10px;
+            border-left: 5px solid;
             margin-bottom: 1rem;
-            box-shadow: var(--shadow-widget);
-            border-top: 1px solid var(--border-color);
-            border-right: 1px solid var(--border-color);
-            border-bottom: 1px solid var(--border-color);
+            box-shadow: var(--shadow-widget-light);
+            border: 1px solid var(--border-color);
+            transition: all .2s;
         }
-        .card-green { border-left-color: var(--success-color); }
+        .prediction-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-widget);
+        }
+        .card-green { border-left-color: var(--secondary-color); }
         .card-violet { border-left-color: var(--violet-color); }
         .card-yellow { border-left-color: var(--warning-color); }
         .card-red { border-left-color: var(--danger-color); }
@@ -278,14 +290,17 @@
             font-weight: 800;
             margin-top: .25rem;
         }
+        /* End of new/restored styles */
 
-        /* Probability Table (from original, adapted) */
+        /* Probability Table */
         .probability-table {
              border: 1px solid var(--border-color);
-             box-shadow: var(--shadow-widget);
+             box-shadow: var(--shadow-widget-light);
+             border-radius: .75rem;
+             overflow: hidden;
         }
         .probability-table th, .probability-table td {
-            padding: .5rem;
+            padding: .75rem;
             text-align: center;
             border: 1px solid var(--border-color);
         }
@@ -294,7 +309,7 @@
         .prob-medium { background-color: var(--badge-yellow-bg); color: var(--badge-yellow-text); }
         .prob-low { background-color: var(--badge-red-bg); color: var(--badge-red-text); }
 
-        /* Modals (from original, adapted) */
+        /* Modals */
         .modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(0, 0, 0, 0.7);
@@ -306,8 +321,8 @@
         .modal.active { opacity: 1; visibility: visible; }
         .modal-content {
             background: var(--widget-background);
-            padding: 2rem;
-            border-radius: .75rem;
+            padding: 2rem 2.5rem;
+            border-radius: 12px;
             box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
             max-width: 90%;
             width: 500px;
@@ -319,25 +334,25 @@
         }
         .modal-close {
             position: absolute; top: 10px; right: 15px;
-            font-size: 2em; cursor: pointer; color: var(--light-grey);
+            font-size: 2em; cursor: pointer; color: var(--text-color-light);
             line-height: 1; z-index: 1001;
         }
 
-        /* Score Cards (from original, adapted) */
+        /* Side Panel Score Cards (Better Spacing) */
         .score-card {
             display: flex;
             align-items: center;
-            padding: .75rem;
-            border-radius: .5rem;
+            padding: 1rem;
+            border-radius: .75rem;
             background-color: var(--widget-darker-color);
             border: 1px solid var(--border-color);
         }
         .score-card strong { font-size: 1.5rem; color: var(--text-color); }
-        .score-card p { margin: 0; color: var(--text-color-light); }
-        .score-icon { font-size: 1.5rem; margin-right: 1rem; }
+        .score-card p { margin: 0; color: var(--text-color-light); font-size: 0.875rem; }
+        .score-icon { font-size: 1.75rem; margin-right: 1rem; width: 32px; text-align: center; }
         .effort-needed { font-size: 1.25rem; font-weight: 700; }
         
-        /* Inputs & Sliders (from original, adapted) */
+        /* Inputs & Sliders */
         .slider-label { font-weight: 600; margin-top: 1rem; }
         select, input[type="range"] {
             width: 100%;
@@ -348,22 +363,41 @@
             border-radius: 8px;
         }
         select {
-            padding: 10px;
+            padding: 12px;
+            font-weight: 500;
             -webkit-appearance: none; appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='5'%3E%3Cpath d='M0 0l5 5 5-5z' fill='%232c3e50'/%3E%3C/svg%3E");
-            background-repeat: no-repeat; background-position: right 15px center; background-size: 10px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b7280'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd' /%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 15px center; background-size: 20px;
         }
         [data-theme="dark"] select {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='5'%3E%3Cpath d='M0 0l5 5 5-5z' fill='%23bbbbbb'/%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%239ca3af'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd' /%3E%3C/svg%3E");
         }
-        button { cursor: pointer; }
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            background-color: var(--border-color);
+            border-radius: 4px;
+            padding: 0;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            border: 2px solid var(--widget-background);
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(0,0,0,.2);
+        }
 
-        /* AI Insight Box (from original, adapted) */
+        /* AI Insight Box */
         .ai-insight-box {
-            background-color: var(--ai-insight-bg);
-            border: 1px solid var(--ai-insight-border);
-            border-radius: .5rem;
-            padding: 1rem;
+            background-color: var(--primary-bg-light);
+            border: 1px solid var(--primary-color);
+            border-radius: .75rem;
+            padding: 1.25rem;
             margin-top: .75rem;
         }
         .ai-insight-box h4 {
@@ -371,25 +405,25 @@
             align-items: center;
             font-size: 1rem;
             font-weight: 700;
-            color: var(--primary-color);
+            color: var(--primary-text-light);
             margin-bottom: .75rem;
             margin-top: 0;
         }
         .ai-insight-box h4 span { font-size: 1.25rem; margin-right: .5rem; }
-        .ai-insight-box ul { list-style-type: none; padding-left: 0; font-size: .875rem; }
+        .ai-insight-box ul { list-style-type: none; padding-left: 0; font-size: .875rem; margin: 0;}
         .ai-insight-box li {
             position: relative;
-            padding-left: 1.5rem;
+            padding-left: 1.75rem;
             margin-bottom: .5rem;
             color: var(--text-color);
-            line-height: 1.4;
+            line-height: 1.5;
         }
+        .ai-insight-box li:last-child { margin-bottom: 0; }
         .ai-insight-box li::before {
-            content: '⚠️';
-            font-size: .75rem;
+            font-size: 1rem;
             position: absolute;
             left: 0;
-            top: 4px;
+            top: 1px;
         }
         .ai-insight-box li.insight-good::before { content: '✅'; }
         .ai-insight-box li.insight-info::before { content: 'ℹ️'; }
@@ -398,42 +432,42 @@
         .ai-insight-box li.insight-priority::before { content: '🧠'; }
         .ai-insight-box li.insight-erratic::before { content: '⚡'; }
 
-        /* Gauge (from original, adapted) */
+        /* Gauge (Polished) */
         .gauge-container {
             width: 100%;
             padding: .5rem 0;
             margin-top: .5rem;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
         }
         .gauge-bar {
             width: 100%;
             height: 12px;
-            background: linear-gradient(90deg, var(--danger-color), var(--warning-color), var(--success-color));
+            background: var(--gauge-gradient);
             border-radius: 6px;
             position: relative;
             box-shadow: inset 0 1px 3px rgba(0, 0, 0, .1);
         }
         .gauge-needle {
             position: absolute;
-            top: -4px;
-            width: 4px;
-            height: 20px;
+            top: -6px;
+            width: 6px;
+            height: 24px;
             background-color: var(--text-color);
-            border-radius: 2px;
-            border: 1px solid var(--widget-background);
-            box-shadow: 0 0 5px rgba(0, 0, 0, .5);
+            border-radius: 3px;
+            border: 2px solid var(--widget-background);
+            box-shadow: 0 1px 5px rgba(0, 0, 0, .4);
             transform: translateX(-50%);
         }
         .gauge-labels {
             display: flex;
             justify-content: space-between;
-            font-size: .75rem;
+            font-size: .875rem;
             font-weight: 600;
             color: var(--text-color-light);
-            margin-top: .5rem;
+            margin-top: .75rem;
         }
 
-        /* Help Modal (from original, adapted) */
+        /* Help Modal */
         #help-modal .modal-content {
             width: 750px;
             max-width: 95%;
@@ -442,7 +476,7 @@
             text-align: left;
         }
         .help-title {
-            font-size: 1.5rem;
+            font-size: 1.75rem;
             font-weight: 700;
             color: var(--primary-color);
             margin-bottom: 1rem;
@@ -470,16 +504,43 @@
             line-height: 1.6;
             margin-top: .5rem;
         }
-        #help-modal ul {
-            list-style-type: disc;
-            padding-left: 2rem;
-            margin-top: .5rem;
-            margin-bottom: 1rem;
-        }
+        #help-modal ul { list-style-type: disc; padding-left: 2rem; }
         #help-modal ol.detailed-list { list-style-type: decimal; padding-left: 1.5rem; }
         #help-modal ol.detailed-list > li { font-weight: 600; color: var(--text-color); margin-top: 1rem; }
         #help-modal ol.detailed-list > li > ul { margin-top: .25rem; font-weight: normal; }
         #help-modal b { font-weight: 600; color: var(--text-color); }
+
+        /* Utility */
+        .space-y-3 { display: flex; flex-direction: column; gap: 1rem; }
+        .space-y-2 { display: flex; flex-direction: column; gap: 0.5rem; }
+        .space-y-4 { display: flex; flex-direction: column; gap: 1rem; }
+        .border-b { border-bottom: 1px solid var(--border-color); }
+        .pb-2 { padding-bottom: 0.5rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-3 { margin-bottom: 0.75rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mt-4 { margin-top: 1rem; }
+        .mt-6 { margin-top: 1.5rem; }
+        .pt-3 { padding-top: 0.75rem; }
+        .block { display: block; }
+        .font-medium { font-weight: 500; }
+        .text-sm { font-size: 0.875rem; }
+        .text-xs { font-size: 0.75rem; }
+        .text-gray-500 { color: var(--text-color-light); }
+        .text-gray-700 { color: var(--text-color); }
+        .text-gray-800 { color: var(--text-color); }
+        .-mt-2 { margin-top: -0.5rem; }
+        .w-full { width: 100%; }
+        .flex { display: flex; }
+        .space-x-2 { gap: 0.5rem; }
+        .rounded-lg { border-radius: .75rem; }
+        .p-4 { padding: 1rem; }
+        .border-l-4 { border-left-width: 4px; }
+        .text-4xl { font-size: 2.5rem; }
+        .font-extrabold { font-weight: 800; }
+        .text-violet-700 { color: var(--primary-color); }
+        .text-red-600 { color: var(--danger-color); }
+        .text-orange-600 { color: var(--warning-color); }
     </style>
 </head>
 <body>
@@ -487,7 +548,6 @@
 <a href="main.html" class="icon-btn" title="Retour à la page principale" style="position: fixed; top: 15px; left: 15px; z-index: 1001;">
     <i class="fa-solid fa-arrow-left"></i>
 </a>
-
 <div class="floating-buttons-container" style="position: fixed; top: 15px; right: 15px; z-index: 1001; display: flex; gap: 10px;">
     <button id="theme-toggle" class="icon-btn" aria-label="Changer de thème (Mode Clair/Sombre)">
         <i class="fa-solid fa-moon"></i>
@@ -509,7 +569,6 @@
         
         <h4>Qu'est-ce que c'est ?</h4>
         <p>Le "Moteur de Découverte (IA)" utilise un outil statistique appelé <b>Régression Linéaire</b>. Son but est de trouver la "ligne de tendance" (la ligne droite de meilleur ajustement) qui passe au milieu d'un nuage de points de données. 
-
 
 
 [Image of a scatter plot with a positive trend line]
@@ -603,14 +662,14 @@
 <div class="main-container">
 
     <div class="side-panel lg:sticky lg:top-4">
-        <h2 class="text-2xl font-bold mb-4 text-gray-800 border-b pb-2" style="border-bottom: 1px solid var(--border-color);">Moteur Stochastique V10 (Fix)</h2>
+        <h2 class="text-2xl font-bold mb-4 text-gray-800 border-b pb-2">Moteur Stochastique V10 (Fix)</h2>
 
-        <div class="bg-violet-100 p-4 rounded-lg mb-4 border-l-4 border-violet-600" style="background-color: var(--widget-darker-color); border-left: 4px solid var(--primary-color);">
+        <div class="bg-violet-100 p-4 rounded-lg mb-4 border-l-4 border-violet-600" style="background-color: var(--primary-bg-light); border-left-color: var(--primary-color); margin-bottom: 1.5rem;">
             <p class="text-sm font-medium text-gray-700" style="color: var(--text-color-light);">Prédiction Globale Stochastique (Tendance MC)</p>
-            <strong id="moyenne-prediction" class="text-4xl font-extrabold text-violet-700" style="font-size: 2.5rem; color: var(--primary-color);">--</strong>
+            <strong id="moyenne-prediction" class="text-4xl font-extrabold text-violet-700" style="color: var(--primary-color);">--</strong>
         </div>
 
-        <h3 class="text-lg font-semibold text-gray-800">Jauge de Performance (P5 à P95)</h3>
+        <h3 class="text-lg font-semibold text-gray-800" style="margin-top: 0;">Jauge de Performance (P5 à P95)</h3>
         <div class="gauge-container">
             <div class="gauge-bar">
                 <div id="gauge-needle" class="gauge-needle" style="left: 50%;"></div>
@@ -622,8 +681,8 @@
             </div>
         </div>
         
-        <h3 class="text-lg font-semibold mt-6 mb-3 text-gray-800 border-b pb-2" style="border-bottom: 1px solid var(--border-color);">Indices de Risque Dynamique</h3>
-        <div id="deep-analysis-scorecard" class="space-y-3 mb-6" style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <h3 class="text-lg font-semibold mt-6 mb-3 text-gray-800 border-b pb-2">Indices de Risque Dynamique</h3>
+        <div id="deep-analysis-scorecard" class="space-y-3 mb-6">
             <div class="score-card score-high" id="consistency-score">
                 <span class="score-icon text-gray-600">🎯</span>
                 <div>
@@ -632,33 +691,33 @@
                 </div>
             </div>
             <div class="score-card score-low" id="burnout-risk-score">
-                <span class="score-icon text-red-600" style="color: var(--danger-color);">🔥</span>
+                <span class="score-icon text-red-600">🔥</span>
                 <div>
                     <p class="text-sm font-medium text-gray-500">Score de Risque de Burnout (100 = Risque Maximal)</p>
-                    <strong class="text-xl text-red-600" style="color: var(--danger-color);">--</strong>
+                    <strong class="text-xl text-red-600">--</strong>
                 </div>
             </div>
 
             <div class="ai-insight-box" id="ai-insight-container">
                 <h4><span>🔎</span> Moteur de Découverte (IA)</h4>
-                <p class="text-xs text-gray-500 -mt-2 mb-3" style="color: var(--text-color-light); margin-top: -0.5rem; margin-bottom: 0.75rem;">L'IA a scanné vos données et a trouvé les corrélations les plus fortes (R² > 0.25) :</p>
+                <p class="text-xs text-gray-500 -mt-2 mb-3">L'IA a scanné vos données et a trouvé les corrélations les plus fortes (R² > 0.25) :</p>
                 <ul id="ai-insights-list">
                     </ul>
             </div>
             
             <div class="score-card score-low" id="dff-score">
-                <span class="score-icon text-orange-600" style="color: var(--warning-color);">📉</span>
+                <span class="score-icon text-orange-600">📉</span>
                 <div>
                     <p class="text-sm font-medium text-gray-500">Facteur de Tendance Globale (Pente / 10 devoirs)</p>
-                    <strong class="text-xl text-orange-600" style="color: var(--warning-color);">--</strong>
+                    <strong class="text-xl text-orange-600">--</strong>
                 </div>
             </div>
         </div>
 
-        <h3 class="text-lg font-semibold mt-4 mb-2 text-gray-700 border-t pt-3" style="border-top: 1px solid var(--border-color);">Paramètres Actuels</h3>
-        <div class="space-y-3 mb-6" style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.9rem;">
+        <h3 class="text-lg font-semibold mt-4 mb-2 text-gray-700 border-t pt-3">Paramètres Actuels</h3>
+        <div class="space-y-3 mb-6 text-sm">
             <div>
-                <label for="niveau-secondaire" class="block text-sm font-medium text-gray-700" style="font-weight: 500; margin-bottom: 0.25rem;">Niveau Secondaire</label>
+                <label for="niveau-secondaire" class="block text-sm font-medium text-gray-700">Niveau Secondaire</label>
                 <select id="niveau-secondaire">
                     <option value="">Sélectionner</option>
                     <option value="sec4">Secondaire 4</option>
@@ -666,14 +725,14 @@
                 </select>
             </div>
             <div>
-                <label class="slider-label block text-sm font-medium text-gray-700" style="font-weight: 500; margin-bottom: 0.25rem;">Taux d'Absentéisme/Désengagement</label>
+                <label class="slider-label block text-sm font-medium text-gray-700" style="margin-top: 0;">Taux d'Absentéisme/Désengagement</label>
                 <input type="range" id="absence-rate-slider" min="0" max="25" step="0.5" value="5" class="w-full mt-1">
-                <p class="text-xs text-gray-500 mt-1" style="font-size: 0.8rem; color: var(--text-color-light);">Impact sur B-Risk : <span id="absence-rate-value">5.0%</span></p>
+                <p class="text-xs text-gray-500 mt-1" style="font-size: 0.8rem;">Impact sur B-Risk : <span id="absence-rate-value">5.0%</span></p>
             </div>
 
             <div>
-                <label for="unites-mode" class="block text-sm font-medium text-gray-700" style="font-weight: 500; margin-bottom: 0.25rem;">Mode Unités (Pondération)</label>
-                <div class="flex space-x-2" style="display: flex; gap: 0.5rem;">
+                <label for="unites-mode" class="block text-sm font-medium text-gray-700">Mode Unités (Pondération)</label>
+                <div class="flex space-x-2">
                     <select id="unites-mode" style="flex: 1;">
                         <option value="defaut">Défaut (Officiel)</option>
                         <option value="sans">Sans Unités (Moy. Simple)</option>
@@ -684,16 +743,15 @@
             </div>
         </div>
 
-        <h3 class="text-lg font-semibold mt-4 mb-2 text-gray-700 border-t pt-3" style="border-top: 1px solid var(--border-color);">Moyennes par Matière (<span id="active-etape-name">1</span>)</h3>
-        <ul id="subject-averages-list" class="space-y-2 text-base" style="display: flex; flex-direction: column; gap: 0.5rem; padding-left: 0; list-style: none; font-size: 0.9rem;">
+        <h3 class="text-lg font-semibold mt-4 mb-2 text-gray-700 border-t pt-3">Moyennes par Matière (<span id="active-etape-name">1</span>)</h3>
+        <ul id="subject-averages-list" class="space-y-2 text-base" style="padding-left: 0; list-style: none;">
             </ul>
-
     </div>
 
     <div class="content-area">
         <h1 class="text-3xl font-bold mb-4 text-gray-800">Détails de Performance & Prédictions</h1>
 
-        <div class="flex border-b border-gray-200 mb-4" style="border-bottom: 2px solid var(--tab-border-color); margin-bottom: 1.5rem;">
+        <div class="flex border-b border-gray-200 mb-4" style="border-bottom: 2px solid var(--border-color);">
             <button class="tab-btn active" data-tab="etape1">Étape 1 - Analyse</button>
             <button class="tab-btn" data-tab="etape2">Étape 2 - Analyse</button>
             <button class="tab-btn" data-tab="etape3">Étape 3 - Projection</button>
@@ -710,7 +768,7 @@
 
             <div id="simulation" class="tab-content">
                 <h2 class="text-2xl font-bold mb-4 text-primary-color" style="color: var(--primary-color);">Analyse Prédictive Stochastique (100,000 Scénarios)</h2>
-                <p class="text-gray-600 mb-6 border-b pb-4" style="color: var(--text-color-light); border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+                <p class="text-gray-600 mb-6 border-b pb-4">
                     *Le modèle utilise la **Régression Linéaire** pour la tendance de base et projette la performance. Les probabilités sont calculées à l'aide d'une **CDF Normale** basée sur la tendance et la volatilité (StdDev) de vos notes. Ces données sont des estimations statistiques.*
                 </p>
 
@@ -718,13 +776,13 @@
                 <div id="global-predictions" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
                     </div>
 
-                <h3 class="text-xl font-semibold mb-3 mt-8 text-gray-700 border-t pt-4" style="border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 2rem;">Analyse de Déséquilibre Volatilité / Effort (Mismatch)</h3>
-                <div id="mismatch-analysis" class="space-y-4" style="display: flex; flex-direction: column; gap: 1rem;">
+                <h3 class="text-xl font-semibold mb-3 mt-8 text-gray-700 border-t pt-4">Analyse de Déséquilibre Volatilité / Effort (Mismatch)</h3>
+                <div id="mismatch-analysis" class="space-y-4">
                     </div>
 
-                <h3 class="text-xl font-semibold mb-3 mt-8 text-gray-700 border-t pt-4" style="border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 2rem;">Analyse de Chemin : Moyenne Requise à l'Étape 2</h3>
-                <p class="text-sm text-gray-600 mb-4" style="font-size: 0.9rem; color: var(--text-color-light);">Moyenne exacte que vous devez obtenir à l'**Étape 2** (basé sur E1 et la projection E3) pour atteindre chaque objectif global.</p>
-                <table class="probability-table w-full rounded-lg overflow-hidden" style="width: 100%;">
+                <h3 class="text-xl font-semibold mb-3 mt-8 text-gray-700 border-t pt-4">Analyse de Chemin : Moyenne Requise à l'Étape 2</h3>
+                <p class="text-sm text-gray-600 mb-4">Moyenne exacte que vous devez obtenir à l'**Étape 2** (basé sur E1 et la projection E3) pour atteindre chaque objectif global.</p>
+                <table class="probability-table w-full rounded-lg overflow-hidden">
                     <thead>
                         <tr class="bg-gray-100">
                             <th>Objectif Global (%)</th>
@@ -737,9 +795,9 @@
                         </tbody>
                 </table>
 
-                <h3 class="text-xl font-semibold mb-3 mt-8 text-gray-700 border-t pt-4" style="border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 2rem;">Analyse de Chemin : Moyenne Requise à l'Étape 3</h3>
-                <p class="text-sm text-gray-600 mb-4" style="font-size: 0.9rem; color: var(--text-color-light);">Moyenne exacte que vous devez obtenir à l'**Étape 3** (basé sur E1+E2) pour atteindre chaque objectif global.</p>
-                <table class="probability-table w-full rounded-lg overflow-hidden" style="width: 100%;">
+                <h3 class="text-xl font-semibold mb-3 mt-8 text-gray-700 border-t pt-4">Analyse de Chemin : Moyenne Requise à l'Étape 3</h3>
+                <p class="text-sm text-gray-600 mb-4">Moyenne exacte que vous devez obtenir à l'**Étape 3** (basé sur E1+E2) pour atteindre chaque objectif global.</p>
+                <table class="probability-table w-full rounded-lg overflow-hidden">
                     <thead>
                         <tr class="bg-gray-100">
                             <th>Objectif Global (%)</th>
@@ -752,9 +810,9 @@
                         </tbody>
                 </table>
 
-                 <h3 class="text-xl font-semibold mb-3 mt-8 text-gray-700 border-t pt-4" style="border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 2rem;">Prédictions Tendancielles Détaillées par Matière</h3>
-                <p class="text-sm text-gray-600 mb-4" style="font-size: 0.9rem; color: var(--text-color-light);">Prédiction de note finale (E1+E2+E3) basée sur la **Tendance par Régression Linéaire**. **Plafondé au Max. Historique + 5%**.</p>
-                <div id="subject-predictions-list" class="space-y-3" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                 <h3 class="text-xl font-semibold mb-3 mt-8 text-gray-700 border-t pt-4">Prédictions Tendancielles Détaillées par Matière</h3>
+                <p class="text-sm text-gray-600 mb-4">Prédiction de note finale (E1+E2+E3) basée sur la **Tendance par Régression Linéaire**. **Plafondé au Max. Historique + 5%**.</p>
+                <div id="subject-predictions-list" class="space-y-3">
                     </div>
             </div>
         </div>
@@ -764,11 +822,11 @@
 <div id="unites-modal" class="modal">
     <div class="modal-content">
         <h3 class="text-xl font-bold mb-4">Unités par Matière</h3>
-        <p class="text-sm text-gray-500 mb-4" style="color: var(--text-color-light);">Ajustez les unités pour chaque matière si le mode 'Personnalisé' est sélectionné.</p>
+        <p class="text-sm text-gray-500 mb-4">Ajustez les unités pour chaque matière si le mode 'Personnalisé' est sélectionné.</p>
         <div id="unites-list" class="max-h-80 overflow-y-auto border p-3 rounded-md space-y-2" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color); padding: 0.75rem; border-radius: 8px;">
             </div>
         <div class="mt-6 flex justify-end" style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
-            <button id="close-unites-modal" class="bg-primary-color text-white px-4 py-2 rounded-md hover:bg-violet-700 transition" style="background-color: var(--primary-color); color: white; padding: 0.5rem 1rem; border-radius: 8px; border: none;">Fermer & Appliquer</button>
+            <button id="close-unites-modal" class="bg-primary-color text-white px-4 py-2 rounded-md" style="background-color: var(--primary-color); color: white; padding: 0.75rem 1.25rem; border-radius: 8px; border: none; font-weight: 600;">Fermer & Appliquer</button>
         </div>
     </div>
 </div>
@@ -783,7 +841,7 @@
         const themeToggle = document.getElementById('theme-toggle');
         const html = document.documentElement;
         const toggleIcon = themeToggle.querySelector('i');
-        const THEME_KEY = 'pathfinder-theme';
+        const THEME_KEY = 'pathfinder-theme-v2'; // Use a new key to avoid cache issues
 
         const updateTheme = (theme) => {
             html.setAttribute('data-theme', theme);
@@ -815,18 +873,23 @@
             button.addEventListener('click', () => {
                 const targetTab = button.getAttribute('data-tab');
 
-                // Update buttons
                 tabButtons.forEach(btn => btn.classList.remove('active'));
                 button.classList.add('active');
 
-                // Update content
                 tabContents.forEach(content => {
-                    if (content.id === targetTab) {
-                        content.classList.add('active');
-                    } else {
+                    content.classList.add('active'); // Keep all active for a moment
+                    if (content.id !== targetTab) {
                         content.classList.remove('active');
                     }
                 });
+                
+                // Update active etape name in side panel
+                const activeEtapeName = document.getElementById('active-etape-name');
+                if (activeEtapeName) {
+                    if (targetTab.startsWith('etape')) {
+                        activeEtapeName.textContent = targetTab.replace('etape', '');
+                    }
+                }
             });
         });
 
@@ -850,10 +913,7 @@
             }
         };
 
-        // Setup Help Modal
         setupModal('open-help-btn', 'help-modal', 'close-help-modal');
-        
-        // Setup Units Modal
         setupModal('unites-btn', 'unites-modal', 'close-unites-modal');
         
         // --- 4. Absence Slider Value Display ---
