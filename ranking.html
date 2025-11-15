@@ -3,16 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Classement - Outil MBS</title>
+    <title>Classement - Outil JDLM</title>
     <link rel="icon" href="https://raw.githubusercontent.com/Student-broken/student-broken.github.io/refs/heads/main/favicon.ico" type="image/x-icon">
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Crypto.js for SHA-256 hashing -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Crypto.js for SHA-256 hashing (POUR LE NOUVEAU SYSTÈME DE HACHAGE) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
 
     <style>
+        .hidden {display: none !important;}
+        
+        /* ===== NOUVEAU: THÈME DARK/LIGHT ===== */
         :root {
             /* Light Mode Variables */
             --primary-color: #2980b9;
@@ -22,14 +27,15 @@
             --text-color: #34495e;
             --text-secondary-color: #7f8c8d;
             --accent-color: #3498db;
-            --light-grey: #bdc3c7;
+            --light-grey: #e0e6eb;
             --shadow-header: 0 2px 4px rgba(0, 0, 0, 0.05);
             --shadow-widget: 0 8px 15px rgba(0, 0, 0, 0.08);
             --border-color: #e0e6eb;
             --danger-color: #e74c3c;
             --success-color: #27ae60;
             --warning-color: #f39c12;
-            --goal-success-bg: #eafaf1; /* Added for highlight */
+            --goal-success-bg: #eafaf1; 
+            --user-highlight-bg: #eaf2f8;
         }
 
         [data-theme="dark"] {
@@ -38,49 +44,81 @@
             --text-color: #e0e0e0;
             --text-secondary-color: #a0a0a0;
             --secondary-color: #bbbbbb;
-            --light-grey: #757575;
+            --light-grey: #333333; /* Ajusté */
             --border-color: #333333;
             --shadow-header: 0 2px 5px rgba(255, 255, 255, 0.1);
             --shadow-widget: 0 5px 10px rgba(0, 0, 0, 0.3);
-            --goal-success-bg: #1a3e2a; /* Added for highlight */
+            --goal-success-bg: #1a3e2a; 
+            --user-highlight-bg: #2a3b4c;
+            .site-header, .widget-title, .back-arrow { color: var(--text-color); }
+            select { background-color: #333; color: var(--text-color); border-color: #555; }
         }
+        /* ===== FIN NOUVEAU: THÈME ===== */
 
-        /* General Styles */
-        body {
-            margin: 0;
-            font-family: 'Inter', sans-serif;
-            background-color: var(--background-color);
-            color: var(--text-color);
-            line-height: 1.6;
-            transition: background-color 0.3s, color 0.3s;
+        html { height: 100%; }
+        body { 
+            margin: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background-color: var(--background-color); 
+            color: var(--text-color); 
+            display: flex; 
+            flex-direction: column; 
+            min-height: 100%;
+            transition: background-color 0.3s, color 0.3s; /* Ajouté */
+        }
+        .site-header-container { 
+            background-color: var(--widget-background); 
+            box-shadow: var(--shadow-header); 
+            padding: 15px 25px; /* Ajusté */
+            position: relative; 
+            margin-bottom: 20px; 
+            flex-shrink: 0; 
+            display: flex; /* Ajouté */
+            align-items: center; /* Ajouté */
+            justify-content: space-between; /* Ajouté */
+            border-bottom: 1px solid var(--border-color); /* Ajouté */
+            transition: background-color 0.3s, border-color 0.3s; /* Ajouté */
+        }
+        .site-header { 
+            text-align: center; 
+            padding: 0; 
+            margin: 0; 
+            color: var(--secondary-color); 
+            font-size: 2.2em; 
+            font-weight: 700; 
+            font-family: 'Playfair Display', serif; 
+            position: absolute; /* Ajouté */
+            left: 50%; /* Ajouté */
+            transform: translateX(-50%); /* Ajouté */
+            transition: color 0.3s; /* Ajouté */
+        }
+        .back-arrow { 
+            position: static; /* Changé */
+            transform: none; /* Changé */
+            font-size: 1.5em; /* Ajusté */
+            color: var(--secondary-color); 
+            text-decoration: none; 
+            transition: color 0.3s; 
+            width: 40px; /* Ajouté */
+            height: 40px; /* Ajouté */
+            display: flex; /* Ajouté */
+            align-items: center; /* Ajouté */
+            justify-content: center; /* Ajouté */
+            border: 2px solid var(--light-grey); /* Ajouté */
+            border-radius: 50%; /* Ajouté */
+            transition: all 0.2s ease; /* Ajouté */
+        }
+        .back-arrow:hover { 
+            color: var(--primary-color); 
+            border-color: var(--primary-color); /* Ajouté */
+            transform: scale(1.1); /* Ajouté */
         }
         
-        /* Header */
-        .site-header-container {
-            background-color: var(--widget-background);
-            box-shadow: var(--shadow-header);
-            border-bottom: 1px solid var(--border-color);
-            padding: 15px 25px;
+        /* NOUVEAU: Bouton Thème */
+        .header-right {
             display: flex;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            transition: background-color 0.3s, border-color 0.3s;
+            justify-content: flex-end;
         }
-        .header-left { flex: 1; }
-        .header-center { flex: 2; text-align: center; }
-        .header-right { flex: 1; display: flex; justify-content: flex-end; }
-        .site-header {
-            padding: 0;
-            margin: 0;
-            color: var(--secondary-color);
-            font-size: 2.2em;
-            font-weight: 700;
-            font-family: 'Playfair Display', serif;
-            transition: color 0.3s;
-        }
-        [data-theme="dark"] .site-header { color: var(--text-color); }
         .icon-btn {
             background: none;
             border: 2px solid var(--light-grey);
@@ -101,793 +139,328 @@
             color: var(--primary-color);
             transform: scale(1.1);
         }
+        /* FIN NOUVEAU: Bouton Thème */
 
-        /* Main Content */
-        .main-container {
-            max-width: 1400px;
-            margin: 30px auto;
-            padding: 0 20px;
-        }
+        .main-container { max-width: 1200px; margin: auto; padding: 0 20px; width: 100%; box-sizing: border-box; }
+        .controls { background: var(--widget-background); padding: 20px; border-radius: 12px; box-shadow: var(--shadow-widget); margin-bottom: 25px; border: 1px solid var(--border-color); transition: background-color 0.3s, border-color 0.3s; }
+        .controls label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 0.9em; }
+        select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border-color); background-color: var(--widget-background); font-size: 1em; color: var(--text-color); transition: background-color 0.3s, border-color 0.3s, color 0.3s; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px; } /* Changé pour être responsive */
+        .stat-widget { background: var(--widget-background); border-radius: 16px; padding: 25px; box-shadow: var(--shadow-widget); border: 1px solid var(--border-color); display: flex; flex-direction: column; transition: background-color 0.3s, border-color 0.3s; }
+        .main-avg-widget { grid-column: 1 / -1; } /* Changé pour s'adapter au responsive */
+        .graph-widget { grid-column: 1 / -1; }
+        .widget-header { text-align: center; margin-bottom: 20px; }
+        .widget-title { font-size: 1.1em; font-weight: bold; color: var(--secondary-color); margin: 0 0 10px 0; transition: color 0.3s; }
+        .widget-value { font-size: 3.5em; font-weight: 700; }
+        .small-widget .widget-value { font-size: 2.5em; }
+        .widget-rank { font-size: 1.2em; font-weight: 600; color: var(--secondary-color); display: flex; align-items: center; justify-content: center; transition: color 0.3s; }
+        .rank-trend { font-weight: bold; margin-left: 8px; font-size: 1.1em; }
+        .rank-trend-up { color: var(--success-color); } .rank-trend-up::before { content: '▲'; }
+        .rank-trend-down { color: var(--danger-color); } .rank-trend-down::before { content: '▼'; }
+        .mini-leaderboard-container { flex-grow: 1; overflow-y: auto; position: relative; margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px; max-height: 190px; transition: border-color 0.3s; }
+        .leaderboard-list { list-style: none; padding: 0; margin: 0; }
+        .leaderboard-item { display: flex; align-items: center; padding: 8px 10px; border-radius: 8px; font-size: 0.95em; transition: background-color 0.2s; }
+        .leaderboard-item.is-user { background-color: var(--user-highlight-bg); font-weight: bold; } /* Variable CSS */
+        .item-rank { width: 45px; font-weight: 600; text-align: left; }
+        .item-name { font-weight: normal; margin-left: 10px; }
+        .is-user .item-name { font-weight: bold; }
+        .item-grade { margin-left: auto; font-weight: 600; }
+        .graph-container { padding-top: 20px; }
+        .overall-avg-widget { text-align: center; }
+        .error-message, .no-data { text-align: center; padding: 40px; font-size: 1.2em; color: var(--text-secondary-color); } /* Fusionné */
+        .error-message { color: var(--danger-color); background-color: rgba(231, 76, 60, 0.1); border: 1px solid var(--danger-color); border-radius: 8px; } /* Style d'erreur amélioré */
+        footer { text-align: center; padding: 25px; font-size: 0.8em; color: #95a5a6; font-style: italic; flex-shrink: 0;}
         
-        /* --- Sync Widget (REMOVED) --- */
+        /* ===== GHOST LOADER STYLES (Adaptés au Thème) ===== */
+        [data-theme="dark"] .ghost {
+            background-color: #333;
+            background-image: linear-gradient(90deg, #333 0px, #444 40px, #333 80px);
+        }
+        [data-theme="dark"] .ghost-line.is-user-ghost {
+             background-color: #4a5a6c;
+             background-image: linear-gradient(90deg, #4a5a6c 0px, #5a6a7c 40px, #4a5a6c 80px);
+        }
 
-        /* --- Rankings --- */
-        
-        /* Loading and Error */
-        #loading-indicator {
-            text-align: center;
-            font-size: 1.2em;
-            padding: 50px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-        }
-        .hidden {
-            display: none;
-        }
-        .error-message {
-            background-color: var(--danger-color);
-            color: white;
-            padding: 15px;
+        .ghost-loading .stat-widget { border-color: transparent; }
+        .ghost {
+            background-color: #e0e6eb;
             border-radius: 8px;
-            text-align: center;
-            margin: 20px 0;
+            animation: shimmer 1.5s infinite linear;
+            background-image: linear-gradient(90deg, #e0e6eb 0px, #f0f4f7 40px, #e0e6eb 80px);
+            background-size: 600px;
         }
 
-        /* Level Toggles */
-        .level-toggle {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 30px;
-            background-color: var(--widget-background);
-            border-radius: 30px;
-            padding: 5px;
-            box-shadow: var(--shadow-widget);
-            border: 1px solid var(--border-color);
-            width: fit-content;
-            margin-left: auto;
-            margin-right: auto;
+        @keyframes shimmer {
+            0% { background-position: -150px; }
+            100% { background-position: 450px; }
         }
-        .level-btn {
-            padding: 12px 25px;
-            border: none;
-            border-radius: 25px;
-            background-color: transparent;
-            color: var(--text-secondary-color);
-            font-weight: 600;
-            font-size: 1em;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .level-btn.active {
-            background-color: var(--primary-color);
-            color: white;
-            box-shadow: 0 4px 10px rgba(41, 128, 185, 0.3);
-        }
-        
-        /* --- NOUVEAU: Carte de résumé --- */
-        .summary-card {
-            background-color: var(--widget-background);
-            border: 1px solid var(--border-color);
-            border-left: 5px solid var(--primary-color);
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 25px;
-            display: flex;
-            justify-content: space-around;
-            flex-wrap: wrap;
-            gap: 20px;
-            box-shadow: var(--shadow-widget);
-        }
-        .summary-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            min-width: 150px;
-        }
-        .summary-item .icon {
-            font-size: 1.8em;
-            color: var(--primary-color);
-            margin-bottom: 10px;
-        }
-        .summary-item .label {
-            font-size: 0.9em;
-            color: var(--text-secondary-color);
-            margin-bottom: 5px;
-        }
-        .summary-item .value {
-            font-size: 1.4em;
-            font-weight: 700;
-            color: var(--text-color);
-        }
-        /* --- FIN: Carte de résumé --- */
 
-        /* Ranking Sections */
-        .ranking-section {
-            display: none; /* Hidden by default, shown by JS */
-        }
-        .ranking-section.active {
-            display: block;
-        }
-        .ranking-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 25px;
-            margin-top: 25px; /* Ajouté pour l'espacement */
-        }
-        
-        /* Category Card */
-        .category-card {
-            background-color: var(--widget-background);
-            border-radius: 12px;
-            box-shadow: var(--shadow-widget);
-            border: 1px solid var(--border-color);
-            padding: 20px;
-            overflow: hidden;
-            transition: background-color 0.3s, border-color 0.3s;
-        }
-        .category-title {
-            font-size: 1.5em;
-            font-weight: 700;
-            font-family: 'Playfair Display', serif;
-            color: var(--primary-color);
-            margin-top: 0;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid var(--border-color);
-            transition: border-color 0.3s, color 0.3s;
-        }
-        
-        /* Ranking List */
-        .ranking-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        .ranking-list li {
-            display: flex;
-            align-items: center;
-            padding: 12px 5px;
-            border-bottom: 1px solid var(--border-color);
-            transition: border-color 0.3s, background-color 0.3s;
-        }
-        .ranking-list li:last-child {
-            border-bottom: none;
-        }
-        /* Added for highlighting the current user */
-        .ranking-list li.current-user-highlight {
-            background-color: var(--goal-success-bg);
-            font-weight: 700;
-        }
-        .rank-position {
-            font-size: 1.1em;
-            font-weight: 700;
-            color: var(--text-secondary-color);
-            width: 40px;
-            text-align: center;
-            flex-shrink: 0;
-        }
-        /* Special ranks */
-        .ranking-list li:nth-child(1) .rank-position { color: #ffd700; font-size: 1.3em; }
-        .ranking-list li:nth-child(2) .rank-position { color: #c0c0c0; font-size: 1.2em; }
-        .ranking-list li:nth-child(3) .rank-position { color: #cd7f32; font-size: 1.1em; }
+        .ghost-title { width: 60%; height: 24px; margin: 0 auto 15px; }
+        .ghost-title-sm { width: 70%; height: 20px; margin: 0 auto 10px; }
+        .ghost-value { width: 40%; height: 50px; margin: 0 auto 15px; }
+        .ghost-value-sm { width: 50%; height: 35px; margin: 0 auto 10px; }
+        .ghost-rank { width: 50%; height: 20px; margin: 0 auto; }
+        .ghost-rank-sm { width: 60%; height: 18px; margin: 0 auto; }
+        .ghost-subtitle { width: 40%; height: 16px; margin: 0 auto 8px; }
+        .ghost-line { width: 100%; height: 35px; margin-bottom: 8px; }
+        .ghost-line.is-user-ghost { background-color: #d0dae2; background-image: linear-gradient(90deg, #d0dae2 0px, #e1e8ed 40px, #d0dae2 80px); }
+        .ghost-graph-title { width: 40%; height: 22px; margin: 0 auto 20px; }
+        .ghost-graph { width: 100%; height: 250px; }
+        /* ===== END GHOST LOADER STYLES ===== */
 
-        .rank-name {
-            font-weight: 600;
-            padding: 0 15px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            flex-grow: 1;
-        }
-        .rank-score {
-            font-weight: 700;
-            font-size: 1.1em;
-            color: var(--success-color);
-            flex-shrink: 0;
-        }
-        
-        /* Subject Category Tabs */
-        .subject-tabs {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .subject-tab-btn {
-            padding: 8px 15px;
-            border: 1px solid var(--light-grey);
-            border-radius: 20px;
-            background-color: transparent;
-            color: var(--text-color);
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .subject-tab-btn.active {
+        .stacked-avg-widget { justify-content: center; }
+        .avg-half { text-align: center; }
+        .widget-subtitle { font-size: 1em; color: var(--text-secondary-color); margin-bottom: 5px; }
+        .avg-half .widget-value { font-size: 2.8em; }
+
+        /* Sync status popup */
+        #sync-status {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 20px;
+            border-radius: 8px;
             background-color: var(--secondary-color);
             color: white;
-            border-color: var(--secondary-color);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 1001;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s, transform 0.3s;
         }
-        
-        .subject-ranking-list {
-            display: none;
+        #sync-status.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
         }
-        .subject-ranking-list.active {
-            display: block;
+        #sync-status.hide {
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(-50%) translateY(20px);
         }
-        
-        /* Footer */
-        footer {
-            text-align: center;
-            padding: 25px;
-            font-size: 0.9em;
-            color: var(--text-secondary-color);
-            border-top: 1px solid var(--border-color);
-            margin-top: 40px;
-        }
-
     </style>
 </head>
 <body>
 
-    <header class="site-header-container">
-        <div class="header-left">
-            <!-- <a href="main.html" class="icon-btn" title="Retour au tableau de bord">
-                <i class="fa-solid fa-arrow-left"></i>
-            </a> -->
-        </div>
-        <div class="header-center"><h1 class="site-header">Classements</h1></div>
+<!-- Le HTML pour le verrouillage (inchangé) -->
+<style>
+/* ... (styles du password-overlay inchangés) ... */
+</style>
+<!-- PASSWORD OVERLAY HTML REMOVED -->
+
+<script>
+// --- SCRIPT DE VERROUILLAGE (Modifié pour appeler le NOUVEAU système) ---
+// SCRIPT DE VERROUILLAGE ENTIÈREMENT SUPPRIMÉ
+// --- FIN DU SCRIPT DE VERROUILLAGE ---
+</script>
+
+    
+    <div class="site-header-container">
+        <a href="main.html" class="back-arrow" title="Retour">←</a>
+        <header class="site-header">Outil JDLM*</header>
+        <!-- NOUVEAU: Bouton Thème -->
         <div class="header-right">
             <button id="theme-toggle" class="icon-btn" aria-label="Changer de thème">
                 <i class="fa-solid fa-moon"></i>
             </button>
         </div>
-    </header>
+    </div>
 
     <main class="main-container">
-
-        <!-- Section de Synchronisation des Données (REMOVED) -->
-        <!-- La synchronisation est maintenant automatique au chargement -->
-
-        <!-- Section des Classements -->
-        <div id="loading-indicator">
-            <i class="fa-solid fa-spinner fa-spin"></i>
-            <span>Chargement des classements...</span>
+        <div class="controls">
+            <label for="term-select">Comparer les moyennes pour :</label>
+            <select id="term-select">
+                <option value="global">Moyenne générale</option>
+                <option value="etape1">Étape 1</option>
+                <option value="etape2">Étape 2</option>
+                <option value="etape3">Étape 3</option>
+                <!-- NOUVEAU: Les matières seront ajoutées ici par JS -->
+            </select>
         </div>
-
-        <div id="error-container" class="error-message hidden"></div>
-
-        <div id="ranking-content" class="hidden">
-            <!-- Toggle for Sec 4 / Sec 5 -->
-            <div class="level-toggle">
-                <button class="level-btn active" data-level="sec4">Secondaire 4</button>
-                <button class="level-btn" data-level="sec5">Secondaire 5</button>
+        <div id="dashboard-container">
+            <!-- Le Ghost Loader est inchangé -->
+            <div class="dashboard-grid ghost-loading" id="dashboard-ghost-loader">
+                <!-- ... (ghost loader widgets inchangés) ... -->
             </div>
-
-            <!-- Container for Sec 4 Rankings -->
-            <section id="sec4-rankings" class="ranking-section active">
-                
-                <!-- NOUVELLE CARTE RÉSUMÉ -->
-                <div id="sec4-summary" class="summary-card">
-                    <!-- Contenu généré par JS -->
-                </div>
-
-                <!-- Classement Global (maintenant séparé) -->
-                <div class="category-card">
-                    <h2 class="category-title">Classement - Moyenne Globale</h2>
-                    <ol id="sec4-global-list" class="ranking-list"></ol>
-                </div>
-
-                <!-- Grille pour les Étapes -->
-                <div class="ranking-grid">
-                    <div class="category-card">
-                        <h2 class="category-title">Étape 1</h2>
-                        <ol id="sec4-etape1-list" class="ranking-list"></ol>
-                    </div>
-                    <div class="category-card">
-                        <h2 class="category-title">Étape 2</h2>
-                        <ol id="sec4-etape2-list" class="ranking-list"></ol>
-                    </div>
-                    <div class="category-card">
-                        <h2 class="category-title">Étape 3</h2>
-                        <ol id="sec4-etape3-list" class="ranking-list"></ol>
-                    </div>
-                </div>
-
-                <!-- Classement par Matières -->
-                <div class="category-card" style="margin-top: 25px;">
-                    <h2 class="category-title" id="sec4-subject-title">Classements par Matière</h2>
-                    <div id="sec4-subject-tabs" class="subject-tabs"></div>
-                    <div id="sec4-subject-lists"></div>
-                </div>
-            </section>
-
-            <!-- Container for Sec 5 Rankings -->
-            <section id="sec5-rankings" class="ranking-section">
-                
-                <!-- NOUVELLE CARTE RÉSUMÉ -->
-                <div id="sec5-summary" class="summary-card">
-                    <!-- Contenu généré par JS -->
-                </div>
-
-                <!-- Classement Global (maintenant séparé) -->
-                <div class="category-card">
-                    <h2 class="category-title">Classement - Moyenne Globale</h2>
-                    <ol id="sec5-global-list" class="ranking-list"></ol>
-                </div>
-
-                <!-- Grille pour les Étapes -->
-                <div class="ranking-grid">
-                    <div class="category-card">
-                        <h2 class="category-title">Étape 1</h2>
-                        <ol id="sec5-etape1-list" class="ranking-list"></ol>
-                    </div>
-                    <div class="category-card">
-                        <h2 class="category-title">Étape 2</h2>
-                        <ol id="sec5-etape2-list" class="ranking-list"></ol>
-                    </div>
-                    <div class="category-card">
-                        <h2 class="category-title">Étape 3</h2>
-                        <ol id="sec5-etape3-list" class="ranking-list"></ol>
-                    </div>
-                </div>
-                
-                <!-- Classement par Matières -->
-                <div class="category-card" style="margin-top: 25px;">
-                    <h2 class="category-title" id="sec5-subject-title">Classements par Matière</h2>
-                    <div id="sec5-subject-tabs" class="subject-tabs"></div>
-                    <div id="sec5-subject-lists"></div>
-                </div>
-            </section>
+            <!-- Le conteneur pour le dashboard réel -->
+            <div class="dashboard-grid" id="dashboard-real-content" style="display: none;">
+                <!-- Le contenu sera généré par JS -->
+            </div>
         </div>
-
     </main>
+    <footer>*jauge de la moyenne</footer>
 
-    <footer><p>Outil MBS - Classements</p></footer>
+<!-- Le HTML pour le logging (inchangé) -->
+<div class="log-display" style="display: none;">
+    <!-- ... (contenu du log-display inchangé) ... -->
+</div>
+<script>
+    // ... (script de logging inchangé) ...
+</script>
+
+    <!-- NOUVEAU: Popup de statut de synchronisation -->
+    <div id="sync-status">Synchronisation...</div>
+
 
     <script>
-        // --- IMPORTANT ---
-        // 1. Copiez le code de `Code.gs` dans votre projet Google Apps Script.
-        // 2. Déployez-le en tant qu'application Web ("Deploy" > "New deployment").
-        // 3. Assurez-vous que "Who has access" est réglé sur "Anyone".
-        // 4. Copiez l'URL de l'application Web et collez-la ci-dessous.
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwuOoAqG_wgI6y32p8OnfRzC0xm0aDo8UvwQpdO4A3iypuvffZRIyIh-uzFTIAec5ej/exec'; // <-- !!! COLLEZ VOTRE URL DE DÉPLOIEMENT ICI
+        // ====================================================================
+        // --- SECTION 0: NOUVELLE CONFIGURATION & CONSTANTES ---
+        // ====================================================================
+
+        // URL unique pour GET et POST
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby5JYFE5JDLycaa4cCCsA57K-2Pka-CoHatWTr1685mQDiJtv_3IcrYDFhS2vkhsOet/exec";
         
-        // --- MOCKED DATA (DONNÉES FICTIVES) ---
-        // (Supprimé)
+        // Conteneurs DOM
+        const dashboardContainer = document.getElementById('dashboard-container');
+        const dashboardGhostLoader = document.getElementById('dashboard-ghost-loader');
+        const dashboardRealContent = document.getElementById('dashboard-real-content');
+        const termSelect = document.getElementById('term-select');
+        const syncStatusPopup = document.getElementById('sync-status');
         
-        // --- CONSTANTES DE CALCUL (inspirées de main-functions.js) ---
+        // État Global
+        let currentRanks = {}; 
+        let chartInstance = null;
+        let currentUserID = null; // Pour stocker le userID (hashé ou non)
+        let allSheetData = null; // Pour mettre en cache les données du GET
+
+        // Constantes pour le calcul (de main-functions.js)
         const gradeMap = { 'A+': 100, 'A': 95, 'A-': 90, 'B+': 85, 'B': 80, 'B-': 75, 'C+': 70, 'C': 65, 'C-': 60, 'D+': 55, 'D': 50, 'E': 45 };
+        
+        // CORRIGÉ: HQC retiré de sec5, FIN dé-dupliqué
         const defaultUnits = {
             sec4: { 'ART': 2, 'MUS': 2, 'DRM': 2, 'FRA': 6, 'ELA': 4, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 6, 'ST': 4, 'STE': 4, 'HQC': 4, 'CCQ': 2, 'EPS': 2, 'ENT': 2, 'INF': 2, 'PSY': 2 },
-            // --- VÉRIFICATION DES CORRECTIONS ---
-            // 1. HQC est bien absent de sec5
-            // 2. PHI (Philosophie) est présent
-            sec5: { 'ART': 2, 'MUS': 2, 'DRM': 2, 'CAT': 4, 'FRA': 6, 'ELA': 6, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 4, 'MED': 4, 'PSY': 4, 'ENT': 4, 'FIN': 4, 'CHI': 4, 'PHY': 4, 'MON': 2,  'CCQ': 2, 'EPS': 2, 'PHI': 2 }
+            sec5: { 'ART': 2, 'MUS': 2, 'DRM': 2, 'CAT': 4, 'FRA': 6, 'ELA': 6, 'EESL': 6, 'ESL': 4, 'MAT': 6, 'CST': 4, 'MED': 4, 'PSY': 4, 'ENT': 4, 'FIN': 4, 'CHI': 4, 'PHY': 4, 'MON': 2, 'CCQ': 2, 'EPS': 2, 'PHI': 2 }
         };
         const termWeights = { etape1: 0.20, etape2: 0.20, etape3: 0.60 };
-        
-        let currentUserID = null; // Variable pour stocker l'ID de l'utilisateur actuel
 
-        
-        document.addEventListener('DOMContentLoaded', () => {
-            currentUserID = localStorage.getItem('mbsUserID'); // Charger l'ID de l'utilisateur au démarrage
-            initTheme();
-            setupLevelToggles();
-            // Lancer la synchronisation automatique PUIS charger les classements
-            syncLocalDataAndLoadRankings();
-        });
+        // NOUVEAU: Liste des clés à ne pas traiter comme des matières
+        const IGNORED_KEYS = new Set([
+            'userID', 'level', 'global', 'etape1', 'etape2', 'etape3',
+            'userCode', 'user_random', 'niveau', 'timestamp',
+            'avg_generale', 'avg_etape1', 'avg_etape2', 'avg_etape3',
+            'avg_francais', 'avg_math', 'avg_anglais' // Anciennes clés
+        ]);
+
 
         // ====================================================================
-        // --- SECTION 1: INITIALISATION ET AFFICHAGE DES CLASSEMENTS (GET) ---
-        // ====================================================================
-
-        function initTheme() {
-            const themeToggle = document.getElementById('theme-toggle');
-            const html = document.documentElement;
-            const toggleIcon = themeToggle.querySelector('i');
-            const THEME_KEY = 'mbs-theme';
-
-            const updateTheme = (theme) => {
-                html.setAttribute('data-theme', theme);
-                localStorage.setItem(THEME_KEY, theme);
-                toggleIcon.className = theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-            };
-
-            const storedTheme = localStorage.getItem(THEME_KEY);
-            const initialTheme = storedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-            updateTheme(initialTheme);
-
-            themeToggle.addEventListener('click', () => {
-                const newTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-                updateTheme(newTheme);
-            });
-        }
-        
-        function setupLevelToggles() {
-            document.querySelectorAll('.level-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelector('.level-btn.active').classList.remove('active');
-                    btn.classList.add('active');
-                    
-                    document.querySelectorAll('.ranking-section').forEach(sec => sec.classList.remove('active'));
-                    document.getElementById(btn.dataset.level + '-rankings').classList.add('active');
-                });
-            });
-        }
-
-        async function loadRankings() {
-            const loadingIndicator = document.getElementById('loading-indicator');
-            const errorContainer = document.getElementById('error-container');
-            const contentContainer = document.getElementById('ranking-content');
-            
-            // On ne cache pas le loading si le contenu est déjà visible (ex: rechargement)
-            if (!contentContainer.classList.contains('hidden')) {
-                loadingIndicator.classList.add('hidden');
-            } else {
-                loadingIndicator.classList.remove('hidden');
-            }
-            errorContainer.classList.add('hidden');
-
-            try {
-                let data;
-                if (!GOOGLE_SCRIPT_URL) {
-                    // console.warn("GOOGLE_SCRIPT_URL est vide. Utilisation des données fictives (MOCK_DATA).");
-                    // await new Promise(r => setTimeout(r, 1000)); // Simuler délai
-                    // data = MOCK_DATA;
-                    throw new Error("L'URL Google Apps Script n'est pas configurée. Veuillez coller l'URL dans la variable 'GOOGLE_SCRIPT_URL'.");
-                } else {
-                    const response = await fetch(GOOGLE_SCRIPT_URL);
-                    if (!response.ok) {
-                        throw new Error(`Erreur réseau: ${response.statusText}`);
-                    }
-                    data = await response.json();
-                }
-
-                if (!data || !data.students || !data.subjects) {
-                    throw new Error("Les données reçues sont mal formatées.");
-                }
-                
-                const sec4Students = data.students.filter(s => s.level == 4);
-                const sec5Students = data.students.filter(s => s.level == 5);
-
-                // --- MODIFICATION: Logique pour trier les matières ---
-                const allSubjectsFromSheet = data.subjects || [];
-                const sec4UnitKeys = new Set(Object.keys(defaultUnits.sec4));
-                const sec5UnitKeys = new Set(Object.keys(defaultUnits.sec5));
-
-                const sec4Subjects = allSubjectsFromSheet.filter(s => sec4UnitKeys.has(s));
-                const sec5Subjects = allSubjectsFromSheet.filter(s => sec5UnitKeys.has(s));
-                // --- FIN MODIFICATION ---
-                
-                populateRankings('sec4', sec4Students, sec4Subjects);
-                populateRankings('sec5', sec5Students, sec5Subjects);
-                
-                loadingIndicator.classList.add('hidden');
-                contentContainer.classList.remove('hidden');
-
-            } catch (error) {
-                console.error("Erreur lors du chargement des classements:", error);
-                loadingIndicator.classList.add('hidden');
-                errorContainer.textContent = `Erreur: ${error.message}. Vérifiez la console et votre URL Apps Script.`;
-                errorContainer.classList.remove('hidden');
-            }
-        }
-        
-        function populateRankings(levelPrefix, students, levelSubjects) {
-            
-            // --- NOUVEAU: Logique pour la carte de résumé ---
-            const summaryEl = document.getElementById(`${levelPrefix}-summary`);
-            
-            // Calculer les moyennes de classe
-            const calcClassAvg = (category) => {
-                const rankedStudents = students.filter(s => s[category] != null && s[category] > 0);
-                const count = rankedStudents.length;
-                if (count === 0) return { avg: 0, count: 0 };
-                const total = rankedStudents.reduce((acc, s) => acc + parseFloat(s[category]), 0);
-                return { avg: total / count, count };
-            };
-            
-            const globalStats = calcClassAvg('global');
-            const etape1Stats = calcClassAvg('etape1');
-            const etape2Stats = calcClassAvg('etape2');
-            const etape3Stats = calcClassAvg('etape3');
-
-            // Trouver le rang de l'utilisateur
-            let userRank = null;
-            if (globalStats.count > 0) {
-                const sorted = [...students.filter(s => s.global != null && s.global > 0)].sort((a, b) => b.global - a.global);
-                const userIndex = sorted.findIndex(s => s.userID === currentUserID);
-                if (userIndex !== -1) {
-                    userRank = userIndex + 1;
-                }
-            }
-            
-            if (summaryEl) {
-                 summaryEl.innerHTML = `
-                    <div class="summary-item">
-                        <span class="icon"><i class="fa-solid fa-trophy"></i></span>
-                        <span class="label">Votre Rang (Global)</span>
-                        <span class="value">${userRank ? `${userRank}${userRank === 1 ? 'er' : 'e'} / ${globalStats.count}` : 'N/A'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="icon"><i class="fa-solid fa-chart-line"></i></span>
-                        <span class="label">Moy. Classe (Global)</span>
-                        <span class="value">${globalStats.avg > 0 ? globalStats.avg.toFixed(2) + '%' : '--'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="icon"><i class="fa-solid fa-1"></i></span>
-                        <span class="label">Moy. Classe (Étape 1)</span>
-                        <span class="value">${etape1Stats.avg > 0 ? etape1Stats.avg.toFixed(2) + '%' : '--'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="icon"><i class="fa-solid fa-2"></i></span>
-                        <span class="label">Moy. Classe (Étape 2)</span>
-                        <span class="value">${etape2Stats.avg > 0 ? etape2Stats.avg.toFixed(2) + '%' : '--'}</span>
-                    </div>
-                     <div class="summary-item">
-                        <span class="icon"><i class="fa-solid fa-3"></i></span>
-                        <span class="label">Moy. Classe (Étape 3)</span>
-                        <span class="value">${etape3Stats.avg > 0 ? etape3Stats.avg.toFixed(2) + '%' : '--'}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="icon"><i class="fa-solid fa-users"></i></span>
-                        <span class="label">Participants (Global)</span>
-                        <span class="value">${globalStats.count}</span>
-                    </div>
-                `;
-            }
-            // --- FIN: Logique de la carte de résumé ---
-
-            // Catégories principales
-            const categories = ['global', 'etape1', 'etape2', 'etape3'];
-            categories.forEach(category => {
-                const sortedStudents = [...students].sort((a, b) => (b[category] || 0) - (a[category] || 0));
-                const listEl = document.getElementById(`${levelPrefix}-${category}-list`);
-                if(listEl) {
-                    listEl.innerHTML = '';
-                    if (sortedStudents.length === 0) {
-                        listEl.innerHTML = '<li>Aucune donnée</li>';
-                    }
-                    sortedStudents.forEach((student, index) => {
-                        const score = (student[category] || 0);
-                        if (score > 0) { // N'afficher que ceux qui ont un score
-                           listEl.appendChild(createRankItem(index + 1, student.userID, score.toFixed(2)));
-                        }
-                    });
-                     if (listEl.innerHTML === '') listEl.innerHTML = '<li>Aucune donnée</li>';
-                }
-            });
-            
-            // Catégories de matières
-            const subjectTabsContainer = document.getElementById(`${levelPrefix}-subject-tabs`);
-            const subjectListsContainer = document.getElementById(`${levelPrefix}-subject-lists`);
-            const subjectTitle = document.getElementById(`${levelPrefix}-subject-title`);
-            
-            if (!subjectTabsContainer || !subjectListsContainer || !subjectTitle) return;
-            
-            subjectTabsContainer.innerHTML = '';
-            subjectListsContainer.innerHTML = '';
-            subjectTitle.textContent = 'Classements par Matière'; // Réinitialiser le titre
-            
-            if (levelSubjects.length === 0) {
-                subjectListsContainer.innerHTML = '<p>Aucune matière à afficher pour ce niveau.</p>';
-                return;
-            }
-            
-            // MODIFICATION: Utilise levelSubjects au lieu de allSubjects
-            levelSubjects.forEach((subject, index) => {
-                // --- NOUVEAU: Calculer la moyenne de classe pour CETTE matière ---
-                const subjectStudents = students.filter(s => s[subject] != null && s[subject] > 0);
-                const subjectStudentCount = subjectStudents.length;
-                let subjectClassAvg = 0;
-                if (subjectStudentCount > 0) {
-                    subjectClassAvg = subjectStudents.reduce((acc, s) => acc + parseFloat(s[subject]), 0) / subjectStudentCount;
-                }
-                // --- FIN NOUVEAU ---
-
-                // Créer l'onglet
-                const tabBtn = document.createElement('button');
-                tabBtn.className = 'subject-tab-btn';
-                tabBtn.dataset.subject = subject;
-                tabBtn.dataset.classAvg = subjectClassAvg > 0 ? subjectClassAvg.toFixed(2) : '--'; // Stocker la moyenne
-                tabBtn.textContent = subject;
-                subjectTabsContainer.appendChild(tabBtn);
-                
-                // Créer la liste de classement pour cette matière
-                const listEl = document.createElement('ol');
-                listEl.className = 'ranking-list subject-ranking-list';
-                listEl.id = `${levelPrefix}-subject-${subject}-list`;
-                
-                const sortedStudents = [...subjectStudents].sort((a, b) => (b[subject] || 0) - (a[subject] || 0));
-                
-                // Remplir la liste
-                if (sortedStudents.length > 0) {
-                    sortedStudents.forEach((student, i) => {
-                        const score = (student[subject] || 0).toFixed(2);
-                        listEl.appendChild(createRankItem(i + 1, student.userID, score));
-                    });
-                } else {
-                    listEl.innerHTML = '<li>Aucune donnée</li>';
-                }
-                subjectListsContainer.appendChild(listEl);
-            });
-
-            // Activer le premier onglet et la première liste
-            const firstTab = subjectTabsContainer.querySelector('.subject-tab-btn');
-            if (firstTab) {
-                firstTab.classList.add('active');
-                document.getElementById(`${levelPrefix}-subject-${firstTab.dataset.subject}-list`).classList.add('active');
-                // --- NOUVEAU: Mettre à jour le titre pour le premier onglet ---
-                const firstAvg = firstTab.dataset.classAvg;
-                subjectTitle.textContent = `Classement - ${firstTab.dataset.subject} (Moy. Classe: ${firstAvg}%)`;
-                // --- FIN NOUVEAU ---
-            } else {
-                 subjectListsContainer.innerHTML = '<p>Aucune donnée de matière à afficher.</p>';
-            }
-            
-            // Ajouter les écouteurs d'événements pour les onglets de matières
-            subjectTabsContainer.querySelectorAll('.subject-tab-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const activeTab = subjectTabsContainer.querySelector('.subject-tab-btn.active');
-                    if (activeTab) activeTab.classList.remove('active');
-                    btn.classList.add('active');
-                    
-                    subjectListsContainer.querySelectorAll('.subject-ranking-list').forEach(list => list.classList.remove('active'));
-                    document.getElementById(`${levelPrefix}-subject-${btn.dataset.subject}-list`).classList.add('active');
-                    
-                    // --- NOUVEAU: Mettre à jour le titre lors du clic ---
-                    const classAvg = btn.dataset.classAvg;
-                    subjectTitle.textContent = `Classement - ${btn.dataset.subject} (Moy. Classe: ${classAvg}%)`;
-                    // --- FIN NOUVEAU ---
-                });
-            });
-        }
-        
-        function createRankItem(rank, userID, score) {
-            let displayName;
-            const item = document.createElement('li');
-
-            // Vérifier si cet utilisateur est l'utilisateur actuel
-            if (currentUserID && userID === currentUserID) {
-                displayName = userID; // Affiche le vrai userID (hashe ou non)
-                item.classList.add('current-user-highlight');
-            } else {
-                displayName = `User ${rank}`; // Anonymise les autres
-            }
-
-            // Masquer les noms longs pour la confidentialité (même pour l'utilisateur actuel si long)
-            const truncatedName = displayName.length > 20 ? displayName.substring(0, 17) + '...' : displayName;
-            item.innerHTML = `
-                <span class="rank-position">${rank}</span>
-                <span class="rank-name" title="${displayName}">${truncatedName}</span>
-                <span class="rank-score">${score}%</span>
-            `;
-            return item;
-        }
-
-        // ====================================================================
-        // --- SECTION 2: SOUMISSION DES DONNÉES LOCALES (POST) ---
+        // --- SECTION 1: NOUVEAU SYSTÈME DE HACHAGE ET SYNCHRONISATION (POST) ---
         // ====================================================================
 
         /**
-         * Nouvelle fonction pour la synchronisation automatique au chargement.
-         * Elle tente de synchroniser PUIS charge les classements.
+         * Point d'entrée principal (remplace l'ancien initializeDashboard)
+         * Appelé après le déverrouillage du mot de passe.
          */
-        async function syncLocalDataAndLoadRankings() {
-            
-            // 1. Tenter la synchronisation des données locales
+        async function syncAndLoadDashboard() {
+            // 1. Synchroniser les données locales (POST)
             try {
-                const payload = getLocalStudentData();
-                if (!payload) {
-                    throw new Error("Données locales introuvables. Synchronisation ignorée.");
-                }
+                showSyncStatus("Synchronisation de vos données...");
+                const payload = getLocalStudentData(); // Calcule les données
                 
-                if (!GOOGLE_SCRIPT_URL) {
-                    // console.warn("GOOGLE_SCRIPT_URL est vide. Simulation d'envoi.");
-                    // console.log("Payload à envoyer:", payload);
-                    // await new Promise(r => setTimeout(r, 500)); // Simuler envoi
-                    throw new Error("L'URL Google Apps Script n'est pas configurée. Synchronisation impossible.");
+                if (!payload) {
+                    showSyncStatus("Aucune donnée locale à synchroniser.", 1500);
+                } else if (!SCRIPT_URL) {
+                     showSyncStatus("URL de script non configurée.", 3000);
+                     console.error("SCRIPT_URL est vide. Impossible de synchroniser.");
                 } else {
-                    const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    const response = await fetch(SCRIPT_URL, {
                         method: 'POST',
-                        mode: 'cors', // Important pour Google Apps Script
-                        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // GAS gère mieux text/plain pour POST
-                        body: JSON.stringify(payload)
+                        body: JSON.stringify(payload),
+                        headers: { 'Content-Type': 'application/json' },
+                        mode: 'cors' // Ajouté pour être explicite
                     });
-                    if (!response.ok) {
-                        throw new Error(`Erreur lors de la soumission: ${response.statusText}`);
-                    }
                     const result = await response.json();
-                    if (result.status !== "success") {
-                        throw new Error(`Erreur du script: ${result.message}`);
-                    }
                     
-                    // --- MODIFICATION IMPORTANTE ---
-                    // Stocker l'userID retourné par le script
-                    if (result.userID) {
-                        currentUserID = result.userID;
-                        localStorage.setItem('mbsUserID', result.userID);
+                    if (result.status === "success" && result.userID) {
+                        currentUserID = result.userID; // Stocke l'ID (hashé ou non) retourné par le serveur
+                        localStorage.setItem('jdlmUserID', currentUserID); // Sauvegarde pour la prochaine fois
+                        showSyncStatus("Synchronisation réussie !", 1500);
+                    } else {
+                        throw new Error(result.message || "Échec de la synchronisation");
                     }
-                    // --- FIN DE LA MODIFICATION ---
                 }
-                console.log("Synchronisation locale automatique réussie.");
-
             } catch (error) {
-                console.warn(`Erreur de synchronisation auto: ${error.message}`);
-                // Ne pas bloquer l'utilisateur, continuer et charger les classements
+                console.error("Erreur de synchronisation (POST):", error);
+                showSyncStatus(`Erreur de synchronisation: ${error.message}`, 3000);
+            }
+
+            // 2. Charger les données du classement (GET)
+            // (Même si le POST échoue, on essaie de charger les classements)
+            
+            // Récupérer l'ID local au cas où la synchro n'a pas eu lieu
+            if (!currentUserID) {
+                 currentUserID = localStorage.getItem('jdlmUserID');
             }
             
-            // 2. Charger les classements (se produit que la synchro ait réussi ou non)
-            await loadRankings();
+            await loadLeaderboardDataInternal();
+        }
+        
+        /**
+         * Affiche un message dans le popup de synchronisation.
+         */
+        function showSyncStatus(message, duration = null) {
+            syncStatusPopup.textContent = message;
+            syncStatusPopup.className = 'show';
+            if (duration) {
+                setTimeout(() => {
+                    syncStatusPopup.className = 'hide';
+                }, duration);
+            }
         }
 
         /**
-         * Récupère et calcule toutes les données de l'étudiant à partir du localStorage.
-         * C'est une ré-implémentation de la logique de calcul de main-functions.js
+         * Lit `jdlmData` de localStorage et calcule toutes les moyennes.
+         * C'est le "Hashing System" que vous vouliez.
          */
         function getLocalStudentData() {
-            const mbsData = JSON.parse(localStorage.getItem('mbsData')) || {};
-
-            if (!mbsData.valid || !mbsData.nom || !mbsData.settings || !mbsData.settings.niveau) {
-                console.warn("Données locales (mbsData) invalides ou manquantes.");
+            const mbsData = JSON.parse(localStorage.getItem('mbsData')); // 'mbsData' est le nom de clé dans main-functions.js
+            if (!mbsData || !mbsData.valid || !mbsData.nom) {
+                console.log("Aucune donnée mbsData (anciennement jdlmData) valide à synchroniser.");
                 return null;
             }
 
+            // 1. Calculer toutes les moyennes (identique à rankings.html)
             const { subjectAverages, termAverages, globalAverage } = calculateAllAverages(mbsData);
             
+            const selectedLevel = mbsData.settings?.niveau; // Lit le niveau depuis mbsData.settings
+            if (!selectedLevel) {
+                 console.log("Niveau non défini dans mbsData.settings.niveau, synchronisation annulée.");
+                 return null;
+            }
+
+            // 2. Construire le payload
             const payload = {
-                name: mbsData.nom,
-                level: mbsData.settings.niveau,
+                name: mbsData.nom, // Le nom sera hashé côté serveur si O2=TRUE
+                level: selectedLevel === 'sec4' ? 4 : 5,
                 global: globalAverage,
                 etape1: termAverages.etape1,
                 etape2: termAverages.etape2,
-                etape3: termAverages.etape3
+                etape3: termAverages.etape3,
             };
 
-            // Aplatir les moyennes de matières
-            const allSubjectCodes = new Set();
-            Object.values(subjectAverages).forEach(etape => {
-                Object.keys(etape).forEach(code => allSubjectCodes.add(code));
-            });
-            
-            allSubjectCodes.forEach(code => {
-                let weightedSum = 0;
-                let totalWeight = 0;
-                
-                Object.keys(termWeights).forEach(etape => {
-                    const avg = subjectAverages[etape]?.[code]?.average;
-                    if (avg != null) {
-                        weightedSum += avg * termWeights[etape];
-                        totalWeight += termWeights[etape];
-                    }
-                });
-                
-                if (totalWeight > 0) {
-                    payload[code] = weightedSum / totalWeight;
+            // 3. Aplatir les moyennes de matières PAR ÉTAPE (ex: "FRA-E1", "MAT-E2")
+            Object.keys(termWeights).forEach(etapeKey => { // etapeKey = 'etape1', 'etape2', 'etape3'
+                if (subjectAverages[etapeKey]) {
+                    Object.keys(subjectAverages[etapeKey]).forEach(code => { // code = 'FRA', 'MAT', 'HQC', etc.
+                        const avg = subjectAverages[etapeKey][code]?.average;
+                        if (avg != null) {
+                            const newKey = `${code}-${etapeKey.replace('etape', 'E')}`; // Crée "FRA-E1", "MAT-E2", etc.
+                            payload[newKey] = avg;
+                        }
+                    });
                 }
             });
 
             return payload;
         }
 
-        // --- Fonctions de calcul (copiées/adaptées de main-functions.js) ---
-
+        // --- Fonctions de calcul (copiées de main-functions.js, nécessaires pour getLocalStudentData) ---
         function getNumericGrade(result) {
             if (!result) return null;
             const trimmed = result.trim();
             if (gradeMap[trimmed]) return gradeMap[trimmed];
-            
             const percentageMatch = trimmed.match(/(\d+[,.]?\d*)\s*%/);
             if (percentageMatch) return parseFloat(percentageMatch[1].replace(',', '.'));
-
             const scoreMatch = trimmed.match(/(\d+[,.]?\d*)\s*\/\s*(\d+[,.]?\d*)/);
             if (scoreMatch) {
                 const score = parseFloat(scoreMatch[1].replace(',', '.'));
@@ -907,32 +480,28 @@
         function calculateSubjectAverage(subject, mbsData) {
             let totalWeightedGrade = 0;
             let totalCompetencyWeight = 0;
-
             subject.competencies.forEach((comp) => {
                 const compWeightMatch = comp.name.match(/\((\d+)%\)/);
                 if (!compWeightMatch) return;
                 const compWeight = parseFloat(compWeightMatch[1]);
-
                 let totalAssignmentGrade = 0;
                 let totalAssignmentWeight = 0;
-
                 comp.assignments.forEach((assign) => {
+                    // NOTE: Cette fonction est "pure" - elle n'a pas besoin de lire le DOM,
+                    // elle lit juste les données brutes de mbsData.
                     const grade = getNumericGrade(assign.result);
                     const weight = parseFloat(assign.pond);
-
                     if (grade !== null && !isNaN(grade) && !isNaN(weight) && weight > 0) {
                         totalAssignmentGrade += grade * weight;
                         totalAssignmentWeight += weight;
                     }
                 });
-
                 if (totalAssignmentWeight > 0) {
                     const competencyAverage = totalAssignmentGrade / totalAssignmentWeight;
                     totalWeightedGrade += competencyAverage * compWeight;
                     totalCompetencyWeight += compWeight;
                 }
             });
-
             return totalCompetencyWeight > 0 ? totalWeightedGrade / totalCompetencyWeight : null;
         }
 
@@ -941,40 +510,360 @@
             const niveau = mbsData.settings?.niveau;
             let allTermAverages = { etape1: null, etape2: null, etape3: null };
             let allSubjectAverages = { etape1: {}, etape2: {}, etape3: {} };
-
             ['etape1', 'etape2', 'etape3'].forEach(etape => {
                 if (!mbsData[etape]) return;
                 let termWeightedSum = 0;
                 let termUnitSum = 0;
-
                 mbsData[etape].forEach((subject) => {
                     const average = calculateSubjectAverage(subject, mbsData);
                     const codePrefix = subject.code.substring(0, 3);
                     allSubjectAverages[etape][codePrefix] = { name: subject.name, average };
-
                     if (average !== null && niveau) {
-                        const unit = units[codePrefix] || 2;
+                        const unit = (units[codePrefix] !== undefined) ? units[codePrefix] : 2; // Default 2
                         termWeightedSum += average * unit;
                         termUnitSum += unit;
                     }
                 });
                 allTermAverages[etape] = termUnitSum > 0 ? termWeightedSum / termUnitSum : null;
             });
-
             let globalWeightedSum = 0;
             let totalWeight = 0;
-            
             Object.entries(allTermAverages).forEach(([etape, avg]) => {
                 if (avg !== null) {
                     globalWeightedSum += avg * termWeights[etape];
                     totalWeight += termWeights[etape];
                 }
             });
-
             const globalAverage = totalWeight > 0 ? globalWeightedSum / totalWeight : null;
             return { subjectAverages: allSubjectAverages, termAverages: allTermAverages, globalAverage };
         }
 
+        
+        // ====================================================================
+        // --- SECTION 2: THÈME, AFFICHAGE ET LOGIQUE DE CLASSEMENT (GET) ---
+        // ====================================================================
+
+        /**
+         * NOUVEAU: Logique du Thème (de improve (1).html)
+         */
+        function initTheme() {
+// ... existing code ... -->
+        }
+        
+        // Initialiser le thème au chargement du DOM
+        document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            // Lancer la synchronisation et le chargement,
+            // car il n'y a plus d'écran de verrouillage
+            syncAndLoadDashboard();
+        });
+
+
+        /**
+         * Logique de chargement (GET) interne
+         */
+        async function loadLeaderboardDataInternal() {
+            const mbsData = JSON.parse(localStorage.getItem('mbsData')) || {};
+            const selectedLevel = mbsData.settings?.niveau;
+
+            if (!selectedLevel) {
+                showError("Données utilisateur non trouvées. Retournez à la page principale (main.html), vos données seront chargées, puis revenez ici.");
+                return;
+            }
+
+            try {
+                // Utiliser les données mises en cache si elles existent, sinon fetch
+                if (!allSheetData) {
+                    if (!SCRIPT_URL) {
+                        throw new Error("SCRIPT_URL est vide. Impossible de charger les classements.");
+                    }
+                    const response = await fetch(SCRIPT_URL); // GET
+                    if (!response.ok) throw new Error(`Network error: ${response.statusText}`);
+                    allSheetData = await response.json();
+                    if (allSheetData.error) throw new Error(`Script error: ${allSheetData.error}`);
+                }
+
+                const oldRanks = JSON.parse(localStorage.getItem('jdlmRankHistory')) || {};
+                
+                // NOUVEAU: Remplir le <select> dynamiquement
+                populateTermSelect(allSheetData.subjects || []);
+                
+                termSelect.addEventListener('change', () => renderDashboard(allSheetData, currentUserID, selectedLevel, oldRanks));
+                renderDashboard(allSheetData, currentUserID, selectedLevel, oldRanks);
+
+                // Afficher le contenu
+                dashboardGhostLoader.style.display = 'none';
+                dashboardRealContent.style.display = 'grid';
+
+            } catch (error) {
+                console.error("Fetch Error (GET):", error);
+                showError(`<strong>Erreur de chargement :</strong> ${error.message}. Vérifiez la console (F12).`);
+            }
+        }
+
+        function showError(message) {
+            dashboardGhostLoader.style.display = 'none';
+            dashboardRealContent.style.display = 'none';
+            dashboardContainer.innerHTML = `<div class="error-message">${message}</div>`;
+        }
+
+        /**
+         * NOUVEAU: Remplit le <select> avec toutes les matières
+         */
+        function populateTermSelect(allSubjects) {
+            // Vider les anciennes options (sauf les 4 premières)
+            while (termSelect.options.length > 4) {
+                termSelect.remove(4);
+            }
+            
+            // Trier les matières par ordre alphabétique
+            allSubjects.sort();
+
+            const subjectGroup = document.createElement('optgroup');
+            subjectGroup.label = 'Matières (par étape)';
+            
+            allSubjects.forEach(subjectKey => {
+                if (!IGNORED_KEYS.has(subjectKey)) {
+                    const option = document.createElement('option');
+                    option.value = subjectKey;
+                    option.textContent = subjectKey; // ex: "FRA-E1"
+                    subjectGroup.appendChild(option);
+                }
+            });
+            termSelect.appendChild(subjectGroup);
+        }
+
+        /**
+         * NOUVEAU: Fonction de rendu entièrement refaite
+         */
+        function renderDashboard(allData, userRandom, selectedLevel, oldRanks) {
+            currentRanks = {}; 
+            const selectedTermKey = termSelect.value;
+            const selectedTermText = termSelect.options[termSelect.selectedIndex].text;
+            
+            const levelNum = selectedLevel === 'sec4' ? 4 : 5;
+            const levelData = allData.students.filter(d => d.level == levelNum);
+            
+            if (levelData.length === 0) {
+                dashboardRealContent.innerHTML = `<div class="no-data">Aucune donnée de classement n'a encore été enregistrée pour ce niveau.</div>`;
+                return;
+            }
+
+            const currentUserData = levelData.find(d => d.userID === userRandom);
+            
+            if (!currentUserData) {
+                // Affiche le dashboard même si l'utilisateur n'est pas dedans
+                console.warn("L'utilisateur actuel (", userRandom, ") n'a pas été trouvé dans le classement.");
+            }
+            
+            const mainWidgetHTML = createStatWidgetHTML('main-avg-widget', selectedTermKey, selectedTermText, levelData, currentUserData, oldRanks);
+            
+            // NOUVEAU: Création dynamique des 3 prochains widgets
+            const keysToDisplay = ['global', 'etape1', 'etape2', 'etape3'];
+            let smallWidgetsHTML = '';
+            keysToDisplay.forEach(key => {
+                if (key !== selectedTermKey) { // N'affiche pas le widget principal en double
+                    const title = termSelect.querySelector(`option[value="${key}"]`).textContent;
+                    smallWidgetsHTML += createStatWidgetHTML('small-widget', key, title, levelData, currentUserData, oldRanks);
+                }
+            });
+            
+            const overallAvgHTML = createOverallAveragesWidgetHTML(selectedTermKey, selectedTermText, levelData);
+            
+            dashboardRealContent.innerHTML = `
+                ${mainWidgetHTML}
+                ${overallAvgHTML}
+                <div class="stat-widget graph-widget">
+                    <h3 class="widget-title" style="text-align:center;">Performance par Étape (Global)</h3>
+                    <div class="graph-container"><canvas id="performanceChart"></canvas></div>
+                </div>
+                ${smallWidgetsHTML}
+            `;
+            
+            createPerformanceChart(levelData, currentUserData);
+
+            document.querySelectorAll('.mini-leaderboard-container').forEach(container => {
+                updateLeaderboardScroll(container);
+            });
+
+            localStorage.setItem('jdlmRankHistory', JSON.stringify(currentRanks));
+        }
+
+        function createStatWidgetHTML(widgetClass, currentKey, title, allUsersData, currentUserData, oldRanks) {
+            const rankedUsers = allUsersData
+                .filter(u => u[currentKey] != null && !isNaN(parseFloat(u[currentKey])) && parseFloat(u[currentKey]) > 0)
+                .sort((a, b) => b[currentKey] - a[currentKey]);
+            
+            const totalUsers = rankedUsers.length;
+            let currentUserRank = -1;
+            let currentUserGrade = NaN;
+
+            if (currentUserData) {
+                 currentUserRank = rankedUsers.findIndex(u => u.userID === currentUserData.userID) + 1; // +1 car 0-indexed
+                 currentUserGrade = parseFloat(currentUserData[currentKey]);
+            }
+            
+            if (currentUserRank > 0) currentRanks[currentKey] = currentUserRank;
+            
+            const getTrophy = (rank) => (rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`);
+
+            let leaderboardItemsHTML = rankedUsers.map((user, index) => {
+                const rank = index + 1;
+                const isCurrentUser = currentUserData && user.userID === currentUserData.userID;
+                const userName = isCurrentUser ? 'Vous' : `Utilisateur ${rank}`;
+                return `<li class="leaderboard-item ${isCurrentUser ? 'is-user' : ''}" data-rank="${rank}">
+                            <span class="item-rank">${getTrophy(rank)}</span>
+                            <span class="item-name">${userName}</span>
+                            <span class="item-grade">${parseFloat(user[currentKey]).toFixed(1)}%</span>
+                        </li>`;
+            }).join('');
+            
+            if (leaderboardItemsHTML === '') {
+                 leaderboardItemsHTML = '<li class="no-data" style="text-align:center; padding: 10px;">Aucune donnée pour cette catégorie.</li>';
+            }
+
+            let widgetContent;
+            if (!currentUserData || isNaN(currentUserGrade) || currentUserRank === 0) {
+                // Vue pour les utilisateurs non classés (ou si la catégorie est vide)
+                widgetContent = `
+                    <div class="widget-header">
+                        <h3 class="widget-title">${title}</h3>
+                        <div class="widget-value" style="font-size: 2em; color: var(--text-secondary-color);">N/A</div>
+                        <div class="widget-rank">
+                            <span>Vous n'êtes pas classé ici.</span>
+                        </div>
+                    </div>
+                    <div class="mini-leaderboard-container" data-user-rank="0">
+                        <ul class="leaderboard-list">${leaderboardItemsHTML}</ul>
+                    </div>`;
+            } else {
+                // Vue pour l'utilisateur classé
+                const oldRank = oldRanks[currentKey];
+                let trendHTML = '';
+                if (oldRank !== undefined) {
+                    if (currentUserRank < oldRank) trendHTML = `<span class="rank-trend rank-trend-up"></span>`;
+                    else if (currentUserRank > oldRank) trendHTML = `<span class="rank-trend rank-trend-down"></span>`;
+                }
+                
+                widgetContent = `
+                    <div class="widget-header">
+                        <h3 class="widget-title">${title}</h3>
+                        <div class="widget-value">${currentUserGrade.toFixed(1)}%</div>
+                        <div class="widget-rank">
+                            <span>Top ${currentUserRank} sur ${totalUsers}</span>
+                            ${trendHTML}
+                        </div>
+                    </div>
+                    <div class="mini-leaderboard-container" data-user-rank="${currentUserRank}">
+                        <ul class="leaderboard-list">${leaderboardItemsHTML}</ul>
+                    </div>
+                `;
+            }
+            return `<div class="stat-widget ${widgetClass}">${widgetContent}</div>`;
+        }
+        
+        function updateLeaderboardScroll(container) {
+            const userRank = parseInt(container.dataset.userRank, 10);
+            if (!userRank || userRank <= 0) return;
+            const userItem = container.querySelector('.is-user');
+            if (!userItem) return;
+            const itemHeight = userItem.offsetHeight;
+            const containerHeight = container.clientHeight;
+            const scrollTop = userItem.offsetTop - (containerHeight / 2) + (itemHeight / 2);
+            container.scrollTop = scrollTop;
+        }
+
+        function createOverallAveragesWidgetHTML(termKey, termText, levelData) {
+            const generalValidGrades = levelData.map(u => parseFloat(u['global'])).filter(g => !isNaN(g) && g > 0);
+            const generalAverage = generalValidGrades.length > 0 ? generalValidGrades.reduce((a, b) => a + b, 0) / generalValidGrades.length : 0;
+            const termValidGrades = levelData.map(u => parseFloat(u[termKey])).filter(g => !isNaN(g) && g > 0);
+            const termAverage = termValidGrades.length > 0 ? termValidGrades.reduce((a, b) => a + b, 0) / termValidGrades.length : 0;
+
+            let trendHTML = '';
+            if (termKey !== 'global' && termAverage > 0 && generalAverage > 0) {
+                if (termAverage > generalAverage) trendHTML = `<span class="rank-trend rank-trend-up"></span>`;
+                else if (termAverage < generalAverage) trendHTML = `<span class="rank-trend rank-trend-down"></span>`;
+            }
+            
+            let secondHalfHTML = '';
+            if (termKey !== 'global' && termValidGrades.length > 0) {
+                secondHalfHTML = `
+                    <div class="avg-half">
+                        <h3 class="widget-title">Moyenne du Niveau</h3>
+                        <div class="widget-subtitle">${termText}</div>
+                        <div class="widget-value">${termAverage.toFixed(1)}%</div>
+                        <div class="widget-rank" style="opacity:0.8;">
+                            <span>Basé sur ${termValidGrades.length} élèves</span>
+                            ${trendHTML}
+                        </div>
+                    </div>`;
+            }
+
+            return `
+                <div class="stat-widget overall-avg-widget stacked-avg-widget">
+                    <div class="avg-half" ${termKey !== 'global' && termValidGrades.length > 0 ? 'style="border-bottom: 1px solid var(--light-grey); padding-bottom: 15px; margin-bottom: 15px;"' : ''}>
+                        <h3 class="widget-title">Moyenne du Niveau</h3>
+                        <div class="widget-subtitle">Générale</div>
+                        <div class="widget-value">${generalAverage.toFixed(1)}%</div>
+                        <div class="widget-rank" style="opacity:0.8;">Basé sur ${generalValidGrades.length} élèves</div>
+                    </div>
+                    ${secondHalfHTML}
+                </div>`;
+        }
+        
+        function createPerformanceChart(levelData, currentUserData) {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            const calculateGroupAvg = (etapeKey) => {
+                const validGrades = levelData.map(u => parseFloat(u[etapeKey])).filter(g => !isNaN(g) && g > 0);
+                return validGrades.length > 0 ? validGrades.reduce((a,b) => a + b, 0) / validGrades.length : null;
+            };
+            const parseUserGrade = (grade) => (parseFloat(grade) > 0 ? parseFloat(grade) : null);
+            
+            // S'assurer que currentUserData existe avant d'accéder à ses propriétés
+            const userData = currentUserData 
+                ? [parseUserGrade(currentUserData.etape1), parseUserGrade(currentUserData.etape2), parseUserGrade(currentUserData.etape3)]
+                : [null, null, null];
+                
+            const groupData = [calculateGroupAvg('etape1'), calculateGroupAvg('etape2'), calculateGroupAvg('etape3')];
+            
+            if(chartInstance) chartInstance.destroy();
+            
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Étape 1', 'Étape 2', 'Étape 3'],
+                    datasets: [
+                        { 
+                            label: 'Votre Moyenne', 
+                            data: userData, 
+                            borderColor: 'rgba(39, 174, 96, 1)', 
+                            backgroundColor: 'rgba(39, 174, 96, 0.1)', 
+                            borderWidth: 3, 
+                            fill: true, 
+                            tension: 0.4, 
+                            spanGaps: false 
+                        }, 
+                        { 
+                            label: 'Moyenne du Niveau', 
+                            data: groupData, 
+                            borderColor: 'rgba(231, 76, 60, 1)', 
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)', 
+                            borderWidth: 3, 
+                            fill: true, 
+                            tension: 0.4, 
+                            spanGaps: false 
+                        }
+                    ]
+                },
+                options: { 
+                    responsive: true, 
+                    scales: { y: { min: 0, max: 100, ticks: { callback: value => `${value}%` } } }, 
+                    plugins: { legend: { position: 'top' } } 
+                }
+            });
+        }
+        // N'appelle PAS initializeDashboard ici, le script de verrouillage le fera.
+        // document.addEventListener('DOMContentLoaded', initializeDashboard);
     </script>
 </body>
 </html>
