@@ -354,7 +354,6 @@
 
             function createNewModel() {
                 const model = tf.sequential();
-                // Normalization is the first layer
                 model.add(tf.layers.normalization({ inputShape: [3] }));
                 model.add(tf.layers.dense({ units: 32, activation: 'relu' }));
                 model.add(tf.layers.dropout({ rate: 0.1 }));
@@ -380,7 +379,7 @@
                 }
             }
             
-            // --- TRAIN MODEL (ROBUST VERSION) ---
+            // --- TRAIN MODEL (FINAL ROBUST VERSION) ---
             async function trainModel() {
                 if (allAssignments.length < 20) {
                     logToScreen(`Pas assez de données (${allAssignments.length}). Minimum 20 points de données requis pour l'entraînement.`);
@@ -405,10 +404,15 @@
                 trainButton.disabled = true;
 
                 try {
-                    // Check for NaN/Infinity before adaptation (critical)
-                    if (inputTensor.some(t => t.isNaN()).dataSync()[0] || inputTensor.some(t => t.isInf()).dataSync()[0]) {
-                        throw new Error("NaNs or Infinity found in input data. Cannot normalize.");
+                    // --- VÉRIFICATION DE TENSOR CORRIGÉE (Robustesse contre NaN/Inf) ---
+                    // Vérifie si un Tensor contient NaN ou Infinity avant l'adaptation.
+                    const isAnyNaN = tf.tidy(() => tf.any(inputTensor.isNaN()).dataSync()[0]);
+                    const isAnyInf = tf.tidy(() => tf.any(inputTensor.isInf()).dataSync()[0]);
+
+                    if (isAnyNaN || isAnyInf) {
+                        throw new Error("NaNs or Infinity found in input data.");
                     }
+                    // --- FIN VÉRIFICATION ---
                     
                     // Reset normalization layer weights before adapting to new data
                     tfModel.layers[0].setWeights([]);
@@ -438,7 +442,7 @@
 
                 } catch (e) {
                     let errorMessage = e.message;
-                    if (e.message.includes('Infinities or NaNs')) {
+                    if (e.message.includes('NaNs or Infinity found') || e.message.includes('Infinities or NaNs')) {
                          errorMessage = "ÉCHEC: Les données sont trop uniformes (écart-type zéro) ou contiennent des NaN. Veuillez ajouter plus de données variées.";
                     }
                     logToScreen(`❌ ÉCHEC DE L'ENTRAÎNEMENT: ${errorMessage}`);
