@@ -50,7 +50,6 @@
 
             /* Specific element adjustments for dark mode */
             .site-header { color: var(--text-color); }
-            .nav-arrow { color: var(--text-color); }
             .widget-title { color: var(--text-color); }
             .comp-widget, .calculator-container {
                 background-color: #282828;
@@ -70,20 +69,21 @@
             transition: background-color var(--transition-duration) ease, color var(--transition-duration) ease, border-color var(--transition-duration) ease, box-shadow var(--transition-duration) ease;
         }
         
-        /* SMOOTHER Page Load Animation Keyframes */
-        @keyframes fadeInSlideUp {
-            from { opacity: 0; transform: translateY(25px); }
-            to { opacity: 1; transform: translateY(0); }
+        /* --- SUPPRESSION DE L'ANIMATION DE CHARGEMENT DE LA PAGE --- */
+        /* Les keyframes fadeInSlideUp et leur application ont été retirées */
+
+        /* --- NOUVELLES KEYFRAMES POUR L'ANIMATION DE LA FLÈCHE DE RETOUR --- */
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(41, 128, 185, 0.4); }
+            70% { box-shadow: 0 0 0 8px rgba(41, 128, 185, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(41, 128, 185, 0); }
         }
-        /* Animation application for main elements */
-        .site-header-container, .sticky-tabs, .widget-grid, footer {
-            opacity: 0;
-            transform: translateY(25px);
-            animation: fadeInSlideUp 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        @keyframes arrow-move {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(-3px); }
         }
-        .sticky-tabs { animation-delay: 0.1s; }
-        .widget-grid { animation-delay: 0.2s; }
-        footer { animation-delay: 0.4s; }
+        /* --- FIN NOUVELLES KEYFRAMES --- */
+
 
         /* General Styles */
         body {
@@ -103,20 +103,30 @@
             font-size: 2.2em; font-weight: 700; font-family: 'Playfair Display', serif;
             display: inline-block;
         }
-        .nav-arrow { font-size: 2em; color: var(--secondary-color); text-decoration: none; transition: all 0.2s; }
-        .nav-arrow:hover { color: var(--primary-color); transform: scale(1.05); }
 
-        /* Dark Mode Toggle Button */
+        /* Dark Mode Toggle Button & Back Arrow Button Styling */
         .icon-btn {
             background: none; border: 2px solid var(--light-grey); color: var(--text-color);
             width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
             display: flex; align-items: center; justify-content: center; font-size: 1.1em;
-            transition: all 0.2s ease, background-color var(--transition-duration);
+            text-decoration: none; /* Important for anchor tags */
+            transition: all 0.2s ease, background-color var(--transition-duration), box-shadow 0.2s; /* Add box-shadow to transition */
         }
         .icon-btn:hover {
             border-color: var(--primary-color); color: var(--primary-color);
             transform: scale(1.1);
         }
+
+        /* --- ANIMATION SPÉCIFIQUE DU BOUTON RETOUR (CERCLE + FLÈCHE) --- */
+        /* Appliqué au .icon-btn dans .header-left qui est le bouton de retour */
+        .header-left .icon-btn:hover {
+            animation: pulse-border 1.5s infinite; /* Animation du cercle (ombre qui pulse) */
+        }
+        .header-left .icon-btn:hover i {
+            animation: arrow-move 0.5s ease-in-out infinite alternate; /* Animation de la flèche */
+        }
+        /* --- FIN ANIMATION SPÉCIFIQUE --- */
+
 
         .sticky-tabs {
             position: sticky; top: 0; background-color: var(--background-color);
@@ -183,160 +193,161 @@
         footer { text-align: center; padding: 25px; font-size: 0.9em; color: var(--footer-grey); border-top: 1px solid var(--border-color); margin-top: 40px; }
    
     
-    /* ----- ADD THIS CSS TO YOUR STYLESHEET ----- */
+        /* Chart Toggle Button */
+        .widget-chart-controls {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            margin-bottom: 5px; /* Space between button and chart */
+            height: 25px; /* Reserve space to prevent layout shift */
+        }
 
-/* Chart Toggle Button */
-.widget-chart-controls {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    margin-bottom: 5px; /* Space between button and chart */
-    height: 25px; /* Reserve space to prevent layout shift */
-}
+        .chart-toggle-btn {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--light-grey);
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.2s ease;
+        }
 
-.chart-toggle-btn {
-    background: none;
-    border: 1px solid var(--border-color);
-    color: var(--light-grey);
-    padding: 4px 8px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.8em;
-    transition: all 0.2s ease;
-}
+        .chart-toggle-btn:hover {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
 
-.chart-toggle-btn:hover {
-    color: var(--primary-color);
-    border-color: var(--primary-color);
-}
+        /* History Editor Modal Specific Styles */
+        #history-editor-modal { /* Using the same overlay class */
+            z-index: 1100; /* Ensure it's above the details modal */
+        }
 
-/* History Editor Modal Specific Styles */
-#history-editor-modal { /* Using the same overlay class */
-    z-index: 1100; /* Ensure it's above the details modal */
-}
+        .history-editor-content {
+            background-color: var(--widget-background);
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-widget);
+        }
 
-.history-editor-content {
-    background-color: var(--widget-background);
-    padding: 25px;
-    border-radius: 12px;
-    width: 90%;
-    max-width: 700px;
-    max-height: 85vh;
-    display: flex;
-    flex-direction: column;
-    box-shadow: var(--shadow-widget);
-}
+        .history-editor-header h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.6em;
+            margin-top: 0;
+            color: var(--primary-color);
+        }
 
-.history-editor-header h3 {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.6em;
-    margin-top: 0;
-    color: var(--primary-color);
-}
+        .history-steps-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap; /* Allow wrapping on small screens */
+        }
 
-.history-steps-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 5px;
-    margin-bottom: 20px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--border-color);
-    flex-wrap: wrap; /* Allow wrapping on small screens */
-}
+        .step-btn {
+            padding: 10px 15px;
+            border: 1px solid var(--border-color);
+            background-color: transparent;
+            color: var(--text-color);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
 
-.step-btn {
-    padding: 10px 15px;
-    border: 1px solid var(--border-color);
-    background-color: transparent;
-    color: var(--text-color);
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-}
+        .step-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
 
-.step-btn.active {
-    background-color: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
-}
+        .history-steps-container .arrow {
+            font-size: 1.2em;
+            color: var(--light-grey);
+        }
 
-.history-steps-container .arrow {
-    font-size: 1.2em;
-    color: var(--light-grey);
-}
+        .assignments-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 10px; /* for scrollbar */
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+        }
 
-.assignments-list {
-    flex-grow: 1;
-    overflow-y: auto;
-    padding-right: 10px; /* for scrollbar */
-    margin-bottom: 20px;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 10px;
-}
+        .assignment-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            border-radius: 6px;
+        }
 
-.assignment-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px;
-    border-radius: 6px;
-}
+        .assignment-item:nth-child(odd) {
+            background-color: rgba(128, 128, 128, 0.05);
+        }
 
-.assignment-item:nth-child(odd) {
-    background-color: rgba(128, 128, 128, 0.05);
-}
+        .assignment-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary-color);
+            cursor: pointer;
+        }
 
-.assignment-item input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    accent-color: var(--primary-color);
-    cursor: pointer;
-}
+        .assignment-item label {
+            flex-grow: 1;
+            cursor: pointer;
+        }
+        .assignment-item label small {
+            display: block;
+            color: var(--light-grey);
+            font-size: 0.8em;
+        }
 
-.assignment-item label {
-    flex-grow: 1;
-    cursor: pointer;
-}
-.assignment-item label small {
-    display: block;
-    color: var(--light-grey);
-    font-size: 0.8em;
-}
+        .history-editor-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+        }
 
-.history-editor-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 15px;
-    padding-top: 15px;
-    border-top: 1px solid var(--border-color);
-}
+        .btn-secondary {
+            padding: 10px 15px;
+            border: 1px solid var(--light-grey);
+            background-color: transparent;
+            color: var(--text-color);
+            border-radius: 8px;
+            cursor: pointer;
+        }
 
-.btn-secondary {
-    padding: 10px 15px;
-    border: 1px solid var(--light-grey);
-    background-color: transparent;
-    color: var(--text-color);
-    border-radius: 8px;
-    cursor: pointer;
-}
-
-.btn-primary {
-    padding: 10px 15px;
-    border: none;
-    background-color: var(--success-color);
-    color: white;
-    border-radius: 8px;
-    cursor: pointer;
-}
-    
-    
+        .btn-primary {
+            padding: 10px 15px;
+            border: none;
+            background-color: var(--success-color);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <header class="site-header-container">
-        <div class="header-left"><a href="main.html" class="nav-arrow" title="Retour au tableau de bord">←</a></div>
+        <div class="header-left">
+            <!-- MODIFICATION: Remplacement de l'ancienne flèche par le bouton circulaire unifié -->
+            <a href="main.html" class="icon-btn" title="Retour au tableau de bord">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+        </div>
         <div class="header-center"><h1 class="site-header">Outil MBS</h1></div>
         <div class="header-right">
             <!-- Theme Toggle Button -->
