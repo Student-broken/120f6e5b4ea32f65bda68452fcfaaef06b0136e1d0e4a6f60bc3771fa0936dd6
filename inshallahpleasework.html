@@ -13,7 +13,7 @@
             /* Animation */
             --transition-duration: 0.3s;
 
-            /* ORIGINAL (Modernized) Color Palette */
+            /* Colors */
             --primary-color: #5B21B6;   /* Purple */
             --secondary-color: #059669; /* Green */
             --warning-color: #F59E0B; /* Amber */
@@ -21,21 +21,21 @@
             --violet-color: var(--primary-color);
             --orange-color: #C2410C;
 
-            /* Light Mode Variables */
+            /* Light Mode */
             --background-color: #f9fafb;
             --widget-background: #ffffff;
             --widget-darker-color: #f3f4f6;
             --text-color: #1f2937;
             --text-color-light: #6b7280;
             --border-color: #e5e7eb;
-            --shadow-widget: 0 4px 16px rgba(0,0,0,.08);
-            --shadow-widget-light: 0 1px 4px rgba(0,0,0,.08);
+            --shadow-widget: 0 8px 24px rgba(0,0,0,.06);
+            --shadow-widget-light: 0 2px 8px rgba(0,0,0,.05);
             --input-bg-color: #ffffff;
             --primary-bg-light: #f5f3ff;
             --primary-text-light: #4c1d95;
             --gauge-gradient: linear-gradient(90deg, var(--danger-color), var(--warning-color), var(--secondary-color));
 
-            /* Badge Colors (Light) */
+            /* Badges */
             --badge-green-bg: #D1FAE5; --badge-green-text: #065F46;
             --badge-yellow-bg: #FEF3C7; --badge-yellow-text: #92400E;
             --badge-red-bg: #FEE2E2; --badge-red-text: #991B1B;
@@ -45,29 +45,29 @@
         }
 
         [data-theme="dark"] {
-            /* Dark Mode Palette */
-            --primary-color: #8B5CF6;     /* Lighter Purple */
-            --secondary-color: #10B981;   /* Lighter Green */
-            --warning-color: #FBBF24;   /* Lighter Amber */
-            --danger-color: #F87171;    /* Lighter Red */
+            /* Dark Colors */
+            --primary-color: #8B5CF6;
+            --secondary-color: #10B981;
+            --warning-color: #FBBF24;
+            --danger-color: #F87171;
             --violet-color: var(--primary-color);
             --orange-color: #F97316;
 
-            /* Dark Mode Variables */
+            /* Dark Mode */
             --background-color: #111827;
             --widget-background: #1f2937;
             --widget-darker-color: #374151;
             --text-color: #f9fafb;
             --text-color-light: #9ca3af;
             --border-color: #374151;
-            --shadow-widget: 0 4px 16px rgba(0,0,0,.2);
-            --shadow-widget-light: 0 1px 4px rgba(0,0,0,.2);
+            --shadow-widget: 0 8px 24px rgba(0,0,0,.25);
+            --shadow-widget-light: 0 2px 8px rgba(0,0,0,.2);
             --input-bg-color: #374151;
             --primary-bg-light: #2d2a43;
             --primary-text-light: #A78BFA;
             --gauge-gradient: linear-gradient(90deg, var(--danger-color), var(--warning-color), var(--secondary-color));
 
-            /* Badge Colors (Dark) */
+            /* Dark Badges */
             --badge-green-bg: #065F46; --badge-green-text: #D1FAE5;
             --badge-yellow-bg: #92400E; --badge-yellow-text: #FEF3C7;
             --badge-red-bg: #991B1B; --badge-red-text: #FEE2E2;
@@ -79,7 +79,7 @@
         /* GLOBAL TRANSITIONS */
         body, .side-panel, .modal-content, .tab-btn, .tab-content, 
         .subject-table, .prediction-card, .score-card, .ai-insight-box, 
-        select, input, .gauge-bar, .gauge-needle {
+        .mismatch-card, select, input, .gauge-bar, .gauge-needle {
             transition: background-color var(--transition-duration) ease, 
                         color var(--transition-duration) ease, 
                         border-color var(--transition-duration) ease, 
@@ -135,8 +135,8 @@
             min-height: 100vh;
             max-width: 1800px;
             margin: 0 auto;
-            padding: 2rem;
-            gap: 2rem;
+            padding: 2.5rem;
+            gap: 2.5rem;
         }
         .side-panel {
             width: 100%;
@@ -149,7 +149,7 @@
             height: fit-content;
         }
         @media (max-width: 1024px) {
-            .main-container { flex-direction: column; padding: 1rem; gap: 1.5rem; }
+            .main-container { flex-direction: column; padding: 1.5rem; gap: 1.5rem; }
             .side-panel { max-width: 100%; position: static; }
         }
         .content-area {
@@ -163,38 +163,45 @@
             font-family: 'Inter', sans-serif;
             font-weight: 700;
         }
-        h1 { font-size: 1.875rem; margin-bottom: 1.5rem; }
-        h2 { font-size: 1.5rem; margin-bottom: 1rem; }
-        h3 { font-size: 1.25rem; margin-bottom: 1rem; margin-top: 2rem; }
-        .content-area h3 { margin-top: 2.5rem; }
-        h4 { font-size: 1rem; margin-bottom: 0.5rem; }
+        h1 { font-size: 2rem; margin-bottom: 2rem; font-weight: 800; }
+        h2 { font-size: 1.6rem; margin-bottom: 1.25rem; font-weight: 700; }
+        h3 { font-size: 1.25rem; margin-bottom: 1rem; margin-top: 2rem; font-weight: 700; }
+        .content-area h3 { margin-top: 3rem; }
+        h4 { font-size: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
 
-        /* Tabs (Polished) */
+        /* ** NEW: Sleek, Modern Tabs ** */
+        .tabs-container {
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 1.5rem;
+        }
         .tab-btn {
-            padding: .75rem 1.5rem;
+            padding: 0.85rem 1.5rem;
             font-weight: 600;
-            border-radius: .5rem .5rem 0 0;
+            border-radius: 8px 8px 0 0;
             border-bottom: 3px solid transparent;
             cursor: pointer;
             background-color: transparent;
             color: var(--text-color-light);
             margin-right: .25rem;
-            position: relative;
-            top: 2px;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+            border-bottom: 3px solid transparent;
         }
-        .tab-btn:hover {
-            color: var(--primary-color);
+        .tab-btn:hover:not(.active) {
+            color: var(--text-color);
             background-color: var(--widget-darker-color);
+            border-bottom-color: var(--border-color);
         }
         .tab-btn.active {
             background-color: var(--widget-background);
-            border-bottom: 3px solid var(--primary-color);
+            border-color: var(--border-color);
+            border-bottom-color: var(--primary-color);
             color: var(--primary-color);
         }
         .tab-content {
             background-color: var(--widget-background);
-            padding: 2rem;
-            border-radius: 0 .75rem .75rem .75rem;
+            padding: 2.5rem;
+            border-radius: 12px;
             box-shadow: var(--shadow-widget);
         }
         .tab-content:not(.active) { display: none; }
@@ -239,9 +246,7 @@
             color: var(--primary-color);
         }
 
-        /* ** NEW/RESTORED DYNAMIC STYLES **
-         Styles for dynamic content from your original file
-        */
+        /* Restored Dynamic Styles */
         .subject-analysis {
             background-color: var(--primary-bg-light);
             border: 1px solid var(--border-color);
@@ -267,11 +272,58 @@
         .badge-blue { background-color: var(--badge-blue-bg); color: var(--badge-blue-text); border-color: var(--badge-blue-text);}
         .badge-orange { background-color: var(--badge-orange-bg); color: var(--badge-orange-text); border-color: var(--badge-orange-text);}
 
+        /* ** NEW: Mismatch Card (to fix "plain text") ** */
+        .mismatch-card {
+            background-color: var(--widget-background);
+            border-radius: 12px;
+            box-shadow: var(--shadow-widget-light);
+            border: 1px solid var(--border-color);
+            padding: 1.25rem;
+            border-left-width: 6px;
+            border-left-style: solid;
+            margin-bottom: 1rem;
+            transition: all 0.2s ease;
+        }
+        .mismatch-card:hover {
+            box-shadow: var(--shadow-widget);
+            transform: translateY(-2px);
+        }
+        /* Variants */
+        .mismatch-card.mismatch-critical { border-left-color: var(--danger-color); }
+        .mismatch-card.mismatch-moderate { border-left-color: var(--warning-color); }
+        .mismatch-card.mismatch-good { border-left-color: var(--secondary-color); }
+        /* Content Styling */
+        .mismatch-card h3 {
+            font-size: 1.125rem;
+            font-weight: 700;
+            margin: 0 0 0.5rem 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+        .mismatch-card h3 small {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-color-light);
+        }
+        .mismatch-card .status-text {
+            font-size: 1rem;
+            font-weight: 500;
+            margin: 0 0 0.75rem 0;
+            color: var(--text-color);
+        }
+        .mismatch-card .meta-text {
+            font-size: 0.875rem;
+            color: var(--text-color-light);
+            margin: 0;
+        }
+
+        /* ** UPDATED: Thicker Prediction Card ** */
         .prediction-card {
             background-color: var(--widget-background);
-            padding: 1rem 1.25rem;
-            border-radius: 10px;
-            border-left: 5px solid;
+            padding: 1.25rem;
+            border-radius: 12px;
+            border-left: 6px solid;
             margin-bottom: 1rem;
             box-shadow: var(--shadow-widget-light);
             border: 1px solid var(--border-color);
@@ -286,11 +338,10 @@
         .card-yellow { border-left-color: var(--warning-color); }
         .card-red { border-left-color: var(--danger-color); }
         .card-score {
-            font-size: 1.875rem;
+            font-size: 2rem;
             font-weight: 800;
             margin-top: .25rem;
         }
-        /* End of new/restored styles */
 
         /* Probability Table */
         .probability-table {
@@ -342,14 +393,14 @@
         .score-card {
             display: flex;
             align-items: center;
-            padding: 1rem;
+            padding: 1.15rem;
             border-radius: .75rem;
             background-color: var(--widget-darker-color);
             border: 1px solid var(--border-color);
         }
         .score-card strong { font-size: 1.5rem; color: var(--text-color); }
         .score-card p { margin: 0; color: var(--text-color-light); font-size: 0.875rem; }
-        .score-icon { font-size: 1.75rem; margin-right: 1rem; width: 32px; text-align: center; }
+        .score-icon { font-size: 1.75rem; margin-right: 1.25rem; width: 32px; text-align: center; }
         .effort-needed { font-size: 1.25rem; font-weight: 700; }
         
         /* Inputs & Sliders */
@@ -432,7 +483,7 @@
         .ai-insight-box li.insight-priority::before { content: '🧠'; }
         .ai-insight-box li.insight-erratic::before { content: '⚡'; }
 
-        /* Gauge (Polished) */
+        /* Gauge */
         .gauge-container {
             width: 100%;
             padding: .5rem 0;
@@ -511,13 +562,13 @@
         #help-modal b { font-weight: 600; color: var(--text-color); }
 
         /* Utility */
-        .space-y-3 { display: flex; flex-direction: column; gap: 1rem; }
-        .space-y-2 { display: flex; flex-direction: column; gap: 0.5rem; }
+        .space-y-3 { display: flex; flex-direction: column; gap: 1.25rem; } /* Increased gap */
+        .space-y-2 { display: flex; flex-direction: column; gap: 0.75rem; }
         .space-y-4 { display: flex; flex-direction: column; gap: 1rem; }
         .border-b { border-bottom: 1px solid var(--border-color); }
         .pb-2 { padding-bottom: 0.5rem; }
-        .mb-4 { margin-bottom: 1rem; }
-        .mb-3 { margin-bottom: 0.75rem; }
+        .mb-4 { margin-bottom: 1.5rem; }
+        .mb-3 { margin-bottom: 1rem; }
         .mb-2 { margin-bottom: 0.5rem; }
         .mt-4 { margin-top: 1rem; }
         .mt-6 { margin-top: 1.5rem; }
@@ -557,25 +608,16 @@
     </button>
 </div>
 
-
 <div id="help-modal" class="modal">
     <div class="modal-content">
         <span id="close-help-modal" class="modal-close">&times;</span>
         <h2 class="help-title">Guide Détaillé de l'Analyseur</h2>
-        
         <p>Cet outil analyse votre <b>tendance</b> (votre "élan") et votre <b>volatilité</b> (votre stabilité) pour prédire vos performances. Voici ce que chaque terme signifie en détail.</p>
-
         <h3 class="help-section-title">Section Spéciale : La Régression Linéaire (Le Cœur de l'IA)</h3>
-        
         <h4>Qu'est-ce que c'est ?</h4>
         <p>Le "Moteur de Découverte (IA)" utilise un outil statistique appelé <b>Régression Linéaire</b>. Son but est de trouver la "ligne de tendance" (la ligne droite de meilleur ajustement) qui passe au milieu d'un nuage de points de données. 
-
-
-[Image of a scatter plot with a positive trend line]
-
 </p>
         <p>L'IA n'analyse pas seulement vos notes, elle analyse la <b>relation</b> entre deux variables. L'application effectue 3 analyses de régression distinctes :</p>
-        
         <ol class="detailed-list">
             <li><b>Modèle 1 : TENDANCE (Note vs. Temps)</b>
                 <ul>
@@ -599,7 +641,6 @@
                 </ul>
             </li>
         </ol>
-
         <h4>Ce qui INFLUENCE la Régression (Votre question)</h4>
         <p>La "ligne de tendance" est comme une balançoire. Ce qui l'influence le plus, ce sont les <b>points aberrants (Outliers)</b> et la <b>dispersion</b> de vos notes.</p>
         <ul>
@@ -612,9 +653,7 @@
             </li>
             <li><b>Le Nombre de Points (N) :</b> Une tendance sur 3 devoirs ne veut rien dire. Une tendance sur 30 devoirs est un schéma très fort. C'est pourquoi l'IA ignore les matières avec moins de 5 notes.</li>
         </ul>
-
         <h3 class="help-section-title">Panneau Principal (Gauche)</h3>
-        
         <h4>Prédiction Globale Stochastique (Tendance MC)</h4>
         <p>"MC" signifie <b>Monte Carlo</b>. L'outil simule <b>100 000 scénarios possibles</b> pour l'Étape 3. Chaque simulation est un "jet de dé" basé sur :</p>
         <ol>
@@ -622,7 +661,6 @@
             <li><b>Votre volatilité</b> (votre <b>Écart-Type</b>, ou "StdDev"). Un étudiant stable (faible volatilité) aura des simulations groupées (ex: 88-92%). Un étudiant erratique (haute volatilité) aura des simulations dispersées (ex: 70-100%).</li>
         </ol>
         <p>Le score affiché est le <b>P50 (Médian)</b> : le point exact où 50 000 simulations ont fait pire et 50 000 ont fait mieux. C'est le résultat le plus probable.</p>
-
         <h4>Jauge de Performance (P5 à P95)</h4>
         <p>C'est la carte complète des 100 000 simulations :</p>
         <ul>
@@ -630,16 +668,13 @@
             <li><b>P50 (Médian) :</b> Le centre, identique à la prédiction "Tendance MC".</li>
             <li><b>P95 (Optimiste) :</b> Seulement 5 000 simulations ont fait mieux. C'est le scénario "rêvé".</li>
         </ul>
-
         <h4>Indices de Risque Dynamique</h4>
         <ul>
             <li><b>Indice de Consistance :</b> C'est l'inverse de votre <b>Volatilité (Écart-Type)</b>. Un score de 100 signifie un Écart-Type de 0 (ex: 90%, 90%, 90%). Un score bas signifie que vos notes sont très dispersées (ex: 60%, 100%, 75%).</li>
             <li><b>Risque de Burnout :</b> Score (sur 100) basé sur 4 facteurs : <b>1.</b> Volatilité (l'instabilité est stressante), <b>2.</b> Tendance (une pente négative est un signe de difficulté), <b>3.</b> Charge de travail (Unités), <b>4.</b> Absentéisme.</li>
             <li><b>Facteur de Tendance Globale :</b> C'est la <b>Pente (Slope)</b> de votre Régression "Tendance" x 10. (Ex: Pente de +0.2 = +2.0% F.T.G. = Vous gagnez 0.2 points par devoir, ou 2 points tous les 10 devoirs).</li>
         </ul>
-
         <h3 class="help-section-title">Analyse Détaillée (Droite)</h3>
-
         <h4>Analyse de Déséquilibre (Mismatch)</h4>
         <p>Cette section identifie les matières "risquées". Le "Score Mismatch" est élevé si une matière a :</p>
         <ul>
@@ -647,7 +682,6 @@
             <li><b>2. Une faible Consistance :</b> Vos notes sont imprévisibles.</li>
         </ul>
         <p>Une matière "Rouge" (Mismatch élevé) est une bombe à retardement. C'est là que vous devez vous concentrer pour <b>stabiliser</b> vos résultats (ex: visez des 80-90 constants plutôt que des 70-100 alternés).</p>
-
         <h4>Analyse de Chemin (Probabilités)</h4>
         <p>Cette section vous donne un plan d'action. Elle répond à deux questions : <b>1.</b> "De quelle moyenne ai-je besoin ?" et <b>2.</b> "Quelles sont mes chances de l'obtenir ?"</p>
         <ul>
@@ -658,15 +692,14 @@
     </div>
 </div>
 
-
 <div class="main-container">
 
     <div class="side-panel lg:sticky lg:top-4">
-        <h2 class="text-2xl font-bold mb-4 text-gray-800 border-b pb-2">Moteur Stochastique V10 (Fix)</h2>
+        <h2 class="text-2xl font-bold mb-4 text-gray-800 border-b pb-2">Moteur Stochastique V10</h2>
 
         <div class="bg-violet-100 p-4 rounded-lg mb-4 border-l-4 border-violet-600" style="background-color: var(--primary-bg-light); border-left-color: var(--primary-color); margin-bottom: 1.5rem;">
-            <p class="text-sm font-medium text-gray-700" style="color: var(--text-color-light);">Prédiction Globale Stochastique (Tendance MC)</p>
-            <strong id="moyenne-prediction" class="text-4xl font-extrabold text-violet-700" style="color: var(--primary-color);">--</strong>
+            <p class="text-sm font-medium text-gray-700">Prédiction Globale Stochastique (Tendance MC)</p>
+            <strong id="moyenne-prediction" class="text-4xl font-extrabold text-violet-700">--</strong>
         </div>
 
         <h3 class="text-lg font-semibold text-gray-800" style="margin-top: 0;">Jauge de Performance (P5 à P95)</h3>
@@ -751,7 +784,7 @@
     <div class="content-area">
         <h1 class="text-3xl font-bold mb-4 text-gray-800">Détails de Performance & Prédictions</h1>
 
-        <div class="flex border-b border-gray-200 mb-4" style="border-bottom: 2px solid var(--border-color);">
+        <div class="tabs-container">
             <button class="tab-btn active" data-tab="etape1">Étape 1 - Analyse</button>
             <button class="tab-btn" data-tab="etape2">Étape 2 - Analyse</button>
             <button class="tab-btn" data-tab="etape3">Étape 3 - Projection</button>
@@ -767,13 +800,13 @@
                 </div>
 
             <div id="simulation" class="tab-content">
-                <h2 class="text-2xl font-bold mb-4 text-primary-color" style="color: var(--primary-color);">Analyse Prédictive Stochastique (100,000 Scénarios)</h2>
+                <h2 class="text-2xl font-bold mb-4 text-primary-color" style="color: var(--primary-color);">Analyse Prédictive Stochastique</h2>
                 <p class="text-gray-600 mb-6 border-b pb-4">
                     *Le modèle utilise la **Régression Linéaire** pour la tendance de base et projette la performance. Les probabilités sont calculées à l'aide d'une **CDF Normale** basée sur la tendance et la volatilité (StdDev) de vos notes. Ces données sont des estimations statistiques.*
                 </p>
 
-                <h3 class="text-xl font-semibold mb-3 mt-4 text-gray-700">Prédictions de Moyenne Finale Globale (Intervalles de Confiance)</h3>
-                <div id="global-predictions" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                <h3 class="text-xl font-semibold mb-3 mt-4 text-gray-700">Prédictions de Moyenne Finale Globale</h3>
+                <div id="global-predictions" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
                     </div>
 
                 <h3 class="text-xl font-semibold mb-3 mt-8 text-gray-700 border-t pt-4">Analyse de Déséquilibre Volatilité / Effort (Mismatch)</h3>
@@ -841,7 +874,7 @@
         const themeToggle = document.getElementById('theme-toggle');
         const html = document.documentElement;
         const toggleIcon = themeToggle.querySelector('i');
-        const THEME_KEY = 'pathfinder-theme-v2'; // Use a new key to avoid cache issues
+        const THEME_KEY = 'pathfinder-theme-v3';
 
         const updateTheme = (theme) => {
             html.setAttribute('data-theme', theme);
@@ -877,13 +910,13 @@
                 button.classList.add('active');
 
                 tabContents.forEach(content => {
-                    content.classList.add('active'); // Keep all active for a moment
-                    if (content.id !== targetTab) {
+                    if (content.id === targetTab) {
+                        content.classList.add('active');
+                    } else {
                         content.classList.remove('active');
                     }
                 });
                 
-                // Update active etape name in side panel
                 const activeEtapeName = document.getElementById('active-etape-name');
                 if (activeEtapeName) {
                     if (targetTab.startsWith('etape')) {
