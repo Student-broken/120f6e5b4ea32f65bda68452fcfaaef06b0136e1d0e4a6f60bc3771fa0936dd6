@@ -109,25 +109,40 @@ body{font-family:'Inter',sans-serif;background-color:var(--bg-color);color:#1f29
     /* 2. Fix for bright table headers (which use Tailwind 'bg-gray-100') */
     .bg-gray-100 { background-color: #3a3a3a; }
 
-    /* 3. NEW FIX: Target the .prediction-card class directly for dark mode */
-    [data-theme="dark"] .prediction-card {
+    /* 3. NEW: Fix backgrounds for Mismatch cards (but DON'T touch their borders) */
+    #mismatch-analysis > div {
         background-color: #2a2a2a !important;
-        border: 1px solid #333333 !important; /* Add a general border */
-        border-left-width: 5px !important; /* Keep the thick left border */
-        /* The border-left-color is NOT set here, allowing the classes below to win */
+        /* By not specifying a border-color here, the original classes 
+           like .card-red and .card-yellow will apply correctly. */
+    }
+
+    /* 4. NEW: Fix backgrounds AND borders for the *other* Prediction cards */
+    #global-predictions > div, 
+    #subject-predictions-list > div {
+        background-color: #2a2a2a !important;
+        border-top: 1px solid #333333 !important;
+        border-right: 1px solid #333333 !important;
+        border-bottom: 1px solid #333333 !important;
+        border-left-width: 5px !important;
+        border-left-style: solid !important;
+        border-left-color: #333333 !important; /* Default dark grey border */
     }
     
-    /* 4. NEW FIX: Apply *only* the color override based on the specific class */
-    [data-theme="dark"] .prediction-card.card-green { 
+    /* 5. NEW: Apply specific colors ONLY to the *other* Prediction cards */
+    #global-predictions > div.card-green, 
+    #subject-predictions-list > div.card-green { 
         border-left-color: var(--secondary-color) !important; 
     }
-    [data-theme="dark"] .prediction-card.card-violet {
+    #global-predictions > div.card-violet, 
+    #subject-predictions-list > div.card-violet { 
         border-left-color: var(--primary-color) !important; 
     }
-    [data-theme="dark"] .prediction-card.card-yellow {
+    #global-predictions > div.card-yellow, 
+    #subject-predictions-list > div.card-yellow { 
         border-left-color: var(--warning-color) !important; 
     }
-    [data-theme="dark"] .prediction-card.card-red {
+    #global-predictions > div.card-red, 
+    #subject-predictions-list > div.card-red { 
         border-left-color: var(--danger-color) !important; 
     }
     /* === FIXES END HERE === */
@@ -156,10 +171,6 @@ body{font-family:'Inter',sans-serif;background-color:var(--bg-color);color:#1f29
         
         <h4>Qu'est-ce que c'est ?</h4>
         <p>Le "Moteur de Découverte (IA)" utilise un outil statistique appelé <b>Régression Linéaire</b>. Son but est de trouver la "ligne de tendance" (la ligne droite de meilleur ajustement) qui passe au milieu d'un nuage de points de données. 
-
-
-
-[Image of a scatter plot with a positive trend line]
 
 </p>
         <p>L'IA n'analyse pas seulement vos notes, elle analyse la <b>relation</b> entre deux variables. L'application effectue 3 analyses de régression distinctes :</p>
