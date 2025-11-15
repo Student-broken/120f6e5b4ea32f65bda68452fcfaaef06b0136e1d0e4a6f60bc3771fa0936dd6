@@ -4,620 +4,139 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analyseur Dynamique V10 (Pathfinder V2)</title>
-    
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root {
-            /* Animation */
-            --transition-duration: 0.3s;
+:root{--primary-color:#5B21B6;--secondary-color:#059669;--warning-color:#F59E0B;--danger-color:#DC2626;--bg-color:#f9fafb}
 
-            /* Colors */
-            --primary-color: #5B21B6;   /* Purple */
-            --secondary-color: #059669; /* Green */
-            --warning-color: #F59E0B; /* Amber */
-            --danger-color: #DC2626;  /* Red */
-            --violet-color: var(--primary-color);
-            --orange-color: #C2410C;
+/* ADDED FOR SMOOTH TRANSITION */
+body, .side-panel, .content-area, .tab-btn, .tab-content, .modal-content, .subject-table, .prediction-card, .score-card, .ai-insight-box, select, input, .help-btn, .back-to-main-btn, .theme-toggle-btn {
+    transition: background-color 0.35s ease, color 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+}
 
-            /* Light Mode */
-            --background-color: #f9fafb;
-            --widget-background: #ffffff;
-            --widget-darker-color: #f3f4f6;
-            --text-color: #1f2937;
-            --text-color-light: #6b7280;
-            --border-color: #e5e7eb;
-            --shadow-widget: 0 8px 24px rgba(0,0,0,.06);
-            --shadow-widget-light: 0 2px 8px rgba(0,0,0,.05);
-            --input-bg-color: #ffffff;
-            --primary-bg-light: #f5f3ff;
-            --primary-text-light: #4c1d95;
-            --gauge-gradient: linear-gradient(90deg, var(--danger-color), var(--warning-color), var(--secondary-color));
+body{font-family:'Inter',sans-serif;background-color:var(--bg-color);color:#1f2937}.main-container{display:flex;min-height:100vh}.side-panel{width:100%;max-width:380px;background-color:white;padding:1.5rem;box-shadow:0 4px 16px rgba(0,0,0,.1);border-radius:.75rem;margin:1rem;height:fit-content}@media (max-width:1024px){.main-container{flex-direction:column}.side-panel{max-width:100%}}.content-area{flex-grow:1;padding:1rem}.tab-btn{padding:.75rem 1.5rem;font-weight:600;border-radius:.375rem .375rem 0 0;border-bottom:2px solid transparent;cursor:pointer;transition:all .2s;background-color:#eef2ff;color:#4c1d95;margin-right:.25rem}.tab-btn.active{background-color:white;border-bottom:2px solid var(--primary-color);color:var(--primary-color);box-shadow:0 -2px 6px rgba(0,0,0,.05)}.tab-content{background-color:white;padding:1.5rem;border-radius:0 .75rem .75rem .75rem;box-shadow:0 4px 16px rgba(0,0,0,.08)}.tab-content:not(.active){display:none}.subject-table{width:100%;border-collapse:collapse;margin-top:1.5rem;box-shadow:0 1px 4px rgba(0,0,0,.08);border-radius:.5rem;overflow:hidden;margin-bottom:1.5rem}.subject-table thead th{padding:.75rem;text-align:left;background-color:var(--primary-color);color:white;font-weight:700}.subject-table thead tr:first-child th{font-size:1.125rem;text-align:center}.subject-table tbody tr:nth-child(even){background-color:#f3f4f6}.subject-table td{padding:.5rem .75rem;border-bottom:1px solid #e5e7eb}.grade-percentage{font-weight:700;color:var(--primary-color)}.subject-analysis{background-color:#f5f3ff;border:1px solid #e9d5ff;padding:1rem;border-radius:.5rem;margin-top:-1rem;margin-bottom:1.5rem}.analysis-badge{display:inline-flex;align-items:center;padding:.25rem .75rem;border-radius:9999px;font-size:.875rem;font-weight:600;margin-right:.5rem}.badge-green{background-color:#D1FAE5;color:#065F46}.badge-yellow{background-color:#FEF3C7;color:#92400E}.badge-red{background-color:#FEE2E2;color:#991B1B}.badge-violet{background-color:#E9D5FF;color:#5B21B6}.badge-blue{background-color:#DBEAFE;color:#1E40AF}.badge-orange{background-color:#FFEDD5;color:#C2410C}.prediction-card{background-color:#f7f7f7;padding:1rem;border-radius:.5rem;border-left:4px solid;margin-bottom:1rem;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.05)}.card-green{border-left-color:var(--secondary-color)}.card-violet{border-left-color:var(--primary-color)}.card-yellow{border-left-color:var(--warning-color)}.card-red{border-left-color:var(--danger-color)}.card-score{font-size:1.875rem;font-weight:800;margin-top:.25rem}.probability-table th,.probability-table td{padding:.5rem;text-align:center;border:1px solid #e5e7eb}.prob-high{background-color:#D1FAE5;color:#065F46;font-weight:700}.prob-medium{background-color:#FEF3C7;color:#92400E}.prob-low{background-color:#FEE2E2;color:#991B1B}.modal{position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0,0,0,.5);display:flex;justify-content:center;align-items:center;z-index:1000;transition:opacity .3s ease-out;opacity:0;pointer-events:none}.modal.active{opacity:1;pointer-events:auto}.modal-content{background:white;padding:2rem;border-radius:.75rem;box-shadow:0 10px 15px rgba(0,0,0,.1);max-width:90%;width:500px}.score-card{display:flex;align-items:center;padding:.75rem;border-radius:.5rem;background-color:#f3f4f6;transition:all .15s}.score-card strong{font-size:1.5rem}.score-icon{font-size:1.5rem;margin-right:1rem}.effort-needed{font-size:1.25rem;font-weight:700}.slider-label{font-weight:600;margin-top:1rem}.ai-insight-box{background-color:#f5f3ff;border:1px solid #ddd6fe;border-radius:.5rem;padding:1rem;margin-top:.75rem}.ai-insight-box h4{display:flex;align-items:center;font-size:1rem;font-weight:700;color:var(--primary-color);margin-bottom:.75rem}.ai-insight-box h4 span{font-size:1.25rem;margin-right:.5rem}.ai-insight-box ul{list-style-type:none;padding-left:0;font-size:.875rem}.ai-insight-box li{position:relative;padding-left:1.5rem;margin-bottom:.5rem;color:#374151;line-height:1.4}.ai-insight-box li::before{content:'⚠️';font-size:.75rem;position:absolute;left:0;top:4px}.ai-insight-box li.insight-good::before{content:'✅'}.ai-insight-box li.insight-info::before{content:'ℹ️'}.ai-insight-box li.insight-trend::before{content:'📈'}.ai-insight-box li.insight-focus::before{content:'🎯'}.ai-insight-box li.insight-priority::before{content:'🧠'}.ai-insight-box li.insight-erratic::before{content:'⚡'}.gauge-container{width:100%;padding:.5rem 0;margin-top:.5rem;margin-bottom:1rem}.gauge-bar{width:100%;height:12px;background:linear-gradient(90deg,var(--danger-color),var(--warning-color),var(--secondary-color));border-radius:6px;position:relative;box-shadow:inset 0 1px 3px rgba(0,0,0,.1)}.gauge-needle{position:absolute;top:-4px;width:4px;height:20px;background-color:#1f2937;border-radius:2px;border:1px solid white;box-shadow:0 0 5px rgba(0,0,0,.5);transform:translateX(-50%);transition:left .5s ease-out}.gauge-labels{display:flex;justify-content:space-between;font-size:.75rem;font-weight:600;color:#4b5563;margin-top:.5rem}.help-btn{position:fixed;top:10px;right:10px;width:30px;height:30px;background-color:#000000;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;text-decoration:none;box-shadow:0 4px 10px rgba(0,0,0,.2);z-index:999;cursor:pointer;transition:all .2s ease-in-out}.help-btn:hover{transform:translateY(-2px) scale(1.05);box-shadow:0 6px 15px rgba(0,0,0,.3);background-color:#6D28D9}#help-modal .modal-content{width:750px;max-width:95%;max-height:90vh;overflow-y:auto;text-align:left}.help-title{font-size:1.5rem;font-weight:700;color:var(--primary-color);margin-bottom:1rem;text-align:left}.help-section-title{font-size:1.25rem;font-weight:600;color:var(--primary-color);margin-top:1.5rem;border-bottom:2px solid var(--primary-color);padding-bottom:4px;margin-bottom:1rem}#help-modal h4{font-size:1.0rem;font-weight:700;color:#1f2937;margin-top:1.25rem;margin-bottom:.25rem}#help-modal p,#help-modal li{font-size:.95rem;color:#374151;line-height:1.6;margin-top:.5rem}#help-modal ul{list-style-type:disc;padding-left:2rem;margin-top:.5rem;margin-bottom:1rem}#help-modal ol.detailed-list{list-style-type:decimal;padding-left:1.5rem}#help-modal ol.detailed-list>li{font-weight:600;color:#1f2937;margin-top:1rem}#help-modal ol.detailed-list>li>ul{margin-top:.25rem;font-weight:normal}#help-modal b{font-weight:600;color:#1f2937}#help-modal .modal-close{position:absolute;top:10px;right:15px;font-size:2em;cursor:pointer;color:#aaa;line-height:1;z-index:1001}.back-to-main-btn{position:fixed;top:10px;left:10px;width:30px;height:30px;background-color:#000000;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.0rem;text-decoration:none;box-shadow:0 4px 10px rgba(0,0,0,.2);z-index:999;transition:all .2s ease-in-out}.back-to-main-btn:hover{transform:translateY(-2px) scale(1.05);box-shadow:0 6px 15px rgba(0,0,0,.3);background-color:#6D28D9}
 
-            /* Badges */
-            --badge-green-bg: #D1FAE5; --badge-green-text: #065F46;
-            --badge-yellow-bg: #FEF3C7; --badge-yellow-text: #92400E;
-            --badge-red-bg: #FEE2E2; --badge-red-text: #991B1B;
-            --badge-violet-bg: #E9D5FF; --badge-violet-text: #5B21B6;
-            --badge-blue-bg: #DBEAFE; --badge-blue-text: #1E40AF;
-            --badge-orange-bg: #FFEDD5; --badge-orange-text: #C2410C;
-        }
+/* ADDED FOR THEME TOGGLE BUTTON */
+.theme-toggle-btn{position:fixed;top:10px;left:50px; /* Positioned next to the back button */ width:30px;height:30px;background-color:#000000;color:white;border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;text-decoration:none;box-shadow:0 4px 10px rgba(0,0,0,.2);z-index:999;cursor:pointer;transition:all .2s ease-in-out}
+.theme-toggle-btn:hover{transform:translateY(-2px) scale(1.05);box-shadow:0 6px 15px rgba(0,0,0,.3);background-color:#6D28D9}
 
-        [data-theme="dark"] {
-            /* Dark Colors */
-            --primary-color: #8B5CF6;
-            --secondary-color: #10B981;
-            --warning-color: #FBBF24;
-            --danger-color: #F87171;
-            --violet-color: var(--primary-color);
-            --orange-color: #F97316;
+/*
+--- DARK MODE STYLES START ---
+*/
+[data-theme="dark"] {
+    /* Root variable overrides */
+    --bg-color: #121212;
+    --primary-color-text: #a78bfa; /* Lighter violet for text */
+    --primary-color-bg-light: #2c1d3e; /* Darker violet bg */
+    --primary-color-border: #4c1d95;
+    
+    /* General Body & Text */
+    body { background-color: var(--bg-color); color: #e5e7eb; }
+    h1, h2, h3, h4, .text-gray-800, .text-gray-700, .text-gray-900 { color: #f3f4f6; }
+    .text-gray-600, .text-gray-500, .text-xs.text-gray-500, p, #help-modal p, #help-modal li { color: #9ca3af; }
+    .text-sm.font-medium.text-gray-700 { color: #d1d5db; }
+    #help-modal b, #help-modal ol.detailed-list>li { color: #f3f4f6; }
 
-            /* Dark Mode */
-            --background-color: #111827;
-            --widget-background: #1f2937;
-            --widget-darker-color: #374151;
-            --text-color: #f9fafb;
-            --text-color-light: #9ca3af;
-            --border-color: #374151;
-            --shadow-widget: 0 8px 24px rgba(0,0,0,.25);
-            --shadow-widget-light: 0 2px 8px rgba(0,0,0,.2);
-            --input-bg-color: #374151;
-            --primary-bg-light: #2d2a43;
-            --primary-text-light: #A78BFA;
-            --gauge-gradient: linear-gradient(90deg, var(--danger-color), var(--warning-color), var(--secondary-color));
+    
+    /* Panels and Cards */
+    .side-panel, .tab-content, .modal-content { 
+        background-color: #1f2937; 
+        box-shadow: 0 4px 16px rgba(0,0,0,.3); 
+        border-color: #374151;
+    }
+    .prediction-card { background-color: #2b3a4e; }
+    .score-card { background-color: #2b3a4e; }
+    
+    /* Tabs */
+    .tab-btn { background-color: #374151; color: #d1d5db; }
+    .tab-btn.active { 
+        background-color: #1f2937; 
+        border-bottom-color: var(--primary-color); 
+        color: var(--primary-color-text); 
+    }
+    
+    /* Tables */
+    .subject-table tbody tr:nth-child(even) { background-color: #2b3a4e; }
+    .subject-table td, .probability-table th, .probability-table td, .subject-table { border-color: #374151; }
+    .probability-table thead tr { background-color: #374151; }
+    
+    /* Badges */
+    .badge-green { background-color: #064e3b; color: #a7f3d0; }
+    .badge-yellow { background-color: #78350f; color: #fde68a; }
+    .badge-red { background-color: #7f1d1d; color: #fecaca; }
+    .badge-violet { background-color: #3b0764; color: #e9d5ff; }
+    .badge-blue { background-color: #1e3a8a; color: #bfdbfe; }
+    .badge-orange { background-color: #7c2d12; color: #fed7aa; }
 
-            /* Dark Badges */
-            --badge-green-bg: #065F46; --badge-green-text: #D1FAE5;
-            --badge-yellow-bg: #92400E; --badge-yellow-text: #FEF3C7;
-            --badge-red-bg: #991B1B; --badge-red-text: #FEE2E2;
-            --badge-violet-bg: #5B21B6; --badge-violet-text: #E9D5FF;
-            --badge-blue-bg: #1E40AF; --badge-blue-text: #DBEAFE;
-            --badge-orange-bg: #C2410C; --badge-orange-text: #FFEDD5;
-        }
+    /* Prob Table Colors */
+    .prob-high { background-color: #064e3b; color: #a7f3d0; font-weight: 700; }
+    .prob-medium { background-color: #78350f; color: #fde68a; }
+    .prob-low { background-color: #7f1d1d; color: #fecaca; }
 
-        /* GLOBAL TRANSITIONS */
-        body, .side-panel, .modal-content, .tab-btn, .tab-content, 
-        .subject-table, .prediction-card, .score-card, .ai-insight-box, 
-        .mismatch-card, select, input, .gauge-bar, .gauge-needle {
-            transition: background-color var(--transition-duration) ease, 
-                        color var(--transition-duration) ease, 
-                        border-color var(--transition-duration) ease, 
-                        box-shadow var(--transition-duration) ease,
-                        left var(--transition-duration) ease-out;
-        }
-
-        @keyframes fadeInSlideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .main-container, .floating-buttons-container {
-            opacity: 0;
-            transform: translateY(20px);
-            animation: fadeInSlideUp 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-        }
-        .main-container { animation-delay: 0.1s; }
-
-        /* General Styles */
-        body {
-            margin: 0;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--background-color);
-            color: var(--text-color);
-        }
-
-        /* Floating Action Buttons */
-        .icon-btn {
-            background-color: var(--widget-background);
-            border: 1px solid var(--border-color);
-            color: var(--text-color-light);
-            width: 44px; height: 44px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1em;
-            box-shadow: var(--shadow-widget);
-            transition: all 0.2s ease, background-color var(--transition-duration);
-            text-decoration: none;
-        }
-        .icon-btn:hover {
-            border-color: var(--primary-color);
-            color: var(--primary-color);
-            transform: scale(1.1) translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,.12);
-        }
-
-        /* Main Layout (Better Spacing) */
-        .main-container {
-            display: flex;
-            min-height: 100vh;
-            max-width: 1800px;
-            margin: 0 auto;
-            padding: 2.5rem;
-            gap: 2.5rem;
-        }
-        .side-panel {
-            width: 100%;
-            max-width: 380px;
-            background-color: var(--side-panel-color);
-            padding: 1.75rem;
-            box-shadow: var(--shadow-widget);
-            border-radius: 16px;
-            margin: 0;
-            height: fit-content;
-        }
-        @media (max-width: 1024px) {
-            .main-container { flex-direction: column; padding: 1.5rem; gap: 1.5rem; }
-            .side-panel { max-width: 100%; position: static; }
-        }
-        .content-area {
-            flex-grow: 1;
-            padding: 0;
-        }
-        
-        /* Typography */
-        h1, h2, h3, h4 {
-            color: var(--text-color);
-            font-family: 'Inter', sans-serif;
-            font-weight: 700;
-        }
-        h1 { font-size: 2rem; margin-bottom: 2rem; font-weight: 800; }
-        h2 { font-size: 1.6rem; margin-bottom: 1.25rem; font-weight: 700; }
-        h3 { font-size: 1.25rem; margin-bottom: 1rem; margin-top: 2rem; font-weight: 700; }
-        .content-area h3 { margin-top: 3rem; }
-        h4 { font-size: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
-
-        /* ** NEW: Sleek, Modern Tabs ** */
-        .tabs-container {
-            border-bottom: 2px solid var(--border-color);
-            margin-bottom: 1.5rem;
-        }
-        .tab-btn {
-            padding: 0.85rem 1.5rem;
-            font-weight: 600;
-            border-radius: 8px 8px 0 0;
-            border-bottom: 3px solid transparent;
-            cursor: pointer;
-            background-color: transparent;
-            color: var(--text-color-light);
-            margin-right: .25rem;
-            transition: all 0.2s ease;
-            border: 1px solid transparent;
-            border-bottom: 3px solid transparent;
-        }
-        .tab-btn:hover:not(.active) {
-            color: var(--text-color);
-            background-color: var(--widget-darker-color);
-            border-bottom-color: var(--border-color);
-        }
-        .tab-btn.active {
-            background-color: var(--widget-background);
-            border-color: var(--border-color);
-            border-bottom-color: var(--primary-color);
-            color: var(--primary-color);
-        }
-        .tab-content {
-            background-color: var(--widget-background);
-            padding: 2.5rem;
-            border-radius: 12px;
-            box-shadow: var(--shadow-widget);
-        }
-        .tab-content:not(.active) { display: none; }
-
-        /* Subject Table */
-        .subject-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            margin-top: 1.5rem;
-            box-shadow: var(--shadow-widget);
-            border-radius: .75rem;
-            overflow: hidden;
-            margin-bottom: 1.5rem;
-            border: 1px solid var(--border-color);
-        }
-        .subject-table thead th {
-            padding: 1rem 1.25rem;
-            text-align: left;
-            background-color: var(--widget-darker-color);
-            color: var(--text-color);
-            font-weight: 700;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .subject-table thead tr:first-child th {
-            font-size: 1.25rem;
-            text-align: center;
-            background-color: var(--primary-color);
-            color: white;
-        }
-        .subject-table tbody tr:nth-child(even) {
-            background-color: var(--widget-darker-color);
-        }
-        .subject-table td {
-            padding: 0.75rem 1.25rem;
-            border-bottom: 1px solid var(--border-color);
-            color: var(--text-color);
-        }
-        .subject-table tr:last-child td { border-bottom: none; }
-        .grade-percentage {
-            font-weight: 700;
-            color: var(--primary-color);
-        }
-
-        /* Restored Dynamic Styles */
-        .subject-analysis {
-            background-color: var(--primary-bg-light);
-            border: 1px solid var(--border-color);
-            padding: 1.25rem;
-            border-radius: .75rem;
-            margin-top: -1rem;
-            margin-bottom: 1.5rem;
-        }
-        .analysis-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: .25rem .75rem;
-            border-radius: 9999px;
-            font-size: .875rem;
-            font-weight: 600;
-            margin-right: .5rem;
-            border: 1px solid transparent;
-        }
-        .badge-green { background-color: var(--badge-green-bg); color: var(--badge-green-text); border-color: var(--badge-green-text);}
-        .badge-yellow { background-color: var(--badge-yellow-bg); color: var(--badge-yellow-text); border-color: var(--badge-yellow-text);}
-        .badge-red { background-color: var(--badge-red-bg); color: var(--badge-red-text); border-color: var(--badge-red-text);}
-        .badge-violet { background-color: var(--badge-violet-bg); color: var(--badge-violet-text); border-color: var(--badge-violet-text);}
-        .badge-blue { background-color: var(--badge-blue-bg); color: var(--badge-blue-text); border-color: var(--badge-blue-text);}
-        .badge-orange { background-color: var(--badge-orange-bg); color: var(--badge-orange-text); border-color: var(--badge-orange-text);}
-
-        /* ** NEW: Mismatch Card (to fix "plain text") ** */
-        .mismatch-card {
-            background-color: var(--widget-background);
-            border-radius: 12px;
-            box-shadow: var(--shadow-widget-light);
-            border: 1px solid var(--border-color);
-            padding: 1.25rem;
-            border-left-width: 6px;
-            border-left-style: solid;
-            margin-bottom: 1rem;
-            transition: all 0.2s ease;
-        }
-        .mismatch-card:hover {
-            box-shadow: var(--shadow-widget);
-            transform: translateY(-2px);
-        }
-        /* Variants */
-        .mismatch-card.mismatch-critical { border-left-color: var(--danger-color); }
-        .mismatch-card.mismatch-moderate { border-left-color: var(--warning-color); }
-        .mismatch-card.mismatch-good { border-left-color: var(--secondary-color); }
-        /* Content Styling */
-        .mismatch-card h3 {
-            font-size: 1.125rem;
-            font-weight: 700;
-            margin: 0 0 0.5rem 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-        }
-        .mismatch-card h3 small {
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: var(--text-color-light);
-        }
-        .mismatch-card .status-text {
-            font-size: 1rem;
-            font-weight: 500;
-            margin: 0 0 0.75rem 0;
-            color: var(--text-color);
-        }
-        .mismatch-card .meta-text {
-            font-size: 0.875rem;
-            color: var(--text-color-light);
-            margin: 0;
-        }
-
-        /* ** UPDATED: Thicker Prediction Card ** */
-        .prediction-card {
-            background-color: var(--widget-background);
-            padding: 1.25rem;
-            border-radius: 12px;
-            border-left: 6px solid;
-            margin-bottom: 1rem;
-            box-shadow: var(--shadow-widget-light);
-            border: 1px solid var(--border-color);
-            transition: all .2s;
-        }
-        .prediction-card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-widget);
-        }
-        .card-green { border-left-color: var(--secondary-color); }
-        .card-violet { border-left-color: var(--violet-color); }
-        .card-yellow { border-left-color: var(--warning-color); }
-        .card-red { border-left-color: var(--danger-color); }
-        .card-score {
-            font-size: 2rem;
-            font-weight: 800;
-            margin-top: .25rem;
-        }
-
-        /* Probability Table */
-        .probability-table {
-             border: 1px solid var(--border-color);
-             box-shadow: var(--shadow-widget-light);
-             border-radius: .75rem;
-             overflow: hidden;
-        }
-        .probability-table th, .probability-table td {
-            padding: .75rem;
-            text-align: center;
-            border: 1px solid var(--border-color);
-        }
-        .probability-table thead tr { background-color: var(--widget-darker-color); }
-        .prob-high { background-color: var(--badge-green-bg); color: var(--badge-green-text); font-weight: 700; }
-        .prob-medium { background-color: var(--badge-yellow-bg); color: var(--badge-yellow-text); }
-        .prob-low { background-color: var(--badge-red-bg); color: var(--badge-red-text); }
-
-        /* Modals */
-        .modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            display: flex; justify-content: center; align-items: center;
-            z-index: 1000;
-            opacity: 0; visibility: hidden;
-            transition: opacity 0.3s, visibility 0.3s;
-        }
-        .modal.active { opacity: 1; visibility: visible; }
-        .modal-content {
-            background: var(--widget-background);
-            padding: 2rem 2.5rem;
-            border-radius: 12px;
-            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
-            max-width: 90%;
-            width: 500px;
-            transform: scale(0.9) translateY(-20px);
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color var(--transition-duration), color var(--transition-duration);
-        }
-        .modal.active .modal-content {
-            transform: scale(1) translateY(0);
-        }
-        .modal-close {
-            position: absolute; top: 10px; right: 15px;
-            font-size: 2em; cursor: pointer; color: var(--text-color-light);
-            line-height: 1; z-index: 1001;
-        }
-
-        /* Side Panel Score Cards (Better Spacing) */
-        .score-card {
-            display: flex;
-            align-items: center;
-            padding: 1.15rem;
-            border-radius: .75rem;
-            background-color: var(--widget-darker-color);
-            border: 1px solid var(--border-color);
-        }
-        .score-card strong { font-size: 1.5rem; color: var(--text-color); }
-        .score-card p { margin: 0; color: var(--text-color-light); font-size: 0.875rem; }
-        .score-icon { font-size: 1.75rem; margin-right: 1.25rem; width: 32px; text-align: center; }
-        .effort-needed { font-size: 1.25rem; font-weight: 700; }
-        
-        /* Inputs & Sliders */
-        .slider-label { font-weight: 600; margin-top: 1rem; }
-        select, input[type="range"] {
-            width: 100%;
-            margin-top: 0.5rem;
-            background-color: var(--input-bg-color);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-        }
-        select {
-            padding: 12px;
-            font-weight: 500;
-            -webkit-appearance: none; appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b7280'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd' /%3E%3C/svg%3E");
-            background-repeat: no-repeat; background-position: right 15px center; background-size: 20px;
-        }
-        [data-theme="dark"] select {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%239ca3af'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd' /%3E%3C/svg%3E");
-        }
-        input[type="range"] {
-            -webkit-appearance: none;
-            appearance: none;
-            height: 8px;
-            background-color: var(--border-color);
-            border-radius: 4px;
-            padding: 0;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background-color: var(--primary-color);
-            border: 2px solid var(--widget-background);
-            cursor: pointer;
-            box-shadow: 0 0 5px rgba(0,0,0,.2);
-        }
-
-        /* AI Insight Box */
-        .ai-insight-box {
-            background-color: var(--primary-bg-light);
-            border: 1px solid var(--primary-color);
-            border-radius: .75rem;
-            padding: 1.25rem;
-            margin-top: .75rem;
-        }
-        .ai-insight-box h4 {
-            display: flex;
-            align-items: center;
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--primary-text-light);
-            margin-bottom: .75rem;
-            margin-top: 0;
-        }
-        .ai-insight-box h4 span { font-size: 1.25rem; margin-right: .5rem; }
-        .ai-insight-box ul { list-style-type: none; padding-left: 0; font-size: .875rem; margin: 0;}
-        .ai-insight-box li {
-            position: relative;
-            padding-left: 1.75rem;
-            margin-bottom: .5rem;
-            color: var(--text-color);
-            line-height: 1.5;
-        }
-        .ai-insight-box li:last-child { margin-bottom: 0; }
-        .ai-insight-box li::before {
-            font-size: 1rem;
-            position: absolute;
-            left: 0;
-            top: 1px;
-        }
-        .ai-insight-box li.insight-good::before { content: '✅'; }
-        .ai-insight-box li.insight-info::before { content: 'ℹ️'; }
-        .ai-insight-box li.insight-trend::before { content: '📈'; }
-        .ai-insight-box li.insight-focus::before { content: '🎯'; }
-        .ai-insight-box li.insight-priority::before { content: '🧠'; }
-        .ai-insight-box li.insight-erratic::before { content: '⚡'; }
-
-        /* Gauge */
-        .gauge-container {
-            width: 100%;
-            padding: .5rem 0;
-            margin-top: .5rem;
-            margin-bottom: 1.5rem;
-        }
-        .gauge-bar {
-            width: 100%;
-            height: 12px;
-            background: var(--gauge-gradient);
-            border-radius: 6px;
-            position: relative;
-            box-shadow: inset 0 1px 3px rgba(0, 0, 0, .1);
-        }
-        .gauge-needle {
-            position: absolute;
-            top: -6px;
-            width: 6px;
-            height: 24px;
-            background-color: var(--text-color);
-            border-radius: 3px;
-            border: 2px solid var(--widget-background);
-            box-shadow: 0 1px 5px rgba(0, 0, 0, .4);
-            transform: translateX(-50%);
-        }
-        .gauge-labels {
-            display: flex;
-            justify-content: space-between;
-            font-size: .875rem;
-            font-weight: 600;
-            color: var(--text-color-light);
-            margin-top: .75rem;
-        }
-
-        /* Help Modal */
-        #help-modal .modal-content {
-            width: 750px;
-            max-width: 95%;
-            max-height: 90vh;
-            overflow-y: auto;
-            text-align: left;
-        }
-        .help-title {
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: var(--primary-color);
-            margin-bottom: 1rem;
-            text-align: left;
-        }
-        .help-section-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--primary-color);
-            margin-top: 1.5rem;
-            border-bottom: 2px solid var(--primary-color);
-            padding-bottom: 4px;
-            margin-bottom: 1rem;
-        }
-        #help-modal h4 {
-            font-size: 1.0rem;
-            font-weight: 700;
-            color: var(--text-color);
-            margin-top: 1.25rem;
-            margin-bottom: .25rem;
-        }
-        #help-modal p, #help-modal li {
-            font-size: .95rem;
-            color: var(--text-color-light);
-            line-height: 1.6;
-            margin-top: .5rem;
-        }
-        #help-modal ul { list-style-type: disc; padding-left: 2rem; }
-        #help-modal ol.detailed-list { list-style-type: decimal; padding-left: 1.5rem; }
-        #help-modal ol.detailed-list > li { font-weight: 600; color: var(--text-color); margin-top: 1rem; }
-        #help-modal ol.detailed-list > li > ul { margin-top: .25rem; font-weight: normal; }
-        #help-modal b { font-weight: 600; color: var(--text-color); }
-
-        /* Utility */
-        .space-y-3 { display: flex; flex-direction: column; gap: 1.25rem; } /* Increased gap */
-        .space-y-2 { display: flex; flex-direction: column; gap: 0.75rem; }
-        .space-y-4 { display: flex; flex-direction: column; gap: 1rem; }
-        .border-b { border-bottom: 1px solid var(--border-color); }
-        .pb-2 { padding-bottom: 0.5rem; }
-        .mb-4 { margin-bottom: 1.5rem; }
-        .mb-3 { margin-bottom: 1rem; }
-        .mb-2 { margin-bottom: 0.5rem; }
-        .mt-4 { margin-top: 1rem; }
-        .mt-6 { margin-top: 1.5rem; }
-        .pt-3 { padding-top: 0.75rem; }
-        .block { display: block; }
-        .font-medium { font-weight: 500; }
-        .text-sm { font-size: 0.875rem; }
-        .text-xs { font-size: 0.75rem; }
-        .text-gray-500 { color: var(--text-color-light); }
-        .text-gray-700 { color: var(--text-color); }
-        .text-gray-800 { color: var(--text-color); }
-        .-mt-2 { margin-top: -0.5rem; }
-        .w-full { width: 100%; }
-        .flex { display: flex; }
-        .space-x-2 { gap: 0.5rem; }
-        .rounded-lg { border-radius: .75rem; }
-        .p-4 { padding: 1rem; }
-        .border-l-4 { border-left-width: 4px; }
-        .text-4xl { font-size: 2.5rem; }
-        .font-extrabold { font-weight: 800; }
-        .text-violet-700 { color: var(--primary-color); }
-        .text-red-600 { color: var(--danger-color); }
-        .text-orange-600 { color: var(--warning-color); }
+    /* AI Insights & Special BGs */
+    .subject-analysis { background-color: #2c1d3e; border-color: #4c1d95; }
+    .ai-insight-box { background-color: #2c1d3e; border-color: #4c1d95; }
+    .ai-insight-box h4 { color: var(--primary-color-text); }
+    .ai-insight-box li { color: #d1d5db; }
+    .bg-violet-100 { background-color: var(--primary-color-bg-light); }
+    .text-violet-700 { color: var(--primary-color-text); }
+    
+    /* Gauge */
+    .gauge-needle { background-color: #e5e7eb; border-color: #1f2937; }
+    .gauge-labels { color: #9ca3af; }
+    .gauge-labels strong { color: var(--primary-color-text); }
+    
+    /* Text colors */
+    .grade-percentage { color: var(--primary-color-text); }
+    
+    /* Forms */
+    select, input[type="range"] { 
+        background-color: #374151; 
+        color: #e5e7eb; 
+        border-color: #4b5563; 
+    }
+    #unites-btn { background-color: #4b5563; color: #e5e7eb; }
+    #unites-btn:hover { background-color: #6b7280; }
+    
+    /* Fixed Buttons */
+    .help-btn, .back-to-main-btn, .theme-toggle-btn {
+        background-color: #374151;
+        color: #e5e7eb;
+        box-shadow: 0 4px 10px rgba(0,0,0,.3);
+    }
+    .help-btn:hover, .back-to-main-btn:hover, .theme-toggle-btn:hover {
+        background-color: #4b5563;
+    }
+    
+    /* Modal */
+    #help-modal .modal-close { color: #d1d5db; }
+}
+/*
+--- DARK MODE STYLES END ---
+*/
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
 
-<a href="main.html" class="icon-btn" title="Retour à la page principale" style="position: fixed; top: 15px; left: 15px; z-index: 1001;">
-    <i class="fa-solid fa-arrow-left"></i>
+<a id="open-help-btn" class="help-btn" title="Comment ça marche ?">
+    <i class="fa-solid fa-question"></i>
 </a>
-<div class="floating-buttons-container" style="position: fixed; top: 15px; right: 15px; z-index: 1001; display: flex; gap: 10px;">
-    <button id="theme-toggle" class="icon-btn" aria-label="Changer de thème (Mode Clair/Sombre)">
-        <i class="fa-solid fa-moon"></i>
-    </button>
-    <button id="open-help-btn" class="icon-btn" title="Comment ça marche ?">
-        <i class="fa-solid fa-question"></i>
-    </button>
-</div>
 
 <div id="help-modal" class="modal">
     <div class="modal-content">
         <span id="close-help-modal" class="modal-close">&times;</span>
         <h2 class="help-title">Guide Détaillé de l'Analyseur</h2>
+        
         <p>Cet outil analyse votre <b>tendance</b> (votre "élan") et votre <b>volatilité</b> (votre stabilité) pour prédire vos performances. Voici ce que chaque terme signifie en détail.</p>
+
         <h3 class="help-section-title">Section Spéciale : La Régression Linéaire (Le Cœur de l'IA)</h3>
+        
         <h4>Qu'est-ce que c'est ?</h4>
         <p>Le "Moteur de Découverte (IA)" utilise un outil statistique appelé <b>Régression Linéaire</b>. Son but est de trouver la "ligne de tendance" (la ligne droite de meilleur ajustement) qui passe au milieu d'un nuage de points de données. 
+
 </p>
         <p>L'IA n'analyse pas seulement vos notes, elle analyse la <b>relation</b> entre deux variables. L'application effectue 3 analyses de régression distinctes :</p>
+        
         <ol class="detailed-list">
             <li><b>Modèle 1 : TENDANCE (Note vs. Temps)</b>
                 <ul>
@@ -641,6 +160,7 @@
                 </ul>
             </li>
         </ol>
+
         <h4>Ce qui INFLUENCE la Régression (Votre question)</h4>
         <p>La "ligne de tendance" est comme une balançoire. Ce qui l'influence le plus, ce sont les <b>points aberrants (Outliers)</b> et la <b>dispersion</b> de vos notes.</p>
         <ul>
@@ -653,7 +173,9 @@
             </li>
             <li><b>Le Nombre de Points (N) :</b> Une tendance sur 3 devoirs ne veut rien dire. Une tendance sur 30 devoirs est un schéma très fort. C'est pourquoi l'IA ignore les matières avec moins de 5 notes.</li>
         </ul>
+
         <h3 class="help-section-title">Panneau Principal (Gauche)</h3>
+        
         <h4>Prédiction Globale Stochastique (Tendance MC)</h4>
         <p>"MC" signifie <b>Monte Carlo</b>. L'outil simule <b>100 000 scénarios possibles</b> pour l'Étape 3. Chaque simulation est un "jet de dé" basé sur :</p>
         <ol>
@@ -661,6 +183,7 @@
             <li><b>Votre volatilité</b> (votre <b>Écart-Type</b>, ou "StdDev"). Un étudiant stable (faible volatilité) aura des simulations groupées (ex: 88-92%). Un étudiant erratique (haute volatilité) aura des simulations dispersées (ex: 70-100%).</li>
         </ol>
         <p>Le score affiché est le <b>P50 (Médian)</b> : le point exact où 50 000 simulations ont fait pire et 50 000 ont fait mieux. C'est le résultat le plus probable.</p>
+
         <h4>Jauge de Performance (P5 à P95)</h4>
         <p>C'est la carte complète des 100 000 simulations :</p>
         <ul>
@@ -668,13 +191,16 @@
             <li><b>P50 (Médian) :</b> Le centre, identique à la prédiction "Tendance MC".</li>
             <li><b>P95 (Optimiste) :</b> Seulement 5 000 simulations ont fait mieux. C'est le scénario "rêvé".</li>
         </ul>
+
         <h4>Indices de Risque Dynamique</h4>
         <ul>
             <li><b>Indice de Consistance :</b> C'est l'inverse de votre <b>Volatilité (Écart-Type)</b>. Un score de 100 signifie un Écart-Type de 0 (ex: 90%, 90%, 90%). Un score bas signifie que vos notes sont très dispersées (ex: 60%, 100%, 75%).</li>
             <li><b>Risque de Burnout :</b> Score (sur 100) basé sur 4 facteurs : <b>1.</b> Volatilité (l'instabilité est stressante), <b>2.</b> Tendance (une pente négative est un signe de difficulté), <b>3.</b> Charge de travail (Unités), <b>4.</b> Absentéisme.</li>
             <li><b>Facteur de Tendance Globale :</b> C'est la <b>Pente (Slope)</b> de votre Régression "Tendance" x 10. (Ex: Pente de +0.2 = +2.0% F.T.G. = Vous gagnez 0.2 points par devoir, ou 2 points tous les 10 devoirs).</li>
         </ul>
+
         <h3 class="help-section-title">Analyse Détaillée (Droite)</h3>
+
         <h4>Analyse de Déséquilibre (Mismatch)</h4>
         <p>Cette section identifie les matières "risquées". Le "Score Mismatch" est élevé si une matière a :</p>
         <ul>
@@ -682,6 +208,7 @@
             <li><b>2. Une faible Consistance :</b> Vos notes sont imprévisibles.</li>
         </ul>
         <p>Une matière "Rouge" (Mismatch élevé) est une bombe à retardement. C'est là que vous devez vous concentrer pour <b>stabiliser</b> vos résultats (ex: visez des 80-90 constants plutôt que des 70-100 alternés).</p>
+
         <h4>Analyse de Chemin (Probabilités)</h4>
         <p>Cette section vous donne un plan d'action. Elle répond à deux questions : <b>1.</b> "De quelle moyenne ai-je besoin ?" et <b>2.</b> "Quelles sont mes chances de l'obtenir ?"</p>
         <ul>
@@ -692,24 +219,33 @@
     </div>
 </div>
 
+<a href="main.html" class="back-to-main-btn" title="Retour à la page principale">
+    <i class="fa-solid fa-arrow-left"></i>
+</a>
+
+<button id="theme-toggle" class="theme-toggle-btn" aria-label="Changer de thème" title="Changer de thème">
+    <i class="fa-solid fa-moon"></i>
+</button>
+
+
 <div class="main-container">
 
     <div class="side-panel lg:sticky lg:top-4">
-        <h2 class="text-2xl font-bold mb-4 text-gray-800 border-b pb-2">Moteur Stochastique V10</h2>
+        <h2 class="text-2xl font-bold mb-4 text-gray-800 border-b pb-2">Moteur Stochastique V10 (Fix)</h2>
 
-        <div class="bg-violet-100 p-4 rounded-lg mb-4 border-l-4 border-violet-600" style="background-color: var(--primary-bg-light); border-left-color: var(--primary-color); margin-bottom: 1.5rem;">
+        <div class="bg-violet-100 p-4 rounded-lg mb-4 border-l-4 border-violet-600">
             <p class="text-sm font-medium text-gray-700">Prédiction Globale Stochastique (Tendance MC)</p>
             <strong id="moyenne-prediction" class="text-4xl font-extrabold text-violet-700">--</strong>
         </div>
 
-        <h3 class="text-lg font-semibold text-gray-800" style="margin-top: 0;">Jauge de Performance (P5 à P95)</h3>
+        <h3 class="text-lg font-semibold text-gray-800">Jauge de Performance (P5 à P95)</h3>
         <div class="gauge-container">
             <div class="gauge-bar">
                 <div id="gauge-needle" class="gauge-needle" style="left: 50%;"></div>
             </div>
             <div class="gauge-labels">
                 <span id="gauge-label-p5">P5: --%</span>
-                <strong id="gauge-label-p50" style="color: var(--primary-color);">P50: --%</strong>
+                <strong id="gauge-label-p50" class="text-primary-color">P50: --%</strong>
                 <span id="gauge-label-p95">P95: --%</span>
             </div>
         </div>
@@ -726,7 +262,7 @@
             <div class="score-card score-low" id="burnout-risk-score">
                 <span class="score-icon text-red-600">🔥</span>
                 <div>
-                    <p class="text-sm font-medium text-gray-500">Score de Risque de Burnout (100 = Risque Maximal)</p>
+                    <p class="text-sm font-medium text-gray-500">Score de Risque de Burnout (100 = Risque Maximal pour Perte de Contrôle)</p>
                     <strong class="text-xl text-red-600">--</strong>
                 </div>
             </div>
@@ -751,40 +287,41 @@
         <div class="space-y-3 mb-6 text-sm">
             <div>
                 <label for="niveau-secondaire" class="block text-sm font-medium text-gray-700">Niveau Secondaire</label>
-                <select id="niveau-secondaire">
+                <select id="niveau-secondaire" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm py-2 px-3 focus:ring-primary-500 focus:border-primary-500">
                     <option value="">Sélectionner</option>
                     <option value="sec4">Secondaire 4</option>
                     <option value="sec5">Secondaire 5</option>
                 </select>
             </div>
             <div>
-                <label class="slider-label block text-sm font-medium text-gray-700" style="margin-top: 0;">Taux d'Absentéisme/Désengagement</label>
+                <label class="slider-label block text-sm font-medium text-gray-700">Taux d'Absentéisme/Désengagement</label>
                 <input type="range" id="absence-rate-slider" min="0" max="25" step="0.5" value="5" class="w-full mt-1">
-                <p class="text-xs text-gray-500 mt-1" style="font-size: 0.8rem;">Impact sur B-Risk : <span id="absence-rate-value">5.0%</span></p>
+                <p class="text-xs text-gray-500 mt-1">Impact sur B-Risk : <span id="absence-rate-value">5.0%</span></p>
             </div>
 
             <div>
                 <label for="unites-mode" class="block text-sm font-medium text-gray-700">Mode Unités (Pondération)</label>
                 <div class="flex space-x-2">
-                    <select id="unites-mode" style="flex: 1;">
+                    <select id="unites-mode" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm py-2 px-3 focus:ring-primary-500 focus:border-primary-500">
                         <option value="defaut">Défaut (Officiel)</option>
                         <option value="sans">Sans Unités (Moy. Simple)</option>
                         <option value="perso">Personnalisé</option>
                     </select>
-                    <button id="unites-btn" style="padding: 8px 12px; background-color: var(--widget-darker-color); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-color); font-weight: 500;">Éditer</button>
+                    <button id="unites-btn" class="bg-gray-200 text-gray-600 rounded-md px-3 hover:bg-gray-300 transition duration-150 text-sm">Éditer</button>
                 </div>
             </div>
         </div>
 
         <h3 class="text-lg font-semibold mt-4 mb-2 text-gray-700 border-t pt-3">Moyennes par Matière (<span id="active-etape-name">1</span>)</h3>
-        <ul id="subject-averages-list" class="space-y-2 text-base" style="padding-left: 0; list-style: none;">
+        <ul id="subject-averages-list" class="space-y-2 text-base">
             </ul>
+
     </div>
 
     <div class="content-area">
         <h1 class="text-3xl font-bold mb-4 text-gray-800">Détails de Performance & Prédictions</h1>
 
-        <div class="tabs-container">
+        <div class="flex border-b border-gray-200 mb-4">
             <button class="tab-btn active" data-tab="etape1">Étape 1 - Analyse</button>
             <button class="tab-btn" data-tab="etape2">Étape 2 - Analyse</button>
             <button class="tab-btn" data-tab="etape3">Étape 3 - Projection</button>
@@ -800,13 +337,13 @@
                 </div>
 
             <div id="simulation" class="tab-content">
-                <h2 class="text-2xl font-bold mb-4 text-primary-color" style="color: var(--primary-color);">Analyse Prédictive Stochastique</h2>
+                <h2 class="text-2xl font-bold mb-4 text-primary-color">Analyse Prédictive Stochastique (100,000 Scénarios)</h2>
                 <p class="text-gray-600 mb-6 border-b pb-4">
                     *Le modèle utilise la **Régression Linéaire** pour la tendance de base et projette la performance. Les probabilités sont calculées à l'aide d'une **CDF Normale** basée sur la tendance et la volatilité (StdDev) de vos notes. Ces données sont des estimations statistiques.*
                 </p>
 
-                <h3 class="text-xl font-semibold mb-3 mt-4 text-gray-700">Prédictions de Moyenne Finale Globale</h3>
-                <div id="global-predictions" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+                <h3 class="text-xl font-semibold mb-3 mt-4 text-gray-700">Prédictions de Moyenne Finale Globale (Intervalles de Confiance)</h3>
+                <div id="global-predictions" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                     </div>
 
                 <h3 class="text-xl font-semibold mb-3 mt-8 text-gray-700 border-t pt-4">Analyse de Déséquilibre Volatilité / Effort (Mismatch)</h3>
@@ -856,10 +393,10 @@
     <div class="modal-content">
         <h3 class="text-xl font-bold mb-4">Unités par Matière</h3>
         <p class="text-sm text-gray-500 mb-4">Ajustez les unités pour chaque matière si le mode 'Personnalisé' est sélectionné.</p>
-        <div id="unites-list" class="max-h-80 overflow-y-auto border p-3 rounded-md space-y-2" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color); padding: 0.75rem; border-radius: 8px;">
+        <div id="unites-list" class="max-h-80 overflow-y-auto border p-3 rounded-md space-y-2">
             </div>
-        <div class="mt-6 flex justify-end" style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
-            <button id="close-unites-modal" class="bg-primary-color text-white px-4 py-2 rounded-md" style="background-color: var(--primary-color); color: white; padding: 0.75rem 1.25rem; border-radius: 8px; border: none; font-weight: 600;">Fermer & Appliquer</button>
+        <div class="mt-6 flex justify-end">
+            <button id="close-unites-modal" class="bg-primary-color text-white px-4 py-2 rounded-md hover:bg-violet-700 transition">Fermer & Appliquer</button>
         </div>
     </div>
 </div>
@@ -868,95 +405,25 @@
 <script src="js/projection.js"></script>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    // Inline script for instant theme loading
+    const themeToggle = document.getElementById('theme-toggle');
+    const html = document.documentElement;
+    const toggleIcon = themeToggle.querySelector('i');
+    const THEME_KEY = 'mbs-theme'; // Using the same key as improve.html
 
-        // --- 1. Theme Toggle Logic ---
-        const themeToggle = document.getElementById('theme-toggle');
-        const html = document.documentElement;
-        const toggleIcon = themeToggle.querySelector('i');
-        const THEME_KEY = 'pathfinder-theme-v3';
+    const updateTheme = (theme) => {
+        html.setAttribute('data-theme', theme);
+        localStorage.setItem(THEME_KEY, theme);
+        toggleIcon.className = theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+    };
 
-        const updateTheme = (theme) => {
-            html.setAttribute('data-theme', theme);
-            localStorage.setItem(THEME_KEY, theme);
-            if (theme === 'dark') {
-                toggleIcon.classList.remove('fa-moon');
-                toggleIcon.classList.add('fa-sun');
-            } else {
-                toggleIcon.classList.remove('fa-sun');
-                toggleIcon.classList.add('fa-moon');
-            }
-        };
+    const storedTheme = localStorage.getItem(THEME_KEY);
+    const initialTheme = storedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    updateTheme(initialTheme);
 
-        const storedTheme = localStorage.getItem(THEME_KEY);
-        const initialTheme = storedTheme || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        updateTheme(initialTheme);
-
-        themeToggle.addEventListener('click', () => {
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            updateTheme(newTheme);
-        });
-
-        // --- 2. Tab Switching Logic ---
-        const tabButtons = document.querySelectorAll('.tab-btn');
-        const tabContents = document.querySelectorAll('.tab-content');
-
-        tabButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const targetTab = button.getAttribute('data-tab');
-
-                tabButtons.forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
-
-                tabContents.forEach(content => {
-                    if (content.id === targetTab) {
-                        content.classList.add('active');
-                    } else {
-                        content.classList.remove('active');
-                    }
-                });
-                
-                const activeEtapeName = document.getElementById('active-etape-name');
-                if (activeEtapeName) {
-                    if (targetTab.startsWith('etape')) {
-                        activeEtapeName.textContent = targetTab.replace('etape', '');
-                    }
-                }
-            });
-        });
-
-        // --- 3. Modal Logic ---
-        const setupModal = (openBtnId, modalId, closeBtnId) => {
-            const openBtn = document.getElementById(openBtnId);
-            const modal = document.getElementById(modalId);
-            const closeBtn = document.getElementById(closeBtnId);
-
-            if (openBtn && modal && closeBtn) {
-                const open = () => modal.classList.add('active');
-                const close = () => modal.classList.remove('active');
-
-                openBtn.addEventListener('click', open);
-                closeBtn.addEventListener('click', close);
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        close();
-                    }
-                });
-            }
-        };
-
-        setupModal('open-help-btn', 'help-modal', 'close-help-modal');
-        setupModal('unites-btn', 'unites-modal', 'close-unites-modal');
-        
-        // --- 4. Absence Slider Value Display ---
-        const absenceSlider = document.getElementById('absence-rate-slider');
-        const absenceValue = document.getElementById('absence-rate-value');
-        if(absenceSlider && absenceValue) {
-            absenceSlider.addEventListener('input', () => {
-                absenceValue.textContent = `${parseFloat(absenceSlider.value).toFixed(1)}%`;
-            });
-        }
+    themeToggle.addEventListener('click', () => {
+        const newTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        updateTheme(newTheme);
     });
 </script>
 
