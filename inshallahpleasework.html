@@ -98,9 +98,47 @@ body{font-family:'Inter',sans-serif;background-color:var(--bg-color);color:#1f29
     .badge-violet { background-color: #3a226d; color: #E9D5FF; }
     .badge-blue { background-color: #1e3a8a; color: #DBEAFE; }
     .badge-orange { background-color: #612c0a; color: #FFEDD5; }
-    .prob-high { background-color: #1a3e2a; color: #D1FAE5; }
-    .prob-medium { background-color: #4d381c; color: #FEF3C7; }
-    .prob-low { background-color: #4f2323; color: #FEE2E2; }
+
+    /* === FIXES START HERE === */
+
+    /* 1. Fix for bright probability table rows */
+    .prob-high { background-color: #1a3e2a !important; color: #D1FAE5 !important; }
+    .prob-medium { background-color: #4d381c !important; color: #FEF3C7 !important; }
+    .prob-low { background-color: #4f2323 !important; color: #FEE2E2 !important; }
+
+    /* 2. Fix for bright table headers (which use Tailwind 'bg-gray-100') */
+    .bg-gray-100 { background-color: #3a3a3a; }
+
+    /* 3. Fix for bright white dynamic cards in Mismatch & Prediction sections */
+    #global-predictions > div, 
+    #mismatch-analysis > div, 
+    #subject-predictions-list > div {
+        background-color: #2a2a2a !important;
+        border: 1px solid #333333 !important; /* Add a border for definition */
+    }
+    
+    /* 4. Ensure left border colors are preserved on fixed cards */
+    #global-predictions > div.card-green, 
+    #mismatch-analysis > div.card-green, 
+    #subject-predictions-list > div.card-green { 
+        border-left-color: var(--secondary-color) !important; 
+    }
+    #global-predictions > div.card-violet, 
+    #mismatch-analysis > div.card-violet, 
+    #subject-predictions-list > div.card-violet { 
+        border-left-color: var(--primary-color) !important; 
+    }
+    #global-predictions > div.card-yellow, 
+    #mismatch-analysis > div.card-yellow, 
+    #subject-predictions-list > div.card-yellow { 
+        border-left-color: var(--warning-color) !important; 
+    }
+    #global-predictions > div.card-red, 
+    #mismatch-analysis > div.card-red, 
+    #subject-predictions-list > div.card-red { 
+        border-left-color: var(--danger-color) !important; 
+    }
+    /* === FIXES END HERE === */
 }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
